@@ -1,0 +1,18 @@
+{
+  "name": "espMqttClient",
+  "keywords": "iot, home, automation, async, mqtt, client, esp8266, esp32",
+  "description": "an MQTT client for the Arduino framework for ESP8266 / ESP32",
+  "authors":
+  {
+    "name": "Bert Melis",
+    "url": "https://github.com/bertmelis"
+  },
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/bertmelis/espMqttClient.git"
+  },
+  "version": "0.0.1",
+  "frameworks": "arduino",
+  "platforms": ["espressif8266", "espressif32"],
+}
