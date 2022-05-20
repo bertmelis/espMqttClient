@@ -437,7 +437,7 @@ void MqttClient::_onPublish() {
   } else if (qos == 2) {
     EMC_SEMAPHORE_TAKE();
     espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-    while(it) {
+    while (it) {
       if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREC && it.data()->packetId() == packetId) {
         callback = false;
         emc_log_e("QoS2 packet previously delivered");
@@ -468,7 +468,7 @@ void MqttClient::_onPuback() {
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while(it) {
+  while (it) {
     // PUBACKs come in the order PUBs are sent. So we only check the first PUB packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBLISH) {
@@ -495,7 +495,7 @@ void MqttClient::_onPubrec() {
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while(it) {
+  while (it) {
     // PUBRECs come in the order PUBs are sent. So we only check the first PUB packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBLISH) {
@@ -524,7 +524,7 @@ void MqttClient::_onPubrel() {
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while(it) {
+  while (it) {
     // PUBRELs come in the order PUBRECs are sent. So we only check the first PUBREC packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREC) {
@@ -553,7 +553,7 @@ void MqttClient::_onPubcomp() {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
-  while(it) {
+  while (it) {
     // PUBCOMPs come in the order PUBRELs are sent. So we only check the first PUBREL packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREL) {
@@ -586,7 +586,7 @@ void MqttClient::_onSuback() {
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while(it) {
+  while (it) {
     if (((it.data()->data(0)[0] & 0xF0) == PacketType.SUBSCRIBE) && it.data()->packetId() == idToMatch) {
       callback = true;
       _outbox.remove(it);
@@ -607,7 +607,7 @@ void MqttClient::_onUnsuback() {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
-  while(it) {
+  while (it) {
     if (it.data()->packetId() == idToMatch) {
       callback = true;
       _outbox.remove(it);
@@ -633,14 +633,14 @@ void MqttClient::_clearQueue(bool clearSession) {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   if (clearSession) {
-    while(it) {
+    while (it) {
       _outbox.remove(it);
     }
   } else {
     // keep PUB, PUBREC and PUBREL
     // Spec only mentions PUB and PUBREL but this lib implements method B from point 4.3.3 (Fig. 4.3)
     // and stores the packet id in the PUBREC packet. So we also must keep PUBREC.
-    while(it) {
+    while (it) {
       espMqttClientInternals::MQTTPacketType type = it.data()->data(0)[0] & 0xF0;
       if (type == PacketType.PUBREC ||
           type == PacketType.PUBREL ||
