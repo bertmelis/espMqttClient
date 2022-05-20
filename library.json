@@ -7,6 +7,8 @@
     "name": "Bert Melis",
     "url": "https://github.com/bertmelis"
   },
+  "license": "MIT",
+  "homepage": "https://github.com/bertmelis/espMqttClient",
   "repository":
   {
     "type": "git",
@@ -14,5 +16,5 @@
   },
   "version": "0.0.1",
   "frameworks": "arduino",
-  "platforms": ["espressif8266", "espressif32"],
+  "platforms": ["espressif8266", "espressif32"]
 }
