@@ -1,6 +1,6 @@
 {
   "name": "espMqttClient",
-  "keywords": "iot, home, automation, async, mqtt, client, esp8266, esp32",
+  "keywords": "iot, home, automation, mqtt, client, esp8266, esp32",
   "description": "an MQTT client for the Arduino framework for ESP8266 / ESP32",
   "authors":
   {
