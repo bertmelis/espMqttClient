@@ -39,7 +39,7 @@ struct IncomingPacket {
     } fixed;
   } variableHeader;
   struct {
-    uint8_t* data;
+    const uint8_t* data;
     size_t length;
     size_t index;
     size_t total;

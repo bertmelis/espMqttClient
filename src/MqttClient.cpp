@@ -437,7 +437,7 @@ void MqttClient::_onPublish() {
   } else if (qos == 2) {
     EMC_SEMAPHORE_TAKE();
     espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-    while (it.data()) {
+    while(it) {
       if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREC && it.data()->packetId() == packetId) {
         callback = false;
         emc_log_e("QoS2 packet previously delivered");
@@ -468,7 +468,7 @@ void MqttClient::_onPuback() {
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while (it.data()) {
+  while(it) {
     // PUBACKs come in the order PUBs are sent. So we only check the first PUB packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBLISH) {
@@ -482,16 +482,20 @@ void MqttClient::_onPuback() {
     }
     ++it;
   }
-  if (!it.data()) emc_log_w("No matching PUBLISH packet found");
   EMC_SEMAPHORE_GIVE();
-  if (callback && _onPublishCallback) _onPublishCallback(idToMatch);
+  if (callback) {
+    if (_onPublishCallback) _onPublishCallback(idToMatch);
+  } else {
+    emc_log_w("No matching PUBLISH packet found");
+  }
 }
 
 void MqttClient::_onPubrec() {
+  bool success = false;
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while (it.data()) {
+  while(it) {
     // PUBRECs come in the order PUBs are sent. So we only check the first PUB packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBLISH) {
@@ -503,6 +507,7 @@ void MqttClient::_onPubrec() {
           emc_log_e("Could not create PUBREL packet");
         }
         _outbox.remove(it);
+        success = true;
         break;
       }
       emc_log_w("Received out of order PUBREC");
@@ -510,15 +515,16 @@ void MqttClient::_onPubrec() {
     }
     ++it;
   }
-  if (!it.data()) emc_log_w("No matching PUBLISH packet found");
+  if (!success) emc_log_w("No matching PUBLISH packet found");
   EMC_SEMAPHORE_GIVE();
 }
 
 void MqttClient::_onPubrel() {
+  bool success = false;
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while (it.data()) {
+  while(it) {
     // PUBRELs come in the order PUBRECs are sent. So we only check the first PUBREC packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREC) {
@@ -530,6 +536,7 @@ void MqttClient::_onPubrel() {
           emc_log_e("Could not create PUBCOMP packet");
         }
         _outbox.remove(it);
+        success = true;
         break;
       }
       emc_log_w("Received out of order PUBREL");
@@ -537,7 +544,7 @@ void MqttClient::_onPubrel() {
     }
     ++it;
   }
-  if (!it.data()) emc_log_w("No matching PUBREC packet found");
+  if (!success) emc_log_w("No matching PUBREC packet found");
   EMC_SEMAPHORE_GIVE();
 }
 
@@ -546,7 +553,7 @@ void MqttClient::_onPubcomp() {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
-  while (it.data()) {
+  while(it) {
     // PUBCOMPs come in the order PUBRELs are sent. So we only check the first PUBREL packet in outbox
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREL) {
@@ -566,9 +573,12 @@ void MqttClient::_onPubcomp() {
     }
     ++it;
   }
-  if (!it.data()) emc_log_w("No matching PUBREL packet found");
   EMC_SEMAPHORE_GIVE();
-  if (callback && _onPublishCallback) _onPublishCallback(idToMatch);
+  if (callback) {
+    if (_onPublishCallback) _onPublishCallback(idToMatch);
+  } else {
+    emc_log_w("No matching PUBREL packet found");
+  }
 }
 
 void MqttClient::_onSuback() {
@@ -576,17 +586,20 @@ void MqttClient::_onSuback() {
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  while (it.data()) {
-    if (it.data()->packetId() == idToMatch) {
+  while(it) {
+    if (((it.data()->data(0)[0] & 0xF0) == PacketType.SUBSCRIBE) && it.data()->packetId() == idToMatch) {
       callback = true;
       _outbox.remove(it);
       break;
     }
     ++it;
   }
-  if (!it.data()) emc_log_w("received SUBACK without SUB");
   EMC_SEMAPHORE_GIVE();
-  if (callback && _onSubscribeCallback) _onSubscribeCallback(idToMatch, *(_parser.getPacket().payload.data));
+  if (callback) {
+    if (_onSubscribeCallback) _onSubscribeCallback(idToMatch, *(_parser.getPacket().payload.data));
+  } else {
+    emc_log_w("received SUBACK without SUB");
+  }
 }
 
 void MqttClient::_onUnsuback() {
@@ -594,7 +607,7 @@ void MqttClient::_onUnsuback() {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
-  while (it.data()) {
+  while(it) {
     if (it.data()->packetId() == idToMatch) {
       callback = true;
       _outbox.remove(it);
@@ -602,9 +615,12 @@ void MqttClient::_onUnsuback() {
     }
     ++it;
   }
-  if (!it.data()) emc_log_w("received UNSUBACK without UNSUB");
   EMC_SEMAPHORE_GIVE();
-  if (callback && _onUnsubscribeCallback) _onUnsubscribeCallback(idToMatch);
+  if (callback) {
+    if (_onUnsubscribeCallback) _onUnsubscribeCallback(idToMatch);
+  } else {
+    emc_log_w("received UNSUBACK without UNSUB");
+  }
 }
 
 void MqttClient::_onDisconnect() {
@@ -617,14 +633,14 @@ void MqttClient::_clearQueue(bool clearSession) {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   if (clearSession) {
-    while (it.data()) {
+    while(it) {
       _outbox.remove(it);
     }
   } else {
     // keep PUB, PUBREC and PUBREL
     // Spec only mentions PUB and PUBREL but this lib implements method B from point 4.3.3 (Fig. 4.3)
     // and stores the packet id in the PUBREC packet. So we also must keep PUBREC.
-    while (it.data()) {
+    while(it) {
       espMqttClientInternals::MQTTPacketType type = it.data()->data(0)[0] & 0xF0;
       if (type == PacketType.PUBREC ||
           type == PacketType.PUBREL ||

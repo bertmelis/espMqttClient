@@ -57,6 +57,11 @@ class Outbox {
       if (_it) _it = _it->prev;
     }
 
+    explicit operator bool() const {
+      if (_it) return true;
+      return false;
+    }
+
     T* data() const {
       if (_it) return &(_it->item);
       return nullptr;

@@ -271,7 +271,8 @@ ParserResult Parser::_payloadSuback(Parser* p) {
 }
 
 ParserResult Parser::_payloadPublish(Parser* p) {
-  if (p->_packet.payload.index == 0) p->_packet.payload.index += p->_packet.payload.length;
+  p->_packet.payload.index += p->_packet.payload.length;
+  p->_packet.payload.data = &p->_data[p->_bytesRead];
   emc_log_i("payload: index %lu, total %lu, avail %lu/%lu", p->_packet.payload.index, p->_packet.payload.total, p->_len - p->_bytesRead, p->_len);
   p->_packet.payload.length = std::min(p->_len - p->_bytesRead, p->_packet.payload.total - p->_packet.payload.index);
   p->_bytesRead += p->_packet.payload.length - 1;  // compensate for increment in _parse-loop
