@@ -44,7 +44,7 @@ size_t Packet::size() const {
 }
 
 void Packet::setDup() {
-  if (!data) return;
+  if (!_data) return;
   _data[0] |= 0x08;
 }
 
