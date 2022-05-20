@@ -9,6 +9,7 @@ Aims to be a non-blocking fully compliant MQTT 3.1.1 client.
 
 ![examples](https://github.com/bertmelis/espMqttClient/actions/workflows/build_examples.yml/badge.svg)
 ![linting](https://github.com/bertmelis/espMqttClient/actions/workflows/lint.yml/badge.svg)
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/bertmelis/library/espMqttClient.svg)](https://registry.platformio.org/libraries/bertmelis/espMqttClient)
 
 # Features
 
