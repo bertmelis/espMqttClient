@@ -28,7 +28,7 @@ class Packet {
 
   const uint8_t* data(size_t index) const;
   size_t size() const;
-  // bool removeable() const  // functionality offered by packetId()
+  void setDup();
   uint16_t packetId() const;
 
   void* token;  // native typeless variable to store any additional data

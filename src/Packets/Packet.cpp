@@ -43,28 +43,10 @@ size_t Packet::size() const {
   return _size;
 }
 
-/*
-Removeable is treated as "_packetId != 0" hence can be filtered out by
-calling `packetId()`.
-Packets without packet ID will return 0.
-
-bool Packet::removeable() const {
-  if (!_data) return true;
-  uint8_t packetType = _data[0] & 0xF0;
-  uint8_t headerFlags = _data[0] & 0x0F;
-  // part of session data for clients are
-  // - QoS 1 and 2 messages sent to server but not yet completely acked
-  // - QoS 2 messages received from server but not yet completely acked
-  if ((packetType == PacketType.PUBREC)  ||
-      (packetType == PacketType.PUBREL)  ||
-      (packetType == PacketType.PUBCOMP) ||
-      (packetType == PacketType.PUBLISH && headerFlags & 0x06)) {  // mask QoS bits
-    return false;
-  } else {
-    return true;
-  }
+void Packet::setDup() {
+  if (!data) return;
+  _data[0] |= 0x08;
 }
-*/
 
 uint16_t Packet::packetId() const {
   return _packetId;

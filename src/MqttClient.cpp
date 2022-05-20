@@ -305,6 +305,7 @@ void MqttClient::_checkOutgoing() {
       } else {
         // handle with care! millis() returns unsigned 32 bit, token is void*
         packet->token = reinterpret_cast<void*>(millis());
+        if ((packet->data(0)[0] & 0xF0) == PacketType.PUBLISH) packet->setDup();
         _outbox.next();
       }
       packet =  _outbox.getCurrent();
