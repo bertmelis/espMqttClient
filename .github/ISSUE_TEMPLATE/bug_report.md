@@ -27,7 +27,7 @@ Steps to reproduce the behaviour:
 
 **Example code**
 ```cpp
-Put code here to reproduce the bug, if possible
+// Put code here to reproduce the bug, if possible
 ```
 
 **Additional context**
