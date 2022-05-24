@@ -17,6 +17,8 @@ Do you use TLS or not?
 Do you use an IDE (Arduino, Platformio...)?
 Which version of the Arduino framework?
 
+Please include any debug output and/or decoded stack trace if applicable.
+
 **Expected behaviour**
 A clear and concise description of what you expected to happen.
 
