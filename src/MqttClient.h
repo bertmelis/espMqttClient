@@ -43,9 +43,10 @@ class MqttClient {
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload);
   void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
   const char* getClientId() const;
- #if defined(ESP32)
+  #if defined(ESP32)
+
  private:
- #endif
+  #endif
   void loop();
 
  protected:
