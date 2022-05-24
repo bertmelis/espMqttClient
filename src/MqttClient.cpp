@@ -287,16 +287,10 @@ void MqttClient::_checkOutgoing() {
 
   int32_t wantToWrite = 0;
   int32_t written = 0;
-  // esp32 doesn't implement availableForWrite so we loop until the amount written is less then what we wanted to write.
   while (packet && (wantToWrite == written)) {
     // mixing signed with unsigned here but safe because of MQTT packet size limits
-    #if defined(ESP8266)
-    wantToWrite = std::min(_transport.availableForWrite(), packet->available(_bytesSent))
-    #elif defined(ESP32)
-    wantToWrite = packet->available(_bytesSent);
-    #endif
-    if (wantToWrite == 0) break;
-    written = _transport->write(packet->data(_bytesSent, wantToWrite), wantToWrite);
+    wantToWrite = packet->size() - _bytesSent;
+    written = _transport->write(packet->data(_bytesSent), wantToWrite);
     if (written < 0) {
       emc_log_w("Writing error, check connection");
       break;
