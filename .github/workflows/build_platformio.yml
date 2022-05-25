@@ -1,4 +1,4 @@
-name: Build examples
+name: Build with Platformio
 
 on: [push, pull_request]
 
