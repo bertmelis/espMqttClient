@@ -12,6 +12,7 @@ the LICENSE file.
 #pragma once
 
 #include <atomic>
+#include <utility>
 
 #if defined(esp32)
   #include "freertos/FreeRTOS.h"
