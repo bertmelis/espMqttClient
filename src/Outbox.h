@@ -9,26 +9,9 @@ the LICENSE file.
 
 #pragma once
 
+#include <utility>
+
 namespace espMqttClientInternals {
-
-/**
- * @brief Simple outbox item to hold raw data
- */
-
-template <typename T>
-struct Node {
- public:
-  explicit Node(T item)
-  : item(item)
-  , prev(nullptr)
-  , next(nullptr) {
-    // empty
-  }
-
-  T item;
-  Node* prev;
-  Node* next;
-};
 
 /**
  * @brief Doubly linked queue
@@ -45,6 +28,20 @@ class Outbox {
   ~Outbox() {
     clear();
   }
+
+  struct Node {
+   public:
+    explicit Node(T item)
+    : item(std::move(item))
+    , prev(nullptr)
+    , next(nullptr) {
+      // empty
+    }
+
+    T item;
+    Node* prev;
+    Node* next;
+  };
 
   class Iterator {
     friend class Outbox;
@@ -68,12 +65,12 @@ class Outbox {
     }
 
    private:
-    Node<T>* _it = nullptr;
+    Node* _it = nullptr;
   };
 
   // add node to back, advance current to new if applicable
-  void add(T item) {
-    Node<T>* node = new Node<T>(item);
+  void add(T&& item) {
+    Node* node = new Node(std::move(item));
     if (!_first) {
       // queue is empty
       _first = _last = node;
@@ -90,8 +87,8 @@ class Outbox {
   }
 
   // add item to front, current points to newly created front
-  void addFront(T item) {
-    Node<T>* node = new Node<T>(item);
+  void addFront(T&& item) {
+    Node* node = new Node(std::move(item));
     if (!_first) {
       // queue is empty
       _last = node;
@@ -105,7 +102,7 @@ class Outbox {
 
   // remove node at iterator, iterator points to next
   void remove(Iterator& it) {  // NOLINT(runtime/references)
-    Node<T>* n = it._it;
+    Node* n = it._it;
     ++it;
     _remove(n);
   }
@@ -127,6 +124,12 @@ class Outbox {
     return it;
   }
 
+  Iterator back() const {
+    Iterator it;
+    it._it = _last;
+    return it;
+  }
+
   // Advance current item
   void next() {
     if (_current) _current = _current->next;
@@ -135,7 +138,7 @@ class Outbox {
   // Remove all items
   void clear() {
     while (_first) {
-      Node<T>* n = _first->next;
+      Node* n = _first->next;
       delete _first;
       _first = n;
     }
@@ -149,11 +152,11 @@ class Outbox {
   }
 
  private:
-  Node<T>* _first;
-  Node<T>* _last;
-  Node<T>* _current;
+  Node* _first;
+  Node* _last;
+  Node* _current;
 
-  void _remove(Node<T>* node) {
+  void _remove(Node* node) {
     if (!node) return;
 
     // set current to next, node->next may be nullptr

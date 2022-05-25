@@ -115,9 +115,9 @@ Packet::Packet(bool cleanSession,
   // client ID
   pos += encodeString(clientId, &_data[pos]);
   // will
-  if (willTopic != nullptr) {
+  if (willTopic != nullptr && willPayload != nullptr) {
     pos += encodeString(willTopic, &_data[pos]);
-    if (willPayload != nullptr && willPayloadLength == 0) {
+    if (willPayloadLength == 0) {
       willPayloadLength = strlen(reinterpret_cast<const char*>(willPayload));
     }
     _data[pos++] = willPayloadLength >> 8;
@@ -127,7 +127,7 @@ Packet::Packet(bool cleanSession,
   }
   // credentials
   if (username != nullptr) pos += encodeString(username, &_data[pos]);
-  if (password != nullptr) pos += encodeString(password, &_data[pos]);
+  if (password != nullptr) encodeString(password, &_data[pos]);
 }
 
 Packet::Packet(const char* topic,
@@ -217,13 +217,14 @@ Packet::Packet(MQTTPacketType type, uint16_t packetId)
   }
   pos += encodeRemainingLength(2, &_data[pos]);
   _data[pos++] = packetId >> 8;
-  _data[pos++] = packetId & 0xFF;
+  _data[pos] = packetId & 0xFF;
 }
 
 Packet::Packet(const char* topic, uint16_t packetId)
 : token(nullptr)
 , _data(nullptr)
-, _size(0) {
+, _size(0)
+, _packetId(packetId) {
   // Calculate size
   size_t remainingLength =
   2 +                  // packet ID
@@ -238,7 +239,7 @@ Packet::Packet(const char* topic, uint16_t packetId)
   pos += encodeRemainingLength(remainingLength, &_data[pos]);
   _data[pos++] = packetId >> 8;
   _data[pos++] = packetId & 0xFF;
-  pos += encodeString(topic, &_data[pos]);
+  encodeString(topic, &_data[pos]);
 }
 
 Packet::Packet(MQTTPacketType type)
