@@ -266,7 +266,7 @@ void MqttClient::_loop(MqttClient* c) {
     size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
     if (waterMark < c->_highWaterMark) {
       c->_highWaterMark = waterMark;
-      emc_log_i("Free stack space: %u/%u", c->_highWaterMark, EMC_TASK_STACK_SIZE);
+      emc_log_i("Free stack space: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
     }
   #endif
   }
@@ -297,7 +297,7 @@ void MqttClient::_checkOutgoing() {
     }
     _lastClientActivity = millis();
     _bytesSent += written;
-    emc_log_i("tx %u/%u", _bytesSent, packet->size());
+    emc_log_i("tx %zu/%zu", _bytesSent, packet->size());
     if (_bytesSent == packet->size()) {
       if ((packet->data(0)[0] & 0xF0) == PacketType.DISCONNECT) _state = DISCONNECTINGTCP;
       if (packet->packetId() == 0) {
@@ -371,7 +371,7 @@ void MqttClient::_checkIncoming() {
       }
       remainingBufferLength -= bytesParsed;
       index += bytesParsed;
-      emc_log_i("Parsed %u - remaining %u", bytesParsed, remainingBufferLength);
+      emc_log_i("Parsed %zu - remaining %i", bytesParsed, remainingBufferLength);
       bytesParsed = 0;
     }
   }

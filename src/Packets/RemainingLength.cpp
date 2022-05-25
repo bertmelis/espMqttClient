@@ -10,7 +10,7 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
-int32_t decodeRemainingLength(uint8_t* stream) {
+int32_t decodeRemainingLength(const uint8_t* stream) {
   uint32_t multiplier = 1;
   int32_t remainingLength = 0;
   uint8_t currentByte = 0;

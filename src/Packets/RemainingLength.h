@@ -19,7 +19,7 @@ namespace espMqttClientInternals {
 // returns decoded length based on input stream
 // stream is expected to contain full encoded remaining length
 // return -1 on error.
-int32_t decodeRemainingLength(uint8_t* stream);
+int32_t decodeRemainingLength(const uint8_t* stream);
 
 
 // returns the number of bytes needed to encode the remaining length
