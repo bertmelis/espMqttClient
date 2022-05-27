@@ -239,7 +239,7 @@ bool Packet::_allocate(size_t remainingLength) {
     return false;
   }
   _size = 1 + remainingLengthLength(remainingLength) + remainingLength;
-  _data = (uint8_t*)malloc(_size);
+  _data = reinterpret_cast<uint8_t*>(malloc(_size));
   if (!_data) {
     _size = 0;
     emc_log_w("Alloc failed (l:%zu)", _size);
