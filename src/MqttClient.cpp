@@ -86,29 +86,29 @@ bool MqttClient::connected() const {
 bool MqttClient::connect() {
   bool result = true;
   if (_state == DISCONNECTED) {
-    _state = CONNECTINGTCP;
-    Packet packet(_cleanSession,
-                  _username,
-                  _password,
-                  _willTopic,
-                  _willRetain,
-                  _willQos,
-                  _willPayload,
-                  _willPayloadLength,
-                  _keepAlive,
-                  _clientId);
-    if (packet.size() > 0) {
-      EMC_SEMAPHORE_TAKE();
-      _outbox.addFront(std::move(packet));
-      EMC_SEMAPHORE_GIVE();
-#if defined(ESP32)
+    EMC_SEMAPHORE_TAKE();
+    if (_addPacket(false,
+                   _cleanSession,
+                   _username,
+                   _password,
+                   _willTopic,
+                   _willRetain,
+                   _willQos,
+                   _willPayload,
+                   _willPayloadLength,
+                   _keepAlive,
+                   _clientId)) {
+      #if defined(ESP32)
       vTaskResume(_taskHandle);
-#endif
+      #endif
+      _state = CONNECTINGTCP;
     } else {
+      EMC_SEMAPHORE_GIVE();
       emc_log_e("Could not create CONNECT packet");
       _onError(0, Error::OUT_OF_MEMORY);
       result = false;
     }
+    EMC_SEMAPHORE_GIVE();
   }
   return result;
 }
@@ -121,7 +121,7 @@ bool MqttClient::disconnect(bool force) {
     if (force) {
       _state = DISCONNECTINGTCP;
     } else {
-      _state = DISCONNECTINGMQTT;
+      _state = DISCONNECTINGMQTT1;
     }
   }
   return result;
@@ -132,16 +132,13 @@ uint16_t MqttClient::subscribe(const char* topic, uint8_t qos) {
   if (_state != CONNECTED) {
     packetId = 0;
   } else {
-    Packet packet(topic, qos, packetId);
-    if (packet.size() > 0) {
-      EMC_SEMAPHORE_TAKE();
-      _outbox.add(std::move(packet));
-      EMC_SEMAPHORE_GIVE();
-    } else {
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(true, topic, qos, packetId)) {
       emc_log_e("Could not create SUBSCRIBE packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
     }
+    EMC_SEMAPHORE_GIVE();
   }
   return packetId;
 }
@@ -151,16 +148,13 @@ uint16_t MqttClient::unsubscribe(const char* topic) {
   if (_state != CONNECTED) {
     packetId = 0;
   } else {
-    Packet packet(topic, packetId);
-    if (packet.size() > 0) {
-      EMC_SEMAPHORE_TAKE();
-      _outbox.add(std::move(packet));
-      EMC_SEMAPHORE_GIVE();
-    } else {
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(true, topic, packetId)) {
       emc_log_e("Could not create UNSUBSCRIBE packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
     }
+    EMC_SEMAPHORE_GIVE();
   }
   return packetId;
 }
@@ -170,16 +164,13 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
   if (_state != CONNECTED) {
     packetId = 0;
   } else {
-    Packet packet(topic, payload, length, qos, retain, packetId);
-    if (packet.size() > 0) {
-      EMC_SEMAPHORE_TAKE();
-      _outbox.add(std::move(packet));
-      EMC_SEMAPHORE_GIVE();
-    } else {
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(true, topic, payload, length, qos, retain, packetId)) {
       emc_log_e("Could not create PUBLISH packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
     }
+    EMC_SEMAPHORE_GIVE();
   }
   return packetId;
 }
@@ -215,19 +206,20 @@ void MqttClient::loop() {
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
-    case DISCONNECTINGMQTT:
+    case DISCONNECTINGMQTT1:
       EMC_SEMAPHORE_TAKE();
       if (_outbox.empty()) {
-        Packet packet(PacketType.DISCONNECT);
-        if (packet.size() > 0) {
-          _outbox.add(std::move(packet));
-        } else {
+        if (!_addPacket(true, PacketType.DISCONNECT)) {
+          EMC_SEMAPHORE_GIVE();
           emc_log_e("Could not create DISCONNECT packet");
           _onError(0, Error::OUT_OF_MEMORY);
+        } else {
+          _state = DISCONNECTINGMQTT2;
         }
       }
       EMC_SEMAPHORE_GIVE();
       // fall through to CONNECTED to send out DISCONN packet
+    case DISCONNECTINGMQTT2:
     case CONNECTINGMQTT:
       // receipt of CONNACK packet will set state to CONNECTED
       // client however is allowed to send packets before CONNACK is received
@@ -251,7 +243,7 @@ void MqttClient::loop() {
       _transport->stop(0);
 #endif
       _state = DISCONNECTED;
-      _onDisconnect();
+        if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
       break;
     // all cases covered, no default case
   }
@@ -340,7 +332,7 @@ void MqttClient::_checkIncoming() {
             }
             break;
           case PacketType.PUBLISH:
-            if (_state == DISCONNECTINGMQTT) break;  // stop processing incoming once user has called disconnect
+            if (_state == DISCONNECTINGMQTT1 || _state == DISCONNECTINGMQTT2) break;  // stop processing incoming once user has called disconnect
             _onPublish();
             break;
           case PacketType.PUBACK:
@@ -391,12 +383,7 @@ void MqttClient::_checkPing() {
   // send ping when client was inactive for 0.7 times the keepalive time
   if (millis() - _lastClientActivity > 700 * _keepAlive) {
     emc_log_i("Near keepalive, sending PING");
-    Packet packet(PacketType.PINGREQ);
-    if (packet.size() > 0) {
-      EMC_SEMAPHORE_TAKE();
-      _outbox.add(std::move(packet));
-      EMC_SEMAPHORE_GIVE();
-    } else {
+    if (!_addPacket(true, PacketType.PINGREQ)) {
       emc_log_e("Could not create PING packet");
     }
   }
@@ -427,14 +414,11 @@ void MqttClient::_onPublish() {
   bool callback = true;
   if (qos == 1) {
     if (p.payload.index + p.payload.length == p.payload.total) {
-      Packet packet(PacketType.PUBACK, packetId);
-      if (packet.size() > 0) {
-        EMC_SEMAPHORE_TAKE();
-        _outbox.add(std::move(packet));
-        EMC_SEMAPHORE_GIVE();
-      } else {
+      EMC_SEMAPHORE_TAKE();
+      if (!_addPacket(true, PacketType.PUBACK, packetId)) {
         emc_log_e("Could not create PUBACK packet");
       }
+      EMC_SEMAPHORE_GIVE();
     }
   } else if (qos == 2) {
     EMC_SEMAPHORE_TAKE();
@@ -448,12 +432,11 @@ void MqttClient::_onPublish() {
       ++it;
     }
     if (p.payload.index + p.payload.length == p.payload.total) {
-      Packet packet(PacketType.PUBREC, packetId);
-      if (packet.size() > 0) {
-        _outbox.add(std::move(packet));
-      } else {
+      EMC_SEMAPHORE_TAKE();
+      if (!_addPacket(true, PacketType.PUBREC, packetId)) {
         emc_log_e("Could not create PUBREC packet");
       }
+      EMC_SEMAPHORE_GIVE();
     }
     EMC_SEMAPHORE_GIVE();
   }
@@ -502,10 +485,7 @@ void MqttClient::_onPubrec() {
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBLISH) {
       if (it.data()->packetId() == idToMatch) {
-        Packet packet(PacketType.PUBREL, idToMatch);
-        if (packet.size() > 0) {
-          _outbox.add(std::move(packet));
-        } else {
+        if (!_addPacket(true, PacketType.PUBREL, idToMatch)) {
           emc_log_e("Could not create PUBREL packet");
         }
         _outbox.remove(it);
@@ -531,10 +511,7 @@ void MqttClient::_onPubrel() {
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREC) {
       if (it.data()->packetId() == idToMatch) {
-        Packet packet(PacketType.PUBCOMP, idToMatch);
-        if (packet.size() > 0) {
-          _outbox.add(std::move(packet));
-        } else {
+        if (!_addPacket(true, PacketType.PUBCOMP, idToMatch)) {
           emc_log_e("Could not create PUBCOMP packet");
         }
         _outbox.remove(it);
@@ -560,10 +537,7 @@ void MqttClient::_onPubcomp() {
     // if it doesn't match the ID, return
     if ((it.data()->data(0)[0] & 0xF0) == PacketType.PUBREL) {
       if (it.data()->packetId() == idToMatch) {
-        Packet packet(PacketType.PUBCOMP, idToMatch);
-        if (packet.size() > 0) {
-          _outbox.add(std::move(packet));
-        } else {
+        if (!_addPacket(true, PacketType.PUBCOMP, idToMatch)) {
           emc_log_e("Could not create PUBCOMP packet");
         }
         callback = true;
@@ -622,12 +596,6 @@ void MqttClient::_onUnsuback() {
     if (_onUnsubscribeCallback) _onUnsubscribeCallback(idToMatch);
   } else {
     emc_log_w("received UNSUBACK without UNSUB");
-  }
-}
-
-void MqttClient::_onDisconnect() {
-  if (_onDisconnectCallback) {
-    _onDisconnectCallback(_disconnectReason);
   }
 }
 

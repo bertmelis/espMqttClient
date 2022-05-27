@@ -31,8 +31,9 @@ class Outbox {
 
   struct Node {
    public:
-    explicit Node(T item)
-    : item(std::move(item))
+    template <typename... Args>
+    explicit Node(Args&&... args)
+    : item(std::forward<Args>(args) ...)
     , prev(nullptr)
     , next(nullptr) {
       // empty
@@ -69,35 +70,51 @@ class Outbox {
   };
 
   // add node to back, advance current to new if applicable
-  void add(T&& item) {
-    Node* node = new Node(std::move(item));
-    if (!_first) {
-      // queue is empty
-      _first = _last = node;
-    } else {
-      // queue has at least one item
-      node->prev = _last;
-      _last->next = node;
-      _last = node;
+  template <class... Args>
+  Iterator emplace(Args&&... args) {
+    Iterator it;
+    Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    if (node) {
+      if (!_first) {
+        // queue is empty
+        _first = _last = node;
+      } else {
+        // queue has at least one item
+        node->prev = _last;
+        _last->next = node;
+        _last = node;
+      }
+      // advance current to newly created if applicable
+      if (!_current) {
+        _current = _last;
+      }
+      it = front();
     }
-    // advance current to newly created if applicable
-    if (!_current) {
-      _current = _last;
-    }
+    return it;
   }
 
-  // add item to front, current points to newly created front
-  void addFront(T&& item) {
-    Node* node = new Node(std::move(item));
-    if (!_first) {
-      // queue is empty
-      _last = node;
-    } else {
-      // queue has at least one
-      node->next = _first;
-      _first->prev = node;
+  // add item to front, current points to newly created front.
+  template <class... Args>
+  Iterator emplaceFront(Args&&... args) {
+    Iterator it;
+    Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    if (node) {
+       if (!_first) {
+        // queue is empty
+        _first = _last = node;
+      } else {
+        // queue has at least one item
+        node->prev = _last;
+        _last->next = node;
+        _last = node;
+      }
+      // advance current to newly created if applicable
+      if (!_current) {
+        _current = _last;
+      }
+      it = back();
     }
-    _current = _first = node;
+    return it;
   }
 
   // remove node at iterator, iterator points to next

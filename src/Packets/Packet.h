@@ -23,8 +23,10 @@ class Packet {
  public:
   virtual ~Packet();
 
+  /*
   Packet(const Packet&);
   Packet(Packet&&);
+  */
 
   const uint8_t* data(size_t index) const;
   size_t size() const;

@@ -11,26 +11,7 @@ the LICENSE file.
 namespace espMqttClientInternals {
 
 Packet::~Packet() {
-  delete[] _data;
-}
-
-Packet::Packet(const Packet& p)
-: token(p.token)
-, _data(nullptr)
-, _size(p._size)
-, _packetId(p._packetId) {
-  _data = new uint8_t[_size];
-  memcpy(_data, p._data, _size);
-}
-
-Packet::Packet(Packet&& p)
-: token(p.token)
-, _data(nullptr)
-, _size(p._size)
-, _packetId(p._packetId) {
-  _data = p._data;
-  p._data = nullptr;
-  p._size = 0;
+  free(_data);
 }
 
 const uint8_t* Packet::data(size_t index) const {
@@ -258,7 +239,7 @@ bool Packet::_allocate(size_t remainingLength) {
     return false;
   }
   _size = 1 + remainingLengthLength(remainingLength) + remainingLength;
-  _data = new uint8_t[_size];
+  _data = (uint8_t*)malloc(_size);
   if (!_data) {
     _size = 0;
     emc_log_w("Alloc failed (l:%zu)", _size);
