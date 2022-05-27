@@ -73,7 +73,7 @@ class Outbox {
   template <class... Args>
   Iterator emplace(Args&&... args) {
     Iterator it;
-    // TODO: following lines are a bit verbose to overcome a bug in Cppcheck
+    // TODO(bertmelis): following lines are a bit verbose to overcome a bug in Cppcheck
     Node* node = nullptr;
     node = new (std::nothrow) Node(std::forward<Args>(args) ...);
     if (node != nullptr) {
@@ -99,7 +99,7 @@ class Outbox {
   template <class... Args>
   Iterator emplaceFront(Args&&... args) {
     Iterator it;
-    // TODO: following lines are a bit verbose to overcome a bug in Cppcheck
+    // TODO(bertmelis): following lines are a bit verbose to overcome a bug in Cppcheck
     Node* node = nullptr;
     node = new (std::nothrow) Node(std::forward<Args>(args) ...);
     if (node != nullptr) {
