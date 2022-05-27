@@ -73,8 +73,10 @@ class Outbox {
   template <class... Args>
   Iterator emplace(Args&&... args) {
     Iterator it;
-    Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
-    if (node) {
+    // TODO: following lines are a bit verbose to overcome a bug in Cppcheck
+    Node* node = nullptr;
+    node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    if (node != nullptr) {
       if (!_first) {
         // queue is empty
         _first = _last = node;
@@ -97,8 +99,10 @@ class Outbox {
   template <class... Args>
   Iterator emplaceFront(Args&&... args) {
     Iterator it;
-    Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
-    if (node) {
+    // TODO: following lines are a bit verbose to overcome a bug in Cppcheck
+    Node* node = nullptr;
+    node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    if (node != nullptr) {
        if (!_first) {
         // queue is empty
         _first = _last = node;
