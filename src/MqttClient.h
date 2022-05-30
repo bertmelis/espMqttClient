@@ -89,7 +89,8 @@ class MqttClient {
     CONNECTINGTCP,
     CONNECTINGMQTT,
     CONNECTED,
-    DISCONNECTINGMQTT,
+    DISCONNECTINGMQTT1,
+    DISCONNECTINGMQTT2,
     DISCONNECTINGTCP
   };
   std::atomic<State> _state;
@@ -112,6 +113,16 @@ class MqttClient {
 
   uint16_t _getNextPacketId();
 
+  template <typename... Args>
+  bool _addPacket(bool addBack, Args&&... args) {
+    if (addBack) {
+      if (_outbox.emplace(std::forward<Args>(args) ...)) return true;
+    } else {
+      if (_outbox.emplaceFront(std::forward<Args>(args) ...)) return true;
+    }
+    return false;
+  }
+
   void _checkOutgoing();
   void _checkIncoming();
   void _checkPing();
@@ -124,7 +135,6 @@ class MqttClient {
   void _onPubcomp();
   void _onSuback();
   void _onUnsuback();
-  void _onDisconnect();
 
   void _clearQueue(bool clearSession);
   void _onError(uint16_t packetId, espMqttClientTypes::Error error);
