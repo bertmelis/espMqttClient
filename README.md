@@ -29,10 +29,6 @@ See [documentation](docs)
 
 ## Limitations
 
-### Warning!
-
-> Because of a timeout bug in `WiFiClientSecure` in the current Arduino framework release you cannot reconnect once disconnected. This has been solved in Git but hasn't made it into a next release yet.
-
 ### MQTT 3.1.1 Compliancy
 
 Outgoing messages and session data are not stored in non-volatile memory. Any events like loss of power or sudden resets result in loss of data. Despite this limitation, one could still consider this library as fully complaint based on the non normative remark in point 4.1.1 of the specification.
