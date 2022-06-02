@@ -9,13 +9,16 @@ the LICENSE file.
 
 #pragma once
 
-#include <utility>
+#include <new>  // new (std::nothrow)
+#include <utility>  // std::forward
 
 namespace espMqttClientInternals {
 
 /**
- * @brief Doubly linked queue
+ * @brief Singly linked queue with builtin non-invalidating forward iterator
  * 
+ * Queue items can only be emplaced, at front and back of the queue.
+ * Remove items using an iterator or the builtin iterator.
  */
 
 template <typename T>
@@ -24,23 +27,26 @@ class Outbox {
   Outbox()
   : _first(nullptr)
   , _last(nullptr)
-  , _current(nullptr) {}
+  , _current(nullptr)
+  , _prev(nullptr) {}
   ~Outbox() {
-    clear();
+    while (_first) {
+      Node* n = _first->next;
+      delete _first;
+      _first = n;
+    }
   }
 
   struct Node {
    public:
     template <typename... Args>
     explicit Node(Args&&... args)
-    : item(std::forward<Args>(args) ...)
-    , prev(nullptr)
+    : data(std::forward<Args>(args) ...)
     , next(nullptr) {
       // empty
     }
 
-    T item;
-    Node* prev;
+    T data;
     Node* next;
   };
 
@@ -48,118 +54,101 @@ class Outbox {
     friend class Outbox;
    public:
     void operator++() {
-      if (_it) _it = _it->next;
-    }
-
-    void operator--() {
-      if (_it) _it = _it->prev;
+      if (_node) {
+        _prev = _node;
+        _node = _node->next;
+      }
     }
 
     explicit operator bool() const {
-      if (_it) return true;
+      if (_node) return true;
       return false;
     }
 
-    T* data() const {
-      if (_it) return &(_it->item);
+    T* get() const {
+      if (_node) return &(_node->data);
       return nullptr;
     }
 
    private:
-    Node* _it = nullptr;
+    Node* _node = nullptr;
+    Node* _prev = nullptr;
   };
 
   // add node to back, advance current to new if applicable
   template <class... Args>
-  Iterator emplace(Args&&... args) {
-    Iterator it;
+  bool emplace(Args&&... args) {
+    bool ret = false;
     Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
     if (node != nullptr) {
       if (!_first) {
         // queue is empty
-        _first = _last = node;
+        _first = _current = node;
       } else {
         // queue has at least one item
-        node->prev = _last;
         _last->next = node;
-        _last = node;
       }
-      // advance current to newly created if applicable
+      _last = node;
+      // point current to newly created if applicable
       if (!_current) {
         _current = _last;
       }
-      it = front();
+      ret = true;
     }
-    return it;
+    return ret;
   }
 
   // add item to front, current points to newly created front.
   template <class... Args>
-  Iterator emplaceFront(Args&&... args) {
-    Iterator it;
+  bool emplaceFront(Args&&... args) {
+    bool ret = false;
     Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
     if (node != nullptr) {
-       if (!_first) {
+      if (!_first) {
         // queue is empty
-        _first = _last = node;
+        _last = node;
       } else {
         // queue has at least one item
-        node->prev = _last;
-        _last->next = node;
-        _last = node;
+        node->next = _first;
       }
-      // advance current to newly created if applicable
-      if (!_current) {
-        _current = _last;
-      }
-      it = back();
+      _current = _first = node;
+      _prev = nullptr;
+      ret = true;
     }
-    return it;
+    return ret;
   }
 
   // remove node at iterator, iterator points to next
   void remove(Iterator& it) {  // NOLINT(runtime/references)
-    Node* n = it._it;
+    Node* node = it._node;
+    Node* prev = it._prev;
     ++it;
-    _remove(n);
+    _remove(prev, node);
   }
 
   // remove current node, current points to next
   void removeCurrent() {
-    _remove(_current);
+    _remove(_prev, _current);
   }
 
-  // Get current item or return nullptr when done
+  // Get current item or return nullptr
   T* getCurrent() const {
-    if (_current) return &(_current->item);
+    if (_current) return &(_current->data);
     return nullptr;
   }
 
   Iterator front() const {
     Iterator it;
-    it._it = _first;
-    return it;
-  }
-
-  Iterator back() const {
-    Iterator it;
-    it._it = _last;
+    it._node = _first;
     return it;
   }
 
   // Advance current item
   void next() {
-    if (_current) _current = _current->next;
-  }
-
-  // Remove all items
-  void clear() {
-    while (_first) {
-      Node* n = _first->next;
-      delete _first;
-      _first = n;
+    if (_current) {
+      _prev = _current;
+      _current = _current->next;
     }
-    _last = _current = nullptr;
   }
 
   // Outbox is empty
@@ -172,12 +161,19 @@ class Outbox {
   Node* _first;
   Node* _last;
   Node* _current;
+  Node* _prev;  // element just before _current
 
-  void _remove(Node* node) {
+  void _remove(Node* prev, Node* node) {
     if (!node) return;
 
     // set current to next, node->next may be nullptr
-    if (_current == node) _current = node->next;
+    if (_current == node) {
+      _current = node->next;
+    }
+
+    if (_prev == node) {
+      _prev = prev;
+    }
 
     // only one element in outbox
     if (_first == _last) {
@@ -186,17 +182,15 @@ class Outbox {
     // delete first el in longer outbox
     } else if (_first == node) {
       _first = node->next;
-      _first->prev = nullptr;
 
     // delete last in longer outbox
     } else if (_last == node) {
-      _last = _last->prev;
+      _last = prev;
       _last->next = nullptr;
 
     // delete somewhere in the middle
     } else {
-      node->prev->next = node->next;
-      node->next->prev = node->prev;
+      prev->next = node->next;
     }
 
     // finally, delete the node
