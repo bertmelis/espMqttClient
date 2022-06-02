@@ -26,6 +26,7 @@ size_t Packet::size() const {
 
 void Packet::setDup() {
   if (!_data) return;
+  if ((_data[0] & 0xF0) != PacketType.PUBLISH) return;
   _data[0] |= 0x08;
 }
 

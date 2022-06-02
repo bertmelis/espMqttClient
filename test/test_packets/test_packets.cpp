@@ -46,6 +46,8 @@ void test_encodeConnect() {
                 keepalive,
                 clientId);
 
+  packet.setDup();  // no effect
+
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
@@ -78,6 +80,17 @@ void test_encodePublish() {
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
+
+  const uint8_t checkDup[] = {
+    0b00111011,                 // header, dup, qos, retain
+    0x0B,
+    0x00,0x03,'t','o','p',      // topic
+    0x00,0x16,                  // packet Id
+    0x01,0x02,0x03,0x04         // payload
+  };
+
+  packet.setDup();
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(checkDup, packet.data(0), length);
 }
 
 void test_encodePubAck() {
@@ -91,6 +104,7 @@ void test_encodePubAck() {
   uint16_t packetId = 22;
 
   Packet packet(PacketType.PUBACK, packetId);
+  packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
@@ -108,6 +122,7 @@ void test_encodePubRec() {
   uint16_t packetId = 22;
 
   Packet packet(PacketType.PUBREC, packetId);
+  packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
@@ -125,6 +140,7 @@ void test_encodePubRel() {
   uint16_t packetId = 22;
 
   Packet packet(PacketType.PUBREL, packetId);
+  packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
@@ -142,6 +158,7 @@ void test_encodePubComp() {
   uint16_t packetId = 22;
 
   Packet packet(PacketType.PUBCOMP, packetId);
+  packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
@@ -163,6 +180,27 @@ void test_encodeSubscribe() {
   uint16_t packetId = 22;
 
   Packet packet(topic, qos, packetId);
+  packet.setDup();  // no effect
+
+  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
+  TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
+}
+
+void test_encodeUnubscribe() {
+  const uint8_t check[] = {
+    0b10100010,                 // header
+    0x07,                       // remaining length
+    0x00,0x16,                  // packet Id
+    0x00, 0x03, 'a', '/', 'b',  // topic
+  };
+  const uint32_t length = 9;
+
+  const char* topic = "a/b";
+  uint16_t packetId = 22;
+
+  Packet packet(topic, packetId);
+  packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
@@ -177,6 +215,7 @@ void test_encodePingReq() {
   const uint32_t length = 2;
 
   Packet packet(PacketType.PINGREQ);
+  packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
@@ -191,6 +230,7 @@ void test_encodeDisconnect() {
   const uint32_t length = 2;
 
   Packet packet(PacketType.DISCONNECT);
+  packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
@@ -206,6 +246,7 @@ int main() {
   RUN_TEST(test_encodePubRel);
   RUN_TEST(test_encodePubComp);
   RUN_TEST(test_encodeSubscribe);
+  RUN_TEST(test_encodeUnubscribe);
   RUN_TEST(test_encodePingReq);
   RUN_TEST(test_encodeDisconnect);
   return UNITY_END();
