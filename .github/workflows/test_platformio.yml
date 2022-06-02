@@ -15,6 +15,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install platformio
-    - name: Build examples
+    - name: Test
       run: |
         pio test -e native
