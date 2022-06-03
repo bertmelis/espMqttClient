@@ -11,7 +11,7 @@ the LICENSE file.
 
 #pragma once
 
-#include <WiFiClientSecure.h> // includes WiFiClient
+#include <WiFiClientSecure.h>  // includes WiFiClient
 
 #include "MqttClientSetup.h"
 
