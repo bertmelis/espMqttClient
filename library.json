@@ -17,5 +17,5 @@
   "version": "0.0.6",
   "frameworks": "arduino",
   "platforms": ["espressif8266", "espressif32"],
-  "headers": ["espMqttClient.h", "espMqttClientSecure.h"]
+  "headers": ["espMqttClient.h"]
 }

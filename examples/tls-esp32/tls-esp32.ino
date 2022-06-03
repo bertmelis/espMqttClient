@@ -1,6 +1,6 @@
 #include <WiFi.h>
 #include <Ticker.h>
-#include <espMqttClientSecure.h>
+#include <espMqttClient.h>
 
 #define WIFI_SSID "yourSSID"
 #define WIFI_PASSWORD "yourpass"
