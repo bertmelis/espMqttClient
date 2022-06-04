@@ -192,7 +192,7 @@ void MqttClient::loop() {
 #endif
       break;
     case CONNECTINGTCP:
-      if (_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) {
+      if ((_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) == 1) {
         #if defined(ARDUINO_ARCH_ESP8266)
         // reset 'sync' and 'nodelay' at every connect. ESP8266 resets to default on disconnect
         _transport->setSync(false);
@@ -202,7 +202,6 @@ void MqttClient::loop() {
         _lastClientActivity = _lastServerActivity = millis();
       } else {
         _state = DISCONNECTINGTCP;
-        _clearQueue(false);
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
@@ -232,7 +231,6 @@ void MqttClient::loop() {
         _checkPing();
       } else {
         _state = DISCONNECTINGTCP;
-        _clearQueue(false);
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
@@ -242,6 +240,7 @@ void MqttClient::loop() {
 #elif defined(ARDUINO_ARCH_ESP8266)
       _transport->stop(0);
 #endif
+      _clearQueue(false);
       _state = DISCONNECTED;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
       break;
@@ -600,6 +599,7 @@ void MqttClient::_onUnsuback() {
 }
 
 void MqttClient::_clearQueue(bool clearSession) {
+  emc_log_i("clearing queue (clear session: %s)", clearSession ? "true" : "false");
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   if (clearSession) {
@@ -607,14 +607,14 @@ void MqttClient::_clearQueue(bool clearSession) {
       _outbox.remove(it);
     }
   } else {
-    // keep PUB, PUBREC and PUBREL
+    // keep PUB (qos > 0, aka packetID != 0), PUBREC and PUBREL
     // Spec only mentions PUB and PUBREL but this lib implements method B from point 4.3.3 (Fig. 4.3)
     // and stores the packet id in the PUBREC packet. So we also must keep PUBREC.
     while (it) {
       espMqttClientInternals::MQTTPacketType type = it.get()->data(0)[0] & 0xF0;
       if (type == PacketType.PUBREC ||
           type == PacketType.PUBREL ||
-          (type == PacketType.PUBLISH || it.get()->packetId() == 0)) {
+          (type == PacketType.PUBLISH && it.get()->packetId() != 0)) {
         ++it;
       } else {
         _outbox.remove(it);
