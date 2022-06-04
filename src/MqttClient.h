@@ -21,8 +21,6 @@ the LICENSE file.
 
 #include <Arduino.h>  // millis()
 #include <WiFiClient.h>
-#include <WiFiClientSecure.h>
-
 
 #include "Config.h"
 #include "TypeDefs.h"

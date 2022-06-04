@@ -11,32 +11,43 @@ the LICENSE file.
 
 #pragma once
 
-#include "MqttClient.h"
+#include <WiFiClientSecure.h>  // includes WiFiClient
 
-class espMqttClient : public MqttClient {
+#include "MqttClientSetup.h"
+
+class espMqttClient : public MqttClientSetup<espMqttClient> {
  public:
 #if defined(ESP32)
   explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1);
 #else
   espMqttClient();
 #endif
-  espMqttClient& setKeepAlive(uint16_t keepAlive);
-  espMqttClient& setClientId(const char* clientId);
-  espMqttClient& setCleanSession(bool cleanSession);
-  espMqttClient& setCredentials(const char* username, const char* password);
-  espMqttClient& setWill(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
-  espMqttClient& setWill(const char* topic, uint8_t qos, bool retain, const char* payload);
-  espMqttClient& setServer(IPAddress ip, uint16_t port);
-  espMqttClient& setServer(const char* host, uint16_t port);
-
-  espMqttClient& onConnect(espMqttClientTypes::OnConnectCallback callback);
-  espMqttClient& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback);
-  espMqttClient& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback);
-  espMqttClient& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback);
-  espMqttClient& onMessage(espMqttClientTypes::OnMessageCallback callback);
-  espMqttClient& onPublish(espMqttClientTypes::OnPublishCallback callback);
-  // espMqttClient& onError(espMqttClientTypes::OnErrorCallback callback);
 
  protected:
   WiFiClient _client;
+};
+
+class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
+ public:
+  #if defined(ESP32)
+  explicit espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1);
+  #else
+  espMqttClientSecure();
+  #endif
+  espMqttClientSecure& setInsecure();
+  #if defined(ESP32)
+  espMqttClientSecure& setCACert(const char* rootCA);
+  espMqttClientSecure& setCertificate(const char* clientCa);
+  espMqttClientSecure& setPrivateKey(const char* privateKey);
+  espMqttClientSecure& setPreSharedKey(const char* pskIdent, const char* psKey);
+  #else
+  espMqttClientSecure& setFingerprint(const uint8_t fingerprint[20]);
+  espMqttClientSecure& setTrustAnchors(const X509List *ta);
+  espMqttClientSecure& setClientRSACert(const X509List *cert, const PrivateKey *sk);
+  espMqttClientSecure& setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type);
+  espMqttClientSecure& setCertStore(CertStoreBase *certStore);
+  #endif
+
+ protected:
+  WiFiClientSecure _client;
 };

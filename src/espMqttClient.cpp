@@ -11,7 +11,7 @@ the LICENSE file.
 
 #if defined(ESP32)
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
-: MqttClient(priority, core)
+: MqttClientSetup(priority, core)
 , _client() {
   _transport = &_client;
 }
@@ -22,91 +22,67 @@ espMqttClient::espMqttClient()
 }
 #endif
 
-espMqttClient& espMqttClient::setKeepAlive(uint16_t keepAlive) {
-  _keepAlive = keepAlive;
+#if defined(ESP32)
+espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
+: MqttClientSetup(priority, core)
+, _client() {
+  _transport = &_client;
+}
+#else
+espMqttClientSecure::espMqttClientSecure()
+: _client() {
+  _transport = &_client;
+}
+#endif
+
+espMqttClientSecure& espMqttClientSecure::setInsecure() {
+  _client.setInsecure();
   return *this;
 }
 
-espMqttClient& espMqttClient::setClientId(const char* clientId) {
-  _clientId = clientId;
+#if defined(ESP32)
+espMqttClientSecure& espMqttClientSecure::setCACert(const char* rootCA) {
+  _client.setCACert(rootCA);
   return *this;
 }
 
-espMqttClient& espMqttClient::setCleanSession(bool cleanSession) {
-  _cleanSession = cleanSession;
+espMqttClientSecure& espMqttClientSecure::setCertificate(const char* clientCa) {
+  _client.setCertificate(clientCa);
   return *this;
 }
 
-espMqttClient& espMqttClient::setCredentials(const char* username, const char* password) {
-  _username = username;
-  _password = password;
+espMqttClientSecure& espMqttClientSecure::setPrivateKey(const char* privateKey) {
+  _client.setPrivateKey(privateKey);
   return *this;
 }
 
-espMqttClient& espMqttClient::setWill(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
-  _willTopic = topic;
-  _willQos = qos;
-  _willRetain = retain;
-  _willPayload = payload;
-  if (!_willPayload) {
-    _willPayloadLength = 0;
-  } else {
-    _willPayloadLength = length;
-  }
+espMqttClientSecure& espMqttClientSecure::setPreSharedKey(const char* pskIdent, const char* psKey) {
+  _client.setPreSharedKey(pskIdent, psKey);
+  return *this;
+}
+#elif defined(ESP8266)
+espMqttClientSecure& espMqttClientSecure::setFingerprint(const uint8_t fingerprint[20]) {
+  _client.setFingerprint(fingerprint);
   return *this;
 }
 
-espMqttClient& espMqttClient::setWill(const char* topic, uint8_t qos, bool retain, const char* payload) {
-  return setWill(topic, qos, retain, reinterpret_cast<const uint8_t*>(payload), strlen(payload));
-}
-
-espMqttClient& espMqttClient::setServer(IPAddress ip, uint16_t port) {
-  _ip = ip;
-  _port = port;
-  _useIp = true;
+espMqttClientSecure& espMqttClientSecure::setTrustAnchors(const X509List *ta) {
+  _client.setTrustAnchors(ta);
   return *this;
 }
 
-espMqttClient& espMqttClient::setServer(const char* host, uint16_t port) {
-  _host = host;
-  _port = port;
-  _useIp = false;
+espMqttClientSecure& espMqttClientSecure::setClientRSACert(const X509List *cert, const PrivateKey *sk) {
+  _client.setClientRSACert(cert, sk);
   return *this;
 }
 
-espMqttClient& espMqttClient::onConnect(espMqttClientTypes::OnConnectCallback callback) {
-  _onConnectCallback = callback;
+espMqttClientSecure& espMqttClientSecure::setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type) {
+  _client.setClientECCert(cert, sk, allowed_usages, cert_issuer_key_type);
   return *this;
 }
 
-espMqttClient& espMqttClient::onDisconnect(espMqttClientTypes::OnDisconnectCallback callback) {
-  _onDisconnectCallback = callback;
+espMqttClientSecure& espMqttClientSecure::setCertStore(CertStoreBase *certStore) {
+  _client.setCertStore(certStore);
   return *this;
 }
-
-espMqttClient& espMqttClient::onSubscribe(espMqttClientTypes::OnSubscribeCallback callback) {
-  _onSubscribeCallback = callback;
-  return *this;
-}
-
-espMqttClient& espMqttClient::onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback) {
-  _onUnsubscribeCallback = callback;
-  return *this;
-}
-
-espMqttClient& espMqttClient::onMessage(espMqttClientTypes::OnMessageCallback callback) {
-  _onMessageCallback = callback;
-  return *this;
-}
-
-espMqttClient& espMqttClient::onPublish(espMqttClientTypes::OnPublishCallback callback) {
-  _onPublishCallback = callback;
-  return *this;
-}
-
-/*
-espMqttClient& espMqttClient::onError(espMqttClientTypes::OnErrorCallback callback) {
-  _onErrorCallback = callback;
-  return *this;
-}
-*/
+#endif

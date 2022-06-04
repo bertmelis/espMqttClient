@@ -1,20 +1,18 @@
-#include <WiFi.h>
+#include <ESP8266WiFi.h>
 #include <Ticker.h>
 #include <espMqttClient.h>
 
 #define WIFI_SSID "yourSSID"
 #define WIFI_PASSWORD "yourpass"
 
-#define MQTT_HOST "mqtt.yourhost.com"
-#define MQTT_PORT 8883
-#define MQTT_USER "username"
-#define MQTT_PASS "password"
+#define MQTT_HOST "test.mosquitto.org"
+#define MQTT_PORT 1883
 
-const char rootCA[] = \
-  "-----BEGIN CERTIFICATE-----\n" \
-  " add your certificate here \n" \
-  "-----END CERTIFICATE-----\n";
+// test.mosquitto.org
+const uint8_t fingerprint[] = {0xee, 0xbc, 0x4b, 0xf8, 0x57, 0xe3, 0xd3, 0xe4, 0x07, 0x54, 0x23, 0x1e, 0xf0, 0xc8, 0xa1, 0x56, 0xe0, 0xd3, 0x1a, 0x1c};
 
+WiFiEventHandler wifiConnectHandler;
+WiFiEventHandler wifiDisconnectHandler;
 espMqttClientSecure mqttClient;
 Ticker reconnectTimer;
 
@@ -28,40 +26,36 @@ void connectToMqtt() {
   mqttClient.connect();
 }
 
-void WiFiEvent(WiFiEvent_t event) {
-  Serial.printf("[WiFi-event] event: %d\n", event);
-  switch(event) {
-    case SYSTEM_EVENT_STA_GOT_IP:
-      Serial.println("WiFi connected");
-      Serial.println("IP address: ");
-      Serial.println(WiFi.localIP());
-      connectToMqtt();
-      break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-      Serial.println("WiFi lost connection");
-      reconnectTimer.once(5, connectToWiFi);
-      break;
-    default:
-      break;
-  }
+void onWiFiConnect(const WiFiEventStationModeGotIP& event) {
+  Serial.println("Connected to Wi-Fi.");
+  connectToMqtt();
+}
+
+void onWiFiDisconnect(const WiFiEventStationModeDisconnected& event) {
+  Serial.println("Disconnected from Wi-Fi.");
+  reconnectTimer.detach(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
+  reconnectTimer.once(5, connectToWiFi);
 }
 
 void onMqttConnect(bool sessionPresent) {
   Serial.println("Connected to MQTT.");
   Serial.print("Session present: ");
   Serial.println(sessionPresent);
-
-  uint16_t packetIdSub0 = mqttClient.subscribe("foo/bar/0", 0);
-  Serial.print("Subscribing at QoS 0, packetId: ");
-  Serial.println(packetIdSub0);
-
-  uint16_t packetIdPub0 = mqttClient.publish("foo/bar/0", 0, false, "test");
-  Serial.println("Publishing at QoS 0, packetId: ");
-  Serial.println(packetIdPub0);
+  uint16_t packetIdSub = mqttClient.subscribe("test/lol", 2);
+  Serial.print("Subscribing at QoS 2, packetId: ");
+  Serial.println(packetIdSub);
+  mqttClient.publish("test/lol", 0, true, "test 1");
+  Serial.println("Publishing at QoS 0");
+  uint16_t packetIdPub1 = mqttClient.publish("test/lol", 1, true, "test 2");
+  Serial.print("Publishing at QoS 1, packetId: ");
+  Serial.println(packetIdPub1);
+  uint16_t packetIdPub2 = mqttClient.publish("test/lol", 2, true, "test 3");
+  Serial.print("Publishing at QoS 2, packetId: ");
+  Serial.println(packetIdPub2);
 }
 
 void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
-  Serial.printf("Disconnected from MQTT: %u\n", (unsigned int)reason);
+  Serial.println("Disconnected from MQTT.");
 
   if (WiFi.isConnected()) {
     reconnectTimer.once(5, connectToMqtt);
@@ -111,11 +105,9 @@ void setup() {
   Serial.println();
   Serial.println();
 
-  WiFi.onEvent(WiFiEvent);
+  wifiConnectHandler = WiFi.onStationModeGotIP(onWiFiConnect);
+  wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWiFiDisconnect);
 
-  //mqttClient.setInsecure();
-  mqttClient.setCACert(rootCA);
-  mqttClient.setCredentials(MQTT_USER, MQTT_PASS);
   mqttClient.onConnect(onMqttConnect);
   mqttClient.onDisconnect(onMqttDisconnect);
   mqttClient.onSubscribe(onMqttSubscribe);
@@ -123,21 +115,11 @@ void setup() {
   mqttClient.onMessage(onMqttMessage);
   mqttClient.onPublish(onMqttPublish);
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
-  mqttClient.setCleanSession(true);
+  mqttClient.setFingerprint(fingerprint);
 
   connectToWiFi();
 }
 
 void loop() {
-  static uint32_t lastMillis = 0;
-  if (millis() - lastMillis > 5000) {
-    lastMillis = millis();
-    Serial.printf("heap: %u\n", ESP.getFreeHeap());
-  }
-
-  static uint32_t millisDisconnect = 0;
-  if (millis() - millisDisconnect > 60000) {
-    millisDisconnect = millis();
-    mqttClient.disconnect();
-  }
+  mqttClient.loop();
 }
