@@ -69,7 +69,6 @@ MqttClient::MqttClient()
   _clientId = _generatedClientId;
 }
 
-
 MqttClient::~MqttClient() {
   disconnect(true);
   _clearQueue(true);
