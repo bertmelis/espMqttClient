@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/bertmelis/espMqttClient.git"
   },
-  "version": "0.0.6",
+  "version": "0.0.7",
   "frameworks": "arduino",
   "platforms": ["espressif8266", "espressif32"],
   "headers": ["espMqttClient.h"]
