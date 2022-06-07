@@ -14,10 +14,18 @@ Packet::~Packet() {
   free(_data);
 }
 
+size_t Packet::available(size_t index) {
+  if (!_getPayload) return _size - index;
+  return _chunkedAvailable(index);
+}
+
 const uint8_t* Packet::data(size_t index) const {
-  if (!_data) return nullptr;
-  if (index >= _size) return nullptr;
-  return &_data[index];
+  if (!_getPayload) {
+    if (!_data) return nullptr;
+    if (index >= _size) return nullptr;
+    return &_data[index];
+  }
+  return _chunkedData(index);
 }
 
 size_t Packet::size() const {
@@ -34,6 +42,17 @@ uint16_t Packet::packetId() const {
   return _packetId;
 }
 
+Packet::Packet()
+: token(nullptr)
+, _data(nullptr)
+, _size(0)
+, _packetId(0)
+, _availableData(0)
+, _payloadIndex(0)
+, _getPayload(nullptr) {
+  // to be implemented in derived class
+}
+
 Packet::Packet(bool cleanSession,
                const char* username,
                const char* password,
@@ -47,7 +66,10 @@ Packet::Packet(bool cleanSession,
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
-, _packetId(0) {
+, _packetId(0)
+, _availableData(0)
+, _payloadIndex(0)
+, _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
   6 +  // protocol
@@ -121,7 +143,10 @@ Packet::Packet(const char* topic,
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId) {
+, _packetId(packetId)
+, _availableData(0)
+, _payloadIndex(0)
+, _getPayload(nullptr) {
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
     2 +                  // packet ID
@@ -159,11 +184,30 @@ Packet::Packet(const char* topic,
   memcpy(&_data[pos], payload, payloadLength);
 }
 
+Packet::Packet(const char* topic,
+               espMqttClientTypes::PayloadCallback payloadCallback,
+               size_t payloadLength,
+               uint8_t qos,
+               bool retain,
+               uint16_t packetId)
+: token(nullptr)
+, _data(nullptr)
+, _size(0)
+, _packetId(packetId)
+, _availableData(0)
+, _payloadIndex(0)
+, _getPayload(payloadCallback) {
+
+}
+
 Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId) {
+, _packetId(packetId)
+, _availableData(0)
+, _payloadIndex(0)
+, _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
   2 +                  // packet ID
@@ -206,7 +250,10 @@ Packet::Packet(const char* topic, uint16_t packetId)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId) {
+, _packetId(packetId)
+, _availableData(0)
+, _payloadIndex(0)
+, _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
   2 +                  // packet ID
@@ -249,6 +296,13 @@ bool Packet::_allocate(size_t remainingLength) {
   emc_log_i("Alloc (l:%zu)", _size);
   memset(_data, 0, _size);
   return true;
+}
+
+size_t Packet::_chunkedAvailable(size_t index) {
+  return 0;  // TODO(bertmelis): implement chunked payload
+}
+const uint8_t* Packet::_chunkedData(size_t index) const {
+  return nullptr;  // TODO(bertmelis): implement chunked payload
 }
 
 }  // end namespace espMqttClientInternals

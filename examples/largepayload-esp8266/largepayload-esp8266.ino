@@ -18,7 +18,7 @@ size_t fetchPayload(uint8_t* dest, size_t len) {
   // but maybe don't fill the entire buffer
   size_t i = 0;
   for (; i < len; ++i) {
-    dest[i] = rand(0xFF);
+    dest[i] = random(0xFF);
     if (dest[i] > 0xFC) break;
   }
   return ++i;  // extra increment 

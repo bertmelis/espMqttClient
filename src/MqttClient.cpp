@@ -180,6 +180,22 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
   return publish(topic, qos, retain, reinterpret_cast<const uint8_t*>(payload), len);
 }
 
+uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
+  uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
+  if (_state != CONNECTED) {
+    packetId = 0;
+  } else {
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(true, topic, callback, length, qos, retain, packetId)) {
+      emc_log_e("Could not create PUBLISH packet");
+      _onError(packetId, Error::OUT_OF_MEMORY);
+      packetId = 0;
+    }
+    EMC_SEMAPHORE_GIVE();
+  }
+  return packetId;
+}
+
 void MqttClient::clearQueue(bool all) {
   _clearQueue(true);
 }
@@ -235,11 +251,11 @@ void MqttClient::loop() {
       }
       break;
     case DISCONNECTINGTCP:
-#if defined(ARDUINO_ARCH_ESP32)
+      #if defined(ARDUINO_ARCH_ESP32)
       _transport->stop();
-#elif defined(ARDUINO_ARCH_ESP8266)
+      #elif defined(ARDUINO_ARCH_ESP8266)
       _transport->stop(0);
-#endif
+      #endif
       _clearQueue(false);
       _state = DISCONNECTED;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
@@ -253,13 +269,13 @@ void MqttClient::loop() {
 void MqttClient::_loop(MqttClient* c) {
   for (;;) {
     c->loop();
-  #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
+    #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
     size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
     if (waterMark < c->_highWaterMark) {
       c->_highWaterMark = waterMark;
       emc_log_i("Free stack space: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
     }
-  #endif
+    #endif
   }
 }
 #endif
@@ -275,16 +291,16 @@ uint16_t MqttClient::_getNextPacketId() {
 
 void MqttClient::_checkOutgoing() {
   EMC_SEMAPHORE_TAKE();
-  Packet* packet =  _outbox.getCurrent();
+  Packet* packet = _outbox.getCurrent();
 
   int32_t wantToWrite = 0;
   int32_t written = 0;
   while (packet && (wantToWrite == written)) {
     // mixing signed with unsigned here but safe because of MQTT packet size limits
-    wantToWrite = packet->size() - _bytesSent;
+    wantToWrite = packet->available(_bytesSent);
     written = _transport->write(packet->data(_bytesSent), wantToWrite);
     if (written < 0) {
-      emc_log_w("Writing error, check connection");
+      emc_log_w("Write error, check connection");
       break;
     }
     _lastClientActivity = millis();
@@ -300,7 +316,7 @@ void MqttClient::_checkOutgoing() {
         if ((packet->data(0)[0] & 0xF0) == PacketType.PUBLISH) packet->setDup();
         _outbox.next();
       }
-      packet =  _outbox.getCurrent();
+      packet = _outbox.getCurrent();
       _bytesSent = 0;
     }
   }

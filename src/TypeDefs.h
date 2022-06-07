@@ -13,8 +13,6 @@ the LICENSE file.
 
 #include <functional>
 
-#include "Packets/Packet.h"
-
 namespace espMqttClientTypes {
 
 enum class DisconnectReason : int8_t {
@@ -44,6 +42,7 @@ typedef std::function<void(uint16_t packetId, uint8_t qos)> OnSubscribeCallback;
 typedef std::function<void(uint16_t packetId)> OnUnsubscribeCallback;
 typedef std::function<void(const MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)> OnMessageCallback;
 typedef std::function<void(uint16_t packetId)> OnPublishCallback;
+typedef std::function<size_t(uint8_t* data, size_t maxSize)> PayloadCallback;
 typedef std::function<void(uint16_t packetId, Error error)> OnErrorCallback;
 
 }  // end namespace espMqttClientTypes
