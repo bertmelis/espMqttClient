@@ -34,6 +34,17 @@ uint16_t Packet::packetId() const {
   return _packetId;
 }
 
+MQTTPacketType Packet::packetType() const {
+  if (_data) return static_cast<MQTTPacketType>(data(0)[0] & 0xF0);
+  return static_cast<MQTTPacketType>(0);
+}
+
+bool Packet::removable() const {
+  if (_packetId == 0) return true;
+  if (((data(0)[0] & 0xF0) == PacketType.PUBACK) || ((data(0)[0] & 0xF0) == PacketType.PUBCOMP)) return true;
+  return false;
+}
+
 Packet::Packet(bool cleanSession,
                const char* username,
                const char* password,

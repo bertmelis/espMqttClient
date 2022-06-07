@@ -32,6 +32,8 @@ class Packet {
   size_t size() const;
   void setDup();
   uint16_t packetId() const;
+  MQTTPacketType packetType() const;
+  bool removable() const;
 
   void* token;  // native typeless variable to store any additional data
 
