@@ -1,7 +1,3 @@
-**WARNING**
-
-This library is under development. You know what this means...
-
 # espMqttClient
 
 MQTT client library for the Espressif devices ESP8266 and ESP32 on the Arduino framework.
@@ -35,7 +31,7 @@ Outgoing messages and session data are not stored in non-volatile memory. Any ev
 
 ### Non-blocking
 
-This library aims to be fully non-blocking. It is however limited by the underlying `WiFiClient` library this has a blocking `connect` method. On ESP32 it is not an issue since the call is offloaded to a separate task. On ESP8266 however, connecting will block until succesful or until the connection timeouts.
+This library aims to be fully non-blocking. It is however limited by the underlying `WiFiClient` library which is part of the Arduino framework and has a blocking `connect` method. On ESP32 it is not an issue since the call is offloaded to a separate task. On ESP8266 however, connecting will block until succesful or until the connection timeouts.
 
 # Bugs and feature requests
 
@@ -43,11 +39,11 @@ Please use Github's facilities to get in touch.
 
 # About this library
 
-This client wouldn't exist without [Async-mqtt-client](https://github.com/marvinroger/async-mqtt-client). It has been my go-to MQTT client for many years. It was fast and -despite other opinions- reliable and had features that were non-existing in alternative libraries. However, the underlying async TCP libraries are lacking updates so I decided to write my own library, from scratch.
+This client wouldn't exist without [Async-mqtt-client](https://github.com/marvinroger/async-mqtt-client). It has been my go-to MQTT client for many years. It was fast, reliable and had features that were non-existing in alternative libraries. However, the underlying async TCP libraries are lacking updates, especially updates related to secure connections. I eventually decided to write my own library, from scratch. 
 
-The result is an almost non-blocking library with no external dependencies. Except for a few type differences, the library is a drop-in replacement for the async-mqtt-client.
+The result is an almost non-blocking library with no external dependencies. Except for a few type differences, the library is a drop-in replacement for the async-mqtt-client except a few parameter type changes (eg. `uint8_t*` instead of `char*` for payloads)
 
 # License
 
 This library is released under the MIT Licence. A copy is included in the repo.
-Parts of this library are based on [Async MQTT client for ESP8266 and ESP32](https://github.com/marvinroger/async-mqtt-client).
+Parts of this library, most notably the API, are based on [Async MQTT client for ESP8266 and ESP32](https://github.com/marvinroger/async-mqtt-client).
