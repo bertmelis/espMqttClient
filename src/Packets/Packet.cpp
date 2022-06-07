@@ -59,7 +59,7 @@ Packet::Packet()
 , _size(0)
 , _packetId(0)
 , _availableData(0)
-, _payloadIndex(0)
+, _payload(nullptr)
 , _getPayload(nullptr) {
   // to be implemented in derived class
 }
@@ -79,7 +79,7 @@ Packet::Packet(bool cleanSession,
 , _size(0)
 , _packetId(0)
 , _availableData(0)
-, _payloadIndex(0)
+, _payload(nullptr)
 , _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
@@ -156,7 +156,7 @@ Packet::Packet(const char* topic,
 , _size(0)
 , _packetId(packetId)
 , _availableData(0)
-, _payloadIndex(0)
+, _payload(nullptr)
 , _getPayload(nullptr) {
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
@@ -170,26 +170,7 @@ Packet::Packet(const char* topic,
 
   if (!_allocate(remainingLength)) return;
 
-    size_t pos = 0;
-
-  // FIXED HEADER
-  _data[pos] = PacketType.PUBLISH;
-  if (retain) _data[pos] |= HeaderFlag.PUBLISH_RETAIN;
-  if (qos == 0) {
-    _data[pos++] |= HeaderFlag.PUBLISH_QOS0;
-  } else if (qos == 1) {
-    _data[pos++] |= HeaderFlag.PUBLISH_QOS1;
-  } else if (qos == 2) {
-    _data[pos++] |= HeaderFlag.PUBLISH_QOS2;
-  }
-  pos += encodeRemainingLength(remainingLength, &_data[pos]);
-
-  // VARIABLE HEADER
-  pos += encodeString(topic, &_data[pos]);
-  if (qos > 0) {
-    _data[pos++] = packetId >> 8;
-    _data[pos++] = packetId & 0xFF;
-  }
+  size_t pos = _fillPublishHeader(topic, remainingLength, qos, retain, packetId);
 
   // PAYLOAD
   memcpy(&_data[pos], payload, payloadLength);
@@ -206,9 +187,26 @@ Packet::Packet(const char* topic,
 , _size(0)
 , _packetId(packetId)
 , _availableData(0)
-, _payloadIndex(0)
+, _payload(nullptr)
 , _getPayload(payloadCallback) {
-  // TODO(bertmelis): implement chunked payload
+  size_t remainingLength =
+    2 + strlen(topic) +  // topic length + topic
+    2 +                  // packet ID
+    payloadLength;
+
+  if (qos == 0) {
+    remainingLength -= 2;
+    _packetId = 0;
+  }
+
+  if (!_allocate(remainingLength - payloadLength + std::min(payloadLength, static_cast<size_t>(EMC_RX_BUFFER_SIZE)))) return;
+
+  size_t pos = _fillPublishHeader(topic, payloadLength, qos, retain, packetId);
+
+  // payload will be added by 'Packet::available'
+  _payload = &_data[pos];
+  _payloadIndex = 0;
+  _availableData = 0;
 }
 
 Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
@@ -217,7 +215,7 @@ Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
 , _size(0)
 , _packetId(packetId)
 , _availableData(0)
-, _payloadIndex(0)
+, _payload(nullptr)
 , _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
@@ -263,7 +261,7 @@ Packet::Packet(const char* topic, uint16_t packetId)
 , _size(0)
 , _packetId(packetId)
 , _availableData(0)
-, _payloadIndex(0)
+, _payload(nullptr)
 , _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
@@ -307,6 +305,35 @@ bool Packet::_allocate(size_t remainingLength) {
   emc_log_i("Alloc (l:%zu)", _size);
   memset(_data, 0, _size);
   return true;
+}
+
+size_t Packet::_fillPublishHeader(const char* topic,
+                                  size_t remainingLength,
+                                  uint8_t qos,
+                                  bool retain,
+                                  uint16_t packetId) {
+  size_t index = 0;
+
+  // FIXED HEADER
+  _data[index] = PacketType.PUBLISH;
+  if (retain) _data[index] |= HeaderFlag.PUBLISH_RETAIN;
+  if (qos == 0) {
+    _data[index++] |= HeaderFlag.PUBLISH_QOS0;
+  } else if (qos == 1) {
+    _data[index++] |= HeaderFlag.PUBLISH_QOS1;
+  } else if (qos == 2) {
+    _data[index++] |= HeaderFlag.PUBLISH_QOS2;
+  }
+  index += encodeRemainingLength(remainingLength, &_data[index]);
+
+  // VARIABLE HEADER
+  index += encodeString(topic, &_data[index]);
+  if (qos > 0) {
+    _data[index++] = packetId >> 8;
+    _data[index++] = packetId & 0xFF;
+  }
+
+  return index;
 }
 
 size_t Packet::_chunkedAvailable(size_t index) {

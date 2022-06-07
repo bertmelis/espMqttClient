@@ -44,6 +44,7 @@ class Packet {
   // variables for chunked payload handling
   size_t _availableData;
   size_t _payloadIndex;
+  uint8_t* _payload;
   espMqttClientTypes::PayloadCallback _getPayload;
 
  public:
@@ -87,6 +88,13 @@ class Packet {
  private:
   // pass remainingLength = total size - header - remainingLengthLength!
   bool _allocate(size_t remainingLength);
+
+  size_t _fillPublishHeader(const char* topic,
+                            size_t remainingLength,
+                            uint8_t qos,
+                            bool retain,
+                            uint16_t packetId);
+
   size_t _chunkedAvailable(size_t index);
   const uint8_t* _chunkedData(size_t index) const;
 };
