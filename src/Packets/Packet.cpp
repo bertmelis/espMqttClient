@@ -197,7 +197,7 @@ Packet::Packet(const char* topic,
 , _availableData(0)
 , _payloadIndex(0)
 , _getPayload(payloadCallback) {
-
+  // TODO(bertmelis): implement chunked payload
 }
 
 Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
