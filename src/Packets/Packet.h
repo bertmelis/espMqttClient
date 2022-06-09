@@ -36,7 +36,7 @@ class Packet {
   void* token;  // native typeless variable to store any additional data
 
  protected:
-  explicit Packet(espMqttClientTypes::Error& error);
+  explicit Packet(espMqttClientTypes::Error& error);  // NOLINT(runtime/references)
 
   uint8_t* _data;
   size_t _size;
@@ -50,7 +50,7 @@ class Packet {
 
  public:
   // CONNECT
-  Packet(espMqttClientTypes::Error& error,
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
          bool cleanSession,
          const char* username,
          const char* password,
@@ -62,14 +62,14 @@ class Packet {
          uint16_t keepAlive,
          const char* clientId);
   // PUBLISH
-  Packet(espMqttClientTypes::Error& error,
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
          const char* topic,
          const uint8_t* payload,
          size_t payloadLength,
          uint8_t qos,
          bool retain,
          uint16_t packetId);
-  Packet(espMqttClientTypes::Error& error,
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
          const char* topic,
          espMqttClientTypes::PayloadCallback payloadCallback,
          size_t payloadLength,
@@ -77,20 +77,20 @@ class Packet {
          bool retain,
          uint16_t packetId);
   // SUBSCRIBE
-  Packet(espMqttClientTypes::Error& error,
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
          const char* topic,
          uint8_t qos,
          uint16_t packetId);
   // UNSUBSCRIBE
-  Packet(espMqttClientTypes::Error& error,
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
          const char* topic,
          uint16_t packetId);
   // PUBACK, PUBREC, PUBREL, PUBCOMP
-  Packet(espMqttClientTypes::Error& error,
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
          MQTTPacketType type,
          uint16_t packetId);
   // PING, DISCONN
-  explicit Packet(espMqttClientTypes::Error& error,
+  explicit Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
                   MQTTPacketType type);
 
  private:

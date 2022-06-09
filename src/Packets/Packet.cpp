@@ -289,6 +289,8 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t p
   pos += encodeRemainingLength(2, &_data[pos]);
   _data[pos++] = packetId >> 8;
   _data[pos] = packetId & 0xFF;
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, const char* topic, uint16_t packetId)
