@@ -77,8 +77,8 @@ class Outbox {
 
   // add node to back, advance current to new if applicable
   template <class... Args>
-  bool emplace(Args&&... args) {
-    bool ret = false;
+  Iterator emplace(Args&&... args) {
+    Iterator it;
     Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
     if (node != nullptr) {
       if (!_first) {
@@ -87,21 +87,22 @@ class Outbox {
       } else {
         // queue has at least one item
         _last->next = node;
+        it._prev = _last;
       }
       _last = node;
+      it._node = node;
       // point current to newly created if applicable
       if (!_current) {
         _current = _last;
       }
-      ret = true;
     }
-    return ret;
+    return it;
   }
 
   // add item to front, current points to newly created front.
   template <class... Args>
-  bool emplaceFront(Args&&... args) {
-    bool ret = false;
+  Iterator emplaceFront(Args&&... args) {
+    Iterator it;
     Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
     if (node != nullptr) {
       if (!_first) {
@@ -113,9 +114,9 @@ class Outbox {
       }
       _current = _first = node;
       _prev = nullptr;
-      ret = true;
+      it._node = node;
     }
-    return ret;
+    return it;
   }
 
   // remove node at iterator, iterator points to next
