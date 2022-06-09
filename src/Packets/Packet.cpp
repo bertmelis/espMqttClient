@@ -168,7 +168,6 @@ Packet::Packet(espMqttClientTypes::Error& error,
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
-  emc_log_w("creating PUB");
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
     2 +                  // packet ID
@@ -179,23 +178,17 @@ Packet::Packet(espMqttClientTypes::Error& error,
     _packetId = 0;
   }
 
-  emc_log_w("got here 1");
-
   if (!_allocate(remainingLength)) {
     emc_log_w("ended here");
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
 
-  emc_log_w("got here 2");
-
   size_t pos = _fillPublishHeader(packetId, topic, remainingLength, qos, retain);
 
   // PAYLOAD
   memcpy(&_data[pos], payload, payloadLength);
 
-
-  emc_log_w("got here 3");
   error = espMqttClientTypes::Error::SUCCESS;
 }
 
@@ -249,28 +242,8 @@ Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* 
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
-  // Calculate size
-  size_t remainingLength =
-  2 +                  // packet ID
-  2 + strlen(topic) +  // topic
-  1;                   // qos
-
-  // allocate memory
-  if (!_allocate(remainingLength)) {
-    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
-    return;
-  }
-
-  // serialize
-  size_t pos = 0;
-  _data[pos++] = PacketType.SUBSCRIBE | HeaderFlag.SUBSCRIBE_RESERVED;
-  pos += encodeRemainingLength(remainingLength, &_data[pos]);
-  _data[pos++] = packetId >> 8;
-  _data[pos++] = packetId & 0xFF;
-  pos += encodeString(topic, &_data[pos]);
-  _data[pos] = qos;
-
-  error = espMqttClientTypes::Error::SUCCESS;
+  SubscribeItem list[1] = {topic, qos};
+  _createSubscribe(error, list, 1);
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t packetId)
@@ -310,26 +283,8 @@ Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* 
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
-  // Calculate size
-  size_t remainingLength =
-  2 +                  // packet ID
-  2 + strlen(topic);   // topic
-
-  // allocate memory
-  if (!_allocate(remainingLength)) {
-    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
-    return;
-  }
-
-  // serialize
-  size_t pos = 0;
-  _data[pos++] = PacketType.UNSUBSCRIBE | HeaderFlag.UNSUBSCRIBE_RESERVED;
-  pos += encodeRemainingLength(remainingLength, &_data[pos]);
-  _data[pos++] = packetId >> 8;
-  _data[pos++] = packetId & 0xFF;
-  encodeString(topic, &_data[pos]);
-
-  error = espMqttClientTypes::Error::SUCCESS;
+  const char* list[1] = {topic};
+  _createUnsubscribe(error, list, 1);
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
@@ -395,6 +350,65 @@ size_t Packet::_fillPublishHeader(uint16_t packetId,
   }
 
   return index;
+}
+
+void Packet::_createSubscribe(espMqttClientTypes::Error& error,
+                              SubscribeItem* list,
+                              size_t numberTopics) {
+  // Calculate size
+  size_t payload = 0;
+  for (size_t i = 0; i < numberTopics; ++i) {
+    payload += 2 + strlen(list[i].topic) + 1;  // length bytes, string, qos
+  }
+  size_t remainingLength = 2 + payload;  // packetId + payload
+
+  // allocate memory
+  if (!_allocate(remainingLength)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
+
+  // serialize
+  size_t pos = 0;
+  _data[pos++] = PacketType.SUBSCRIBE | HeaderFlag.SUBSCRIBE_RESERVED;
+  pos += encodeRemainingLength(remainingLength, &_data[pos]);
+  _data[pos++] = _packetId >> 8;
+  _data[pos++] = _packetId & 0xFF;
+  for (size_t i = 0; i < numberTopics; ++i) {
+    pos += encodeString(list[i].topic, &_data[pos]);
+    _data[pos++] =list[i].qos;
+  }
+
+  error = espMqttClientTypes::Error::SUCCESS;
+}
+
+void Packet::_createUnsubscribe(espMqttClientTypes::Error& error,
+                                const char** list,
+                                size_t numberTopics) {
+  // Calculate size
+  size_t payload = 0;
+  for (size_t i = 0; i < numberTopics; ++i) {
+    payload += 2 + strlen(list[i]);  // length bytes, string
+  }
+  size_t remainingLength = 2 + payload;  // packetId + payload
+
+  // allocate memory
+  if (!_allocate(remainingLength)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
+
+  // serialize
+  size_t pos = 0;
+  _data[pos++] = PacketType.UNSUBSCRIBE | HeaderFlag.UNSUBSCRIBE_RESERVED;
+  pos += encodeRemainingLength(remainingLength, &_data[pos]);
+  _data[pos++] = _packetId >> 8;
+  _data[pos++] = _packetId & 0xFF;
+  for (size_t i = 0; i < numberTopics; ++i) {
+    pos += encodeString(list[i], &_data[pos]);
+  }
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
 size_t Packet::_chunkedAvailable(size_t index) {
