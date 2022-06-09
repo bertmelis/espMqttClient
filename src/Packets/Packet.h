@@ -148,10 +148,10 @@ class Packet {
                             size_t remainingLength,
                             uint8_t qos,
                             bool retain);
-  void _createSubscribe(espMqttClientTypes::Error& error,
+  void _createSubscribe(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
                         SubscribeItem* list,
                         size_t numberTopics);
-  void _createUnsubscribe(espMqttClientTypes::Error& error,
+  void _createUnsubscribe(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
                           const char** list,
                           size_t numberTopics);
 
