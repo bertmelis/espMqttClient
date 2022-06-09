@@ -53,7 +53,7 @@ bool Packet::removable() const {
   return false;
 }
 
-Packet::Packet()
+Packet::Packet(espMqttClientTypes::Error& error)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
@@ -65,7 +65,8 @@ Packet::Packet()
   // to be implemented in derived class
 }
 
-Packet::Packet(bool cleanSession,
+Packet::Packet(espMqttClientTypes::Error& error,
+               bool cleanSession,
                const char* username,
                const char* password,
                const char* willTopic,
@@ -95,7 +96,10 @@ Packet::Packet(bool cleanSession,
   (password ? 2 + strlen(password) : 0);
 
   // allocate memory
-  if (!_allocate(remainingLength)) return;
+  if (!_allocate(remainingLength)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
 
   // serialize
   size_t pos = 0;
@@ -145,9 +149,12 @@ Packet::Packet(bool cleanSession,
   // credentials
   if (username != nullptr) pos += encodeString(username, &_data[pos]);
   if (password != nullptr) encodeString(password, &_data[pos]);
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(const char* topic,
+Packet::Packet(espMqttClientTypes::Error& error,
+               const char* topic,
                const uint8_t* payload,
                size_t payloadLength,
                uint8_t qos,
@@ -171,15 +178,21 @@ Packet::Packet(const char* topic,
     _packetId = 0;
   }
 
-  if (!_allocate(remainingLength)) return;
+  if (!_allocate(remainingLength)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
 
   size_t pos = _fillPublishHeader(topic, remainingLength, qos, retain, packetId);
 
   // PAYLOAD
   memcpy(&_data[pos], payload, payloadLength);
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(const char* topic,
+Packet::Packet(espMqttClientTypes::Error& error,
+               const char* topic,
                espMqttClientTypes::PayloadCallback payloadCallback,
                size_t payloadLength,
                uint8_t qos,
@@ -203,7 +216,10 @@ Packet::Packet(const char* topic,
     _packetId = 0;
   }
 
-  if (!_allocate(remainingLength - payloadLength + std::min(payloadLength, static_cast<size_t>(EMC_RX_BUFFER_SIZE)))) return;
+  if (!_allocate(remainingLength - payloadLength + std::min(payloadLength, static_cast<size_t>(EMC_RX_BUFFER_SIZE)))) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
 
   size_t pos = _fillPublishHeader(topic, remainingLength, qos, retain, packetId);
 
@@ -212,9 +228,11 @@ Packet::Packet(const char* topic,
   _payloadIndex = pos;
   _payloadStartIndex = _payloadIndex;
   _payloadEndIndex = _payloadIndex;
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
+Packet::Packet(espMqttClientTypes::Error& error, const char* topic, uint8_t qos, uint16_t packetId)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
@@ -230,7 +248,10 @@ Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
   1;                   // qos
 
   // allocate memory
-  if (!_allocate(remainingLength)) return;
+  if (!_allocate(remainingLength)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
 
   // serialize
   size_t pos = 0;
@@ -240,9 +261,11 @@ Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
   _data[pos++] = packetId & 0xFF;
   pos += encodeString(topic, &_data[pos]);
   _data[pos] = qos;
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(MQTTPacketType type, uint16_t packetId)
+Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t packetId)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
@@ -251,7 +274,10 @@ Packet::Packet(MQTTPacketType type, uint16_t packetId)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
-  if (!_allocate(2)) return;
+  if (!_allocate(2)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
 
   size_t pos = 0;
   _data[pos] = type;
@@ -263,9 +289,11 @@ Packet::Packet(MQTTPacketType type, uint16_t packetId)
   pos += encodeRemainingLength(2, &_data[pos]);
   _data[pos++] = packetId >> 8;
   _data[pos] = packetId & 0xFF;
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(const char* topic, uint16_t packetId)
+Packet::Packet(espMqttClientTypes::Error& error, const char* topic, uint16_t packetId)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
@@ -280,7 +308,10 @@ Packet::Packet(const char* topic, uint16_t packetId)
   2 + strlen(topic);   // topic
 
   // allocate memory
-  if (!_allocate(remainingLength)) return;
+  if (!_allocate(remainingLength)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
 
   // serialize
   size_t pos = 0;
@@ -289,9 +320,11 @@ Packet::Packet(const char* topic, uint16_t packetId)
   _data[pos++] = packetId >> 8;
   _data[pos++] = packetId & 0xFF;
   encodeString(topic, &_data[pos]);
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(MQTTPacketType type)
+Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
@@ -300,8 +333,13 @@ Packet::Packet(MQTTPacketType type)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
-  if (!_allocate(0)) return;
+  if (!_allocate(0)) {
+    error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
+  }
   _data[0] |= type;
+
+  error = espMqttClientTypes::Error::SUCCESS;
 }
 
 
