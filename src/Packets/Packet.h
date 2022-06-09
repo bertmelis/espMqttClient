@@ -104,7 +104,6 @@ class Packet {
   , _getPayload(nullptr) {
     static_assert(sizeof...(Args) % 2 == 0);
     size_t numberTopics = 2 + (sizeof...(Args) / 2);
-    emc_log_i("number topics: %zu", numberTopics);
     SubscribeItem list[numberTopics] = {topic1, qos1, topic2, qos2, args...};
     _createSubscribe(error, list, numberTopics);
   }
