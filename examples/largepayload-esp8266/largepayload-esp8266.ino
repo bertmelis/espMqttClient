@@ -20,9 +20,12 @@ size_t fetchPayload(uint8_t* dest, size_t len, size_t index) {
   size_t i = 0;
   for (; i < len; ++i) {
     dest[i] = random(0xFF);
-    if (dest[i] > 0xFC) break;
+    if (dest[i] > 0xFC) {
+      ++i;  // extra increment to compensate 'break'
+      break;
+    }
   }
-  return ++i;  // extra increment 
+  return i; 
 }
 
 void connectToWiFi() {
