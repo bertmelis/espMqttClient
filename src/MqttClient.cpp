@@ -87,17 +87,16 @@ bool MqttClient::connect() {
   bool result = true;
   if (_state == DISCONNECTED) {
     EMC_SEMAPHORE_TAKE();
-    if (_addPacket(false,
-                   _cleanSession,
-                   _username,
-                   _password,
-                   _willTopic,
-                   _willRetain,
-                   _willQos,
-                   _willPayload,
-                   _willPayloadLength,
-                   _keepAlive,
-                   _clientId)) {
+    if (_addPacketFront(_cleanSession,
+                        _username,
+                        _password,
+                        _willTopic,
+                        _willRetain,
+                        _willQos,
+                        _willPayload,
+                        _willPayloadLength,
+                        _keepAlive,
+                        _clientId)) {
       #if defined(ESP32)
       vTaskResume(_taskHandle);
       #endif
@@ -133,7 +132,7 @@ uint16_t MqttClient::subscribe(const char* topic, uint8_t qos) {
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(true, topic, qos, packetId)) {
+    if (!_addPacket(topic, qos, packetId)) {
       emc_log_e("Could not create SUBSCRIBE packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
@@ -149,7 +148,7 @@ uint16_t MqttClient::unsubscribe(const char* topic) {
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(true, topic, packetId)) {
+    if (!_addPacket(topic, packetId)) {
       emc_log_e("Could not create UNSUBSCRIBE packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
@@ -165,7 +164,7 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(true, topic, payload, length, qos, retain, packetId)) {
+    if (!_addPacket(topic, payload, length, qos, retain, packetId)) {
       emc_log_e("Could not create PUBLISH packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
@@ -186,7 +185,7 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqt
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(true, topic, callback, length, qos, retain, packetId)) {
+    if (!_addPacket(topic, callback, length, qos, retain, packetId)) {
       emc_log_e("Could not create PUBLISH packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
@@ -224,7 +223,7 @@ void MqttClient::loop() {
     case DISCONNECTINGMQTT1:
       EMC_SEMAPHORE_TAKE();
       if (_outbox.empty()) {
-        if (!_addPacket(true, PacketType.DISCONNECT)) {
+        if (!_addPacket(PacketType.DISCONNECT)) {
           EMC_SEMAPHORE_GIVE();
           emc_log_e("Could not create DISCONNECT packet");
           _onError(0, Error::OUT_OF_MEMORY);
@@ -398,7 +397,7 @@ void MqttClient::_checkPing() {
   // send ping when client was inactive for 0.7 times the keepalive time
   if (millis() - _lastClientActivity > 700 * _keepAlive) {
     emc_log_i("Near keepalive, sending PING");
-    if (!_addPacket(true, PacketType.PINGREQ)) {
+    if (!_addPacket(PacketType.PINGREQ)) {
       emc_log_e("Could not create PING packet");
     }
   }
@@ -430,7 +429,7 @@ void MqttClient::_onPublish() {
   if (qos == 1) {
     if (p.payload.index + p.payload.length == p.payload.total) {
       EMC_SEMAPHORE_TAKE();
-      if (!_addPacket(true, PacketType.PUBACK, packetId)) {
+      if (!_addPacket(PacketType.PUBACK, packetId)) {
         emc_log_e("Could not create PUBACK packet");
       }
       EMC_SEMAPHORE_GIVE();
@@ -448,7 +447,7 @@ void MqttClient::_onPublish() {
     }
     if (p.payload.index + p.payload.length == p.payload.total) {
       EMC_SEMAPHORE_TAKE();
-      if (!_addPacket(true, PacketType.PUBREC, packetId)) {
+      if (!_addPacket(PacketType.PUBREC, packetId)) {
         emc_log_e("Could not create PUBREC packet");
       }
       EMC_SEMAPHORE_GIVE();
@@ -500,7 +499,7 @@ void MqttClient::_onPubrec() {
     // if it doesn't match the ID, return
     if ((it.get()->packetType()) == PacketType.PUBLISH) {
       if (it.get()->packetId() == idToMatch) {
-        if (!_addPacket(true, PacketType.PUBREL, idToMatch)) {
+        if (!_addPacket(PacketType.PUBREL, idToMatch)) {
           emc_log_e("Could not create PUBREL packet");
         }
         _outbox.remove(it);
@@ -526,7 +525,7 @@ void MqttClient::_onPubrel() {
     // if it doesn't match the ID, return
     if ((it.get()->packetType()) == PacketType.PUBREC) {
       if (it.get()->packetId() == idToMatch) {
-        if (!_addPacket(true, PacketType.PUBCOMP, idToMatch)) {
+        if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
           emc_log_e("Could not create PUBCOMP packet");
         }
         _outbox.remove(it);
@@ -552,7 +551,7 @@ void MqttClient::_onPubcomp() {
     // if it doesn't match the ID, return
     if ((it.get()->packetType()) == PacketType.PUBREL) {
       if (it.get()->packetId() == idToMatch) {
-        if (!_addPacket(true, PacketType.PUBCOMP, idToMatch)) {
+        if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
           emc_log_e("Could not create PUBCOMP packet");
         }
         callback = true;

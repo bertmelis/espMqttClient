@@ -36,7 +36,7 @@ class Packet {
   void* token;  // native typeless variable to store any additional data
 
  protected:
-  Packet();
+  explicit Packet(espMqttClientTypes::Error& error);
 
   uint8_t* _data;
   size_t _size;
@@ -50,7 +50,8 @@ class Packet {
 
  public:
   // CONNECT
-  Packet(bool cleanSession,
+  Packet(espMqttClientTypes::Error& error,
+         bool cleanSession,
          const char* username,
          const char* password,
          const char* willTopic,
@@ -61,30 +62,36 @@ class Packet {
          uint16_t keepAlive,
          const char* clientId);
   // PUBLISH
-  Packet(const char* topic,
+  Packet(espMqttClientTypes::Error& error,
+         const char* topic,
          const uint8_t* payload,
          size_t payloadLength,
          uint8_t qos,
          bool retain,
          uint16_t packetId);
-  Packet(const char* topic,
+  Packet(espMqttClientTypes::Error& error,
+         const char* topic,
          espMqttClientTypes::PayloadCallback payloadCallback,
          size_t payloadLength,
          uint8_t qos,
          bool retain,
          uint16_t packetId);
   // SUBSCRIBE
-  Packet(const char* topic,
+  Packet(espMqttClientTypes::Error& error,
+         const char* topic,
          uint8_t qos,
          uint16_t packetId);
   // UNSUBSCRIBE
-  Packet(const char* topic,
+  Packet(espMqttClientTypes::Error& error,
+         const char* topic,
          uint16_t packetId);
   // PUBACK, PUBREC, PUBREL, PUBCOMP
-  Packet(MQTTPacketType type,
+  Packet(espMqttClientTypes::Error& error,
+         MQTTPacketType type,
          uint16_t packetId);
   // PING, DISCONN
-  explicit Packet(MQTTPacketType type);
+  explicit Packet(espMqttClientTypes::Error& error,
+                  MQTTPacketType type);
 
  private:
   // pass remainingLength = total size - header - remainingLengthLength!

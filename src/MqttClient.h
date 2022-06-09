@@ -113,11 +113,19 @@ class MqttClient {
   uint16_t _getNextPacketId();
 
   template <typename... Args>
-  bool _addPacket(bool addBack, Args&&... args) {
-    if (addBack) {
-      if (_outbox.emplace(std::forward<Args>(args) ...)) return true;
-    } else {
-      if (_outbox.emplaceFront(std::forward<Args>(args) ...)) return true;
+  bool _addPacket(Args&&... args) {
+    espMqttClientTypes::Error error;
+    if (_outbox.emplace(error, std::forward<Args>(args) ...)) {
+      if (error == espMqttClientTypes::Error::SUCCESS) return true;
+    }
+    return false;
+  }
+
+  template <typename... Args>
+  bool _addPacketFront(Args&&... args) {
+    espMqttClientTypes::Error error;
+    if (_outbox.emplaceFront(error, std::forward<Args>(args) ...)) {
+      if (error == espMqttClientTypes::Error::SUCCESS) return true;
     }
     return false;
   }

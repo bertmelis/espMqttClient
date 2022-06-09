@@ -25,8 +25,9 @@ enum class DisconnectReason : int8_t {
 };
 
 enum class Error : uint8_t {
-  MAX_RETRIES = 0,
-  OUT_OF_MEMORY = 1
+  SUCCESS = 0,
+  OUT_OF_MEMORY = 1,
+  MAX_RETRIES = 2
 };
 
 struct MessageProperties {
