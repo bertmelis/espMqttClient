@@ -376,7 +376,7 @@ void Packet::_createSubscribe(espMqttClientTypes::Error& error,
   _data[pos++] = _packetId & 0xFF;
   for (size_t i = 0; i < numberTopics; ++i) {
     pos += encodeString(list[i].topic, &_data[pos]);
-    _data[pos++] =list[i].qos;
+    _data[pos++] = list[i].qos;
   }
 
   error = espMqttClientTypes::Error::SUCCESS;
