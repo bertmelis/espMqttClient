@@ -334,8 +334,8 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
   if (!_allocate(0)) {
-    return;
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+    return;
   }
   _data[0] |= type;
 
