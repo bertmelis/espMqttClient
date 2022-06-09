@@ -62,12 +62,14 @@ void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
   }
 }
 
-void onMqttSubscribe(uint16_t packetId, uint8_t qos) {
+void onMqttSubscribe(uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* codes, size_t len) {
   Serial.println("Subscribe acknowledged.");
   Serial.print("  packetId: ");
   Serial.println(packetId);
-  Serial.print("  qos: ");
-  Serial.println(qos);
+  for (size_t i = 0; i < len; ++i) {
+    Serial.print("  qos: ");
+    Serial.println(static_cast<uint8_t>(codes[i]));
+  }
 }
 
 void onMqttUnsubscribe(uint16_t packetId) {
