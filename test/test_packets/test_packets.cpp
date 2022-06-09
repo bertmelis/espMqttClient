@@ -237,6 +237,99 @@ void test_encodeDisconnect() {
   TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
 }
 
+size_t getData(uint8_t* dest, size_t len, size_t index) {
+  static uint8_t i = 1;
+  memset(dest, i, len);
+  ++i;
+  return len;
+}
+
+void test_encodeChunkedPublish() {
+  const uint8_t check[] = {
+    0b00110011,                 // header, dup, qos, retain
+    0xCF, 0x01,                 // 7 + 200 = (0x4F * 1) & 0x40 + (0x01 * 128)
+    0x00,0x03,'t','o','p',      // topic
+    0x00,0x16                   // packet Id
+  };
+  uint8_t payloadChunk[EMC_RX_BUFFER_SIZE] = {};
+  memset(payloadChunk, 0x01, EMC_RX_BUFFER_SIZE);
+
+  const char* topic = "top";
+  uint8_t qos = 1;
+  bool retain = true;
+  size_t headerLength = 10;
+  size_t payloadLength = 200;
+  size_t size = headerLength + payloadLength;
+  uint16_t packetId = 22;
+
+  Packet packet(topic,
+                getData,
+                payloadLength,
+                qos,
+                retain,
+                packetId);
+
+  TEST_ASSERT_EQUAL_UINT32(size, packet.size());
+  TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
+
+  size_t available = 0;
+  size_t index = 0;
+
+  // call 'available' before 'data'
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(headerLength + EMC_RX_BUFFER_SIZE, available);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(index), headerLength);
+
+  // index == first payload byte
+  index = headerLength;
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(EMC_RX_BUFFER_SIZE, available);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(payloadChunk, packet.data(index), available);
+
+  // index == first payload byte
+  index = headerLength + 4;
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(EMC_RX_BUFFER_SIZE - 4, available);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(payloadChunk, packet.data(index), available);
+
+  // index == last payload byte in first chunk
+  index = headerLength + EMC_RX_BUFFER_SIZE - 1;
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(1, available);
+
+  // index == first payloadbyte in second chunk
+  memset(payloadChunk, 0x02, EMC_RX_BUFFER_SIZE);
+  index = headerLength + EMC_RX_BUFFER_SIZE;
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(EMC_RX_BUFFER_SIZE, available);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(payloadChunk, packet.data(index), available);
+
+  memset(payloadChunk, 0x03, EMC_RX_BUFFER_SIZE);
+  index = headerLength + EMC_RX_BUFFER_SIZE + EMC_RX_BUFFER_SIZE + 10;
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(EMC_RX_BUFFER_SIZE, available);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(payloadChunk, packet.data(index), available);
+
+  const uint8_t checkDup[] = {
+    0b00111011,                 // header, dup, qos, retain
+    0xCF, 0x01,                 // 7 + 200 = (0x4F * 0) + (0x01 * 128)
+    0x00,0x03,'t','o','p',      // topic
+    0x00,0x16,                  // packet Id
+  };
+
+  index = 0;
+  packet.setDup();
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(headerLength + EMC_RX_BUFFER_SIZE, available);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(checkDup, packet.data(index), headerLength);
+
+  memset(payloadChunk, 0x04, EMC_RX_BUFFER_SIZE);
+  index = headerLength;
+  available = packet.available(index);
+  TEST_ASSERT_EQUAL_UINT32(EMC_RX_BUFFER_SIZE, available);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(payloadChunk, packet.data(index), available);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_encodeConnect);
@@ -249,5 +342,6 @@ int main() {
   RUN_TEST(test_encodeUnubscribe);
   RUN_TEST(test_encodePingReq);
   RUN_TEST(test_encodeDisconnect);
+  RUN_TEST(test_encodeChunkedPublish);
   return UNITY_END();
 }

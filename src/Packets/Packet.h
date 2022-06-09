@@ -13,7 +13,9 @@ the LICENSE file.
 
 #include "Constants.h"
 #include "Config.h"
+#include "../TypeDefs.h"
 #include "../Helpers.h"
+#include "../Logging.h"
 #include "RemainingLength.h"
 #include "String.h"
 
@@ -21,14 +23,10 @@ namespace espMqttClientInternals {
 
 class Packet {
  public:
-  virtual ~Packet();
-
-  /*
-  Packet(const Packet&);
-  Packet(Packet&&);
-  */
-
+  ~Packet();
+  size_t available(size_t index);
   const uint8_t* data(size_t index) const;
+
   size_t size() const;
   void setDup();
   uint16_t packetId() const;
@@ -38,9 +36,17 @@ class Packet {
   void* token;  // native typeless variable to store any additional data
 
  protected:
+  Packet();
+
   uint8_t* _data;
   size_t _size;
   uint16_t _packetId;  // save as separate variable: will be accessed frequently
+
+  // variables for chunked payload handling
+  size_t _payloadIndex;
+  size_t _payloadStartIndex;
+  size_t _payloadEndIndex;
+  espMqttClientTypes::PayloadCallback _getPayload;
 
  public:
   // CONNECT
@@ -61,6 +67,12 @@ class Packet {
          uint8_t qos,
          bool retain,
          uint16_t packetId);
+  Packet(const char* topic,
+         espMqttClientTypes::PayloadCallback payloadCallback,
+         size_t payloadLength,
+         uint8_t qos,
+         bool retain,
+         uint16_t packetId);
   // SUBSCRIBE
   Packet(const char* topic,
          uint8_t qos,
@@ -77,6 +89,16 @@ class Packet {
  private:
   // pass remainingLength = total size - header - remainingLengthLength!
   bool _allocate(size_t remainingLength);
+
+  // fills header and returns index of next available byte in buffer
+  size_t _fillPublishHeader(const char* topic,
+                            size_t remainingLength,
+                            uint8_t qos,
+                            bool retain,
+                            uint16_t packetId);
+
+  size_t _chunkedAvailable(size_t index);
+  const uint8_t* _chunkedData(size_t index) const;
 };
 
 }  // end namespace espMqttClientInternals

@@ -17,4 +17,4 @@ jobs:
         pip install platformio
     - name: Test
       run: |
-        pio test -e native
+        pio test -e native -v

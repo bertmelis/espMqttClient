@@ -13,11 +13,9 @@ Aims to be a non-blocking fully compliant MQTT 3.1.1 client.
 - MQTT 3.1.1 compliant library
 - Sending and receiving at all QoS levels
 - TCP and TCP/TLS using standard WiFiClient and WiFiClientSecure connections
-- Virtually unlimited incoming ~~and outgoing~~ payload sizes
+- Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
 - No dependencies outside the Arduino framework
-
-** strikethrough features are in development
 
 # Documentation
 

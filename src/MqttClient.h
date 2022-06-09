@@ -40,6 +40,7 @@ class MqttClient {
   uint16_t unsubscribe(const char* topic);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload);
+  uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
   void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
   const char* getClientId() const;
   #if defined(ESP32)
