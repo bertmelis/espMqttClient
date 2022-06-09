@@ -36,8 +36,36 @@ class MqttClient {
   bool connected() const;
   bool connect();
   bool disconnect(bool force = false);
-  uint16_t subscribe(const char* topic, uint8_t qos);
-  uint16_t unsubscribe(const char* topic);
+  template <typename... Args>
+  uint16_t subscribe(const char* topic, uint8_t qos, Args&&... args) {
+    uint16_t packetId = _getNextPacketId();
+    if (_state != CONNECTED) {
+      packetId = 0;
+    } else {
+      EMC_SEMAPHORE_TAKE();
+      if (!_addPacket(packetId, topic, qos, std::forward<Args>(args) ...)) {
+        emc_log_e("Could not create SUBSCRIBE packet");
+        packetId = 0;
+      }
+      EMC_SEMAPHORE_GIVE();
+    }
+    return packetId;
+  }
+  template <typename... Args>
+  uint16_t unsubscribe(const char* topic, Args&&... args) {
+    uint16_t packetId = _getNextPacketId();
+    if (_state != CONNECTED) {
+      packetId = 0;
+    } else {
+      EMC_SEMAPHORE_TAKE();
+      if (!_addPacket(packetId, topic, std::forward<Args>(args) ...)) {
+        emc_log_e("Could not create UNSUBSCRIBE packet");
+        packetId = 0;
+      }
+      EMC_SEMAPHORE_GIVE();
+    }
+    return packetId;
+  }
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);

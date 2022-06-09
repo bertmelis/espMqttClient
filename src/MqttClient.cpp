@@ -126,45 +126,13 @@ bool MqttClient::disconnect(bool force) {
   return result;
 }
 
-uint16_t MqttClient::subscribe(const char* topic, uint8_t qos) {
-  uint16_t packetId = _getNextPacketId();
-  if (_state != CONNECTED) {
-    packetId = 0;
-  } else {
-    EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(topic, qos, packetId)) {
-      emc_log_e("Could not create SUBSCRIBE packet");
-      _onError(packetId, Error::OUT_OF_MEMORY);
-      packetId = 0;
-    }
-    EMC_SEMAPHORE_GIVE();
-  }
-  return packetId;
-}
-
-uint16_t MqttClient::unsubscribe(const char* topic) {
-  uint16_t packetId = _getNextPacketId();
-  if (_state != CONNECTED) {
-    packetId = 0;
-  } else {
-    EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(topic, packetId)) {
-      emc_log_e("Could not create UNSUBSCRIBE packet");
-      _onError(packetId, Error::OUT_OF_MEMORY);
-      packetId = 0;
-    }
-    EMC_SEMAPHORE_GIVE();
-  }
-  return packetId;
-}
-
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
   if (_state != CONNECTED) {
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(topic, payload, length, qos, retain, packetId)) {
+    if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
       emc_log_e("Could not create PUBLISH packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
@@ -185,7 +153,7 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqt
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(topic, callback, length, qos, retain, packetId)) {
+    if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
       emc_log_e("Could not create PUBLISH packet");
       _onError(packetId, Error::OUT_OF_MEMORY);
       packetId = 0;
@@ -586,7 +554,7 @@ void MqttClient::_onSuback() {
   }
   EMC_SEMAPHORE_GIVE();
   if (callback) {
-    if (_onSubscribeCallback) _onSubscribeCallback(idToMatch, *(_parser.getPacket().payload.data));
+    if (_onSubscribeCallback) _onSubscribeCallback(idToMatch, reinterpret_cast<const espMqttClientTypes::SubscribeReturncode*>(_parser.getPacket().payload.data), _parser.getPacket().payload.total);
   } else {
     emc_log_w("received SUBACK without SUB");
   }
