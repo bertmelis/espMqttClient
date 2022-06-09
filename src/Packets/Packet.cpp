@@ -55,9 +55,9 @@ bool Packet::removable() const {
 
 Packet::Packet(espMqttClientTypes::Error& error)
 : token(nullptr)
+, _packetId(0)
 , _data(nullptr)
 , _size(0)
-, _packetId(0)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -77,9 +77,9 @@ Packet::Packet(espMqttClientTypes::Error& error,
                uint16_t keepAlive,
                const char* clientId)
 : token(nullptr)
+, _packetId(0)
 , _data(nullptr)
 , _size(0)
-, _packetId(0)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -154,20 +154,21 @@ Packet::Packet(espMqttClientTypes::Error& error,
 }
 
 Packet::Packet(espMqttClientTypes::Error& error,
+               uint16_t packetId,
                const char* topic,
                const uint8_t* payload,
                size_t payloadLength,
                uint8_t qos,
-               bool retain,
-               uint16_t packetId)
+               bool retain)
 : token(nullptr)
+, _packetId(packetId)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
+  emc_log_w("creating PUB");
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
     2 +                  // packet ID
@@ -178,30 +179,37 @@ Packet::Packet(espMqttClientTypes::Error& error,
     _packetId = 0;
   }
 
+  emc_log_w("got here 1");
+
   if (!_allocate(remainingLength)) {
+    emc_log_w("ended here");
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
 
-  size_t pos = _fillPublishHeader(topic, remainingLength, qos, retain, packetId);
+  emc_log_w("got here 2");
+
+  size_t pos = _fillPublishHeader(packetId, topic, remainingLength, qos, retain);
 
   // PAYLOAD
   memcpy(&_data[pos], payload, payloadLength);
 
+
+  emc_log_w("got here 3");
   error = espMqttClientTypes::Error::SUCCESS;
 }
 
 Packet::Packet(espMqttClientTypes::Error& error,
+               uint16_t packetId,
                const char* topic,
                espMqttClientTypes::PayloadCallback payloadCallback,
                size_t payloadLength,
                uint8_t qos,
-               bool retain,
-               uint16_t packetId)
+               bool retain)
 : token(nullptr)
+, _packetId(packetId)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -221,7 +229,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
     return;
   }
 
-  size_t pos = _fillPublishHeader(topic, remainingLength, qos, retain, packetId);
+  size_t pos = _fillPublishHeader(packetId, topic, remainingLength, qos, retain);
 
   // payload will be added by 'Packet::available'
   _size = pos + payloadLength;
@@ -232,11 +240,11 @@ Packet::Packet(espMqttClientTypes::Error& error,
   error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(espMqttClientTypes::Error& error, const char* topic, uint8_t qos, uint16_t packetId)
+Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* topic, uint8_t qos)
 : token(nullptr)
+, _packetId(packetId)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -267,9 +275,9 @@ Packet::Packet(espMqttClientTypes::Error& error, const char* topic, uint8_t qos,
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t packetId)
 : token(nullptr)
+, _packetId(packetId)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -293,11 +301,11 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t p
   error = espMqttClientTypes::Error::SUCCESS;
 }
 
-Packet::Packet(espMqttClientTypes::Error& error, const char* topic, uint16_t packetId)
+Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* topic)
 : token(nullptr)
+, _packetId(packetId)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -326,9 +334,9 @@ Packet::Packet(espMqttClientTypes::Error& error, const char* topic, uint16_t pac
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
 : token(nullptr)
+, _packetId(0)
 , _data(nullptr)
 , _size(0)
-, _packetId(0)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -360,11 +368,11 @@ bool Packet::_allocate(size_t remainingLength) {
   return true;
 }
 
-size_t Packet::_fillPublishHeader(const char* topic,
+size_t Packet::_fillPublishHeader(uint16_t packetId,
+                                  const char* topic,
                                   size_t remainingLength,
                                   uint8_t qos,
-                                  bool retain,
-                                  uint16_t packetId) {
+                                  bool retain) {
   size_t index = 0;
 
   // FIXED HEADER

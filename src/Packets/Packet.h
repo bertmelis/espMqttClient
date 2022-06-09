@@ -38,15 +38,20 @@ class Packet {
  protected:
   explicit Packet(espMqttClientTypes::Error& error);  // NOLINT(runtime/references)
 
+  uint16_t _packetId;  // save as separate variable: will be accessed frequently
   uint8_t* _data;
   size_t _size;
-  uint16_t _packetId;  // save as separate variable: will be accessed frequently
 
   // variables for chunked payload handling
   size_t _payloadIndex;
   size_t _payloadStartIndex;
   size_t _payloadEndIndex;
   espMqttClientTypes::PayloadCallback _getPayload;
+
+  struct SubscribeList {
+    const char* topic;
+    uint8_t qos;
+  };
 
  public:
   // CONNECT
@@ -63,28 +68,43 @@ class Packet {
          const char* clientId);
   // PUBLISH
   Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
+         uint16_t packetId,
          const char* topic,
          const uint8_t* payload,
          size_t payloadLength,
          uint8_t qos,
-         bool retain,
-         uint16_t packetId);
+         bool retain);
   Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
+         uint16_t packetId,
          const char* topic,
          espMqttClientTypes::PayloadCallback payloadCallback,
          size_t payloadLength,
          uint8_t qos,
-         bool retain,
-         uint16_t packetId);
+         bool retain);
   // SUBSCRIBE
   Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
+         uint16_t packetId,
+         const char* topic,
+         uint8_t qos);
+  template<typename ... Args>
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
+         uint16_t packetId,
          const char* topic,
          uint8_t qos,
-         uint16_t packetId);
+         Args&& ... args) {
+    // to be implemented
+  }
   // UNSUBSCRIBE
   Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
+         uint16_t packetId,
+         const char* topic);
+  template<typename ... Args>
+  Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
+         uint16_t packetId,
          const char* topic,
-         uint16_t packetId);
+         Args&& ... args) {
+    // to be implemented
+         }
   // PUBACK, PUBREC, PUBREL, PUBCOMP
   Packet(espMqttClientTypes::Error& error,  // NOLINT(runtime/references)
          MQTTPacketType type,
@@ -98,11 +118,12 @@ class Packet {
   bool _allocate(size_t remainingLength);
 
   // fills header and returns index of next available byte in buffer
-  size_t _fillPublishHeader(const char* topic,
+  size_t _fillPublishHeader(uint16_t packetId,
+                            const char* topic,
                             size_t remainingLength,
                             uint8_t qos,
-                            bool retain,
-                            uint16_t packetId);
+                            bool retain);
+
 
   size_t _chunkedAvailable(size_t index);
   const uint8_t* _chunkedData(size_t index) const;
