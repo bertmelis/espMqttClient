@@ -13,7 +13,8 @@ WiFiEventHandler wifiDisconnectHandler;
 espMqttClient mqttClient;
 Ticker reconnectTimer;
 
-size_t fetchPayload(uint8_t* dest, size_t len) {
+size_t fetchPayload(uint8_t* dest, size_t len, size_t index) {
+  Serial.printf("filling buffer at index %zu\n", index);
   // fill the buffer with random bytes
   // but maybe don't fill the entire buffer
   size_t i = 0;

@@ -43,13 +43,13 @@ uint16_t Packet::packetId() const {
 }
 
 MQTTPacketType Packet::packetType() const {
-  if (_data) return static_cast<MQTTPacketType>(data(0)[0] & 0xF0);
+  if (_data) return static_cast<MQTTPacketType>(_data[0] & 0xF0);
   return static_cast<MQTTPacketType>(0);
 }
 
 bool Packet::removable() const {
   if (_packetId == 0) return true;
-  if (((data(0)[0] & 0xF0) == PacketType.PUBACK) || ((data(0)[0] & 0xF0) == PacketType.PUBCOMP)) return true;
+  if (((_data[0] & 0xF0) == PacketType.PUBACK) || ((_data[0] & 0xF0) == PacketType.PUBCOMP)) return true;
   return false;
 }
 
@@ -58,8 +58,9 @@ Packet::Packet()
 , _data(nullptr)
 , _size(0)
 , _packetId(0)
-, _availableData(0)
-, _payload(nullptr)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
 , _getPayload(nullptr) {
   // to be implemented in derived class
 }
@@ -78,8 +79,9 @@ Packet::Packet(bool cleanSession,
 , _data(nullptr)
 , _size(0)
 , _packetId(0)
-, _availableData(0)
-, _payload(nullptr)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
 , _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
@@ -155,8 +157,9 @@ Packet::Packet(const char* topic,
 , _data(nullptr)
 , _size(0)
 , _packetId(packetId)
-, _availableData(0)
-, _payload(nullptr)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
 , _getPayload(nullptr) {
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
@@ -186,8 +189,9 @@ Packet::Packet(const char* topic,
 , _data(nullptr)
 , _size(0)
 , _packetId(packetId)
-, _availableData(0)
-, _payload(nullptr)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
 , _getPayload(payloadCallback) {
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
@@ -201,12 +205,13 @@ Packet::Packet(const char* topic,
 
   if (!_allocate(remainingLength - payloadLength + std::min(payloadLength, static_cast<size_t>(EMC_RX_BUFFER_SIZE)))) return;
 
-  size_t pos = _fillPublishHeader(topic, payloadLength, qos, retain, packetId);
+  size_t pos = _fillPublishHeader(topic, remainingLength, qos, retain, packetId);
 
   // payload will be added by 'Packet::available'
-  _payload = &_data[pos];
-  _payloadIndex = 0;
-  _availableData = 0;
+  _size = pos + payloadLength;
+  _payloadIndex = pos;
+  _payloadStartIndex = _payloadIndex;
+  _payloadEndIndex = _payloadIndex;
 }
 
 Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
@@ -214,8 +219,9 @@ Packet::Packet(const char* topic, uint8_t qos, uint16_t packetId)
 , _data(nullptr)
 , _size(0)
 , _packetId(packetId)
-, _availableData(0)
-, _payload(nullptr)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
 , _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
@@ -240,7 +246,11 @@ Packet::Packet(MQTTPacketType type, uint16_t packetId)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
-, _packetId(packetId) {
+, _packetId(packetId)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
+, _getPayload(nullptr) {
   if (!_allocate(2)) return;
 
   size_t pos = 0;
@@ -260,8 +270,9 @@ Packet::Packet(const char* topic, uint16_t packetId)
 , _data(nullptr)
 , _size(0)
 , _packetId(packetId)
-, _availableData(0)
-, _payload(nullptr)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
 , _getPayload(nullptr) {
   // Calculate size
   size_t remainingLength =
@@ -284,7 +295,11 @@ Packet::Packet(MQTTPacketType type)
 : token(nullptr)
 , _data(nullptr)
 , _size(0)
-, _packetId(0) {
+, _packetId(0)
+, _payloadIndex(0)
+, _payloadStartIndex(0)
+, _payloadEndIndex(0)
+, _getPayload(nullptr) {
   if (!_allocate(0)) return;
   _data[0] |= type;
 }
@@ -337,10 +352,33 @@ size_t Packet::_fillPublishHeader(const char* topic,
 }
 
 size_t Packet::_chunkedAvailable(size_t index) {
-  return 0;  // TODO(bertmelis): implement chunked payload
+  if (index >= _size) return 0;
+
+  // index points to header or first payload byte
+  if (index < _payloadIndex) {
+    if (_size > _payloadIndex && _payloadEndIndex != 0) {
+      size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_RX_BUFFER_SIZE), _size - _payloadStartIndex), index);
+      _payloadStartIndex = _payloadIndex;
+      _payloadEndIndex = _payloadStartIndex + copied - 1;
+    }
+
+  // index points to payload unavailable
+  } else if (index > _payloadEndIndex || _payloadStartIndex > index) {
+    _payloadStartIndex = index;
+    size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_RX_BUFFER_SIZE), _size - _payloadStartIndex), index);
+    _payloadEndIndex = _payloadStartIndex + copied - 1;
+  }
+
+  // now index points to header or payload available
+  return _payloadEndIndex - index + 1;
 }
+
 const uint8_t* Packet::_chunkedData(size_t index) const {
-  return nullptr;  // TODO(bertmelis): implement chunked payload
+  // CAUTION!! available(index) has to be called first to check available data and possibly fill payloadbuffer
+  if (index < _payloadIndex) {
+    return &_data[index];
+  }
+  return &_data[index - _payloadStartIndex + _payloadIndex];
 }
 
 }  // end namespace espMqttClientInternals

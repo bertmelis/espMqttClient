@@ -15,6 +15,7 @@ the LICENSE file.
 #include "Config.h"
 #include "../TypeDefs.h"
 #include "../Helpers.h"
+#include "../Logging.h"
 #include "RemainingLength.h"
 #include "String.h"
 
@@ -42,9 +43,9 @@ class Packet {
   uint16_t _packetId;  // save as separate variable: will be accessed frequently
 
   // variables for chunked payload handling
-  size_t _availableData;
   size_t _payloadIndex;
-  uint8_t* _payload;
+  size_t _payloadStartIndex;
+  size_t _payloadEndIndex;
   espMqttClientTypes::PayloadCallback _getPayload;
 
  public:
@@ -89,6 +90,7 @@ class Packet {
   // pass remainingLength = total size - header - remainingLengthLength!
   bool _allocate(size_t remainingLength);
 
+  // fills header and returns index of next available byte in buffer
   size_t _fillPublishHeader(const char* topic,
                             size_t remainingLength,
                             uint8_t qos,
