@@ -34,7 +34,7 @@ void test_encodeConnect() {
   uint16_t willPayloadLength = 2;
   uint16_t keepalive = 16;
   const char* clientId = "cli";
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error,
                 cleanSession,
@@ -72,15 +72,15 @@ void test_encodePublish() {
   const uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
   uint16_t payloadLength = 4;
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error,
+                packetId,
                 topic,
                 payload,
                 payloadLength,
                 qos,
-                retain,
-                packetId);
+                retain);
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
@@ -107,7 +107,7 @@ void test_encodePubAck() {
   };
   const uint32_t length = 4;
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error, PacketType.PUBACK, packetId);
   packet.setDup();  // no effect
@@ -126,7 +126,7 @@ void test_encodePubRec() {
   };
   const uint32_t length = 4;
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error, PacketType.PUBREC, packetId);
   packet.setDup();  // no effect
@@ -145,7 +145,7 @@ void test_encodePubRel() {
   };
   const uint32_t length = 4;
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error, PacketType.PUBREL, packetId);
   packet.setDup();  // no effect
@@ -164,7 +164,7 @@ void test_encodePubComp() {
   };
   const uint32_t length = 4;
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error, PacketType.PUBCOMP, packetId);
   packet.setDup();  // no effect
@@ -187,9 +187,9 @@ void test_encodeSubscribe() {
   const char* topic = "a/b";
   uint8_t qos = 2;
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
-  Packet packet(error, topic, qos, packetId);
+  Packet packet(error, packetId, topic, qos);
   packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
@@ -198,7 +198,65 @@ void test_encodeSubscribe() {
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
 
-void test_encodeUnubscribe() {
+void test_encodeMultiSubscribe2() {
+  const uint8_t check[] = {
+    0b10000010,                 // header
+    0x0E,                       // remaining length
+    0x00,0x16,                  // packet Id
+    0x00, 0x03, 'a', '/', 'b',  // topic1
+    0x01,                       // qos1
+    0x00, 0x03, 'c', '/', 'd',  // topic2
+    0x02                        // qos2
+  };
+  const uint32_t length = 16;
+  const char* topic1 = "a/b";
+  const char* topic2 = "c/d";
+  uint8_t qos1 = 1;
+  uint8_t qos2 = 2;
+  uint16_t packetId = 22;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
+
+  Packet packet(error, packetId, topic1, qos1, topic2, qos2);
+  packet.setDup();  // no effect
+
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
+  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
+  TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
+}
+
+void test_encodeMultiSubscribe3() {
+  const uint8_t check[] = {
+    0b10000010,                 // header
+    0x14,                       // remaining length
+    0x00,0x16,                  // packet Id
+    0x00, 0x03, 'a', '/', 'b',  // topic1
+    0x01,                       // qos1
+    0x00, 0x03, 'c', '/', 'd',  // topic2
+    0x02,                       // qos2
+    0x00, 0x03, 'e', '/', 'f',  // topic3
+    0x00                        // qos3
+  };
+  const uint32_t length = 22;
+  const char* topic1 = "a/b";
+  const char* topic2 = "c/d";
+  const char* topic3 = "e/f";
+  uint8_t qos1 = 1;
+  uint8_t qos2 = 2;
+  uint8_t qos3 = 0;
+  uint16_t packetId = 22;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
+
+  Packet packet(error, packetId, topic1, qos1, topic2, qos2, topic3, qos3);
+  packet.setDup();  // no effect
+
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
+  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
+  TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
+}
+
+void test_encodeUnsubscribe() {
   const uint8_t check[] = {
     0b10100010,                 // header
     0x07,                       // remaining length
@@ -208,9 +266,57 @@ void test_encodeUnubscribe() {
   const uint32_t length = 9;
   const char* topic = "a/b";
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
-  Packet packet(error, topic, packetId);
+  Packet packet(error, packetId, topic);
+  packet.setDup();  // no effect
+
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
+  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
+  TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
+}
+
+void test_encodeMultiUnsubscribe2() {
+  const uint8_t check[] = {
+    0b10100010,                 // header
+    0x0C,                       // remaining length
+    0x00,0x16,                  // packet Id
+    0x00, 0x03, 'a', '/', 'b',  // topic1
+    0x00, 0x03, 'c', '/', 'd'  // topic2
+  };
+  const uint32_t length = 14;
+  const char* topic1 = "a/b";
+  const char* topic2 = "c/d";
+  uint16_t packetId = 22;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
+
+  Packet packet(error, packetId, topic1, topic2);
+  packet.setDup();  // no effect
+
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
+  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
+  TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
+}
+
+void test_encodeMultiUnsubscribe3() {
+  const uint8_t check[] = {
+    0b10100010,                 // header
+    0x11,                       // remaining length
+    0x00,0x16,                  // packet Id
+    0x00, 0x03, 'a', '/', 'b',  // topic1
+    0x00, 0x03, 'c', '/', 'd',  // topic2
+    0x00, 0x03, 'e', '/', 'f',  // topic3
+  };
+  const uint32_t length = 19;
+  const char* topic1 = "a/b";
+  const char* topic2 = "c/d";
+  const char* topic3 = "e/f";
+  uint16_t packetId = 22;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
+
+  Packet packet(error, packetId, topic1, topic2, topic3);
   packet.setDup();  // no effect
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
@@ -225,7 +331,7 @@ void test_encodePingReq() {
     0x00
   };
   const uint32_t length = 2;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error, PacketType.PINGREQ);
   packet.setDup();  // no effect
@@ -242,7 +348,7 @@ void test_encodeDisconnect() {
     0x00
   };
   const uint32_t length = 2;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error, PacketType.DISCONNECT);
   packet.setDup();  // no effect
@@ -276,15 +382,15 @@ void test_encodeChunkedPublish() {
   size_t payloadLength = 200;
   size_t size = headerLength + payloadLength;
   uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::OUT_OF_MEMORY;
+  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
 
   Packet packet(error,
+                packetId,
                 topic,
                 getData,
                 payloadLength,
                 qos,
-                retain,
-                packetId);
+                retain);
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(size, packet.size());
@@ -357,7 +463,11 @@ int main() {
   RUN_TEST(test_encodePubRel);
   RUN_TEST(test_encodePubComp);
   RUN_TEST(test_encodeSubscribe);
-  RUN_TEST(test_encodeUnubscribe);
+  RUN_TEST(test_encodeMultiSubscribe2);
+  RUN_TEST(test_encodeMultiSubscribe3);
+  RUN_TEST(test_encodeUnsubscribe);
+  RUN_TEST(test_encodeMultiUnsubscribe2);
+  RUN_TEST(test_encodeMultiUnsubscribe3);
   RUN_TEST(test_encodePingReq);
   RUN_TEST(test_encodeDisconnect);
   RUN_TEST(test_encodeChunkedPublish);
