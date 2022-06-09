@@ -143,18 +143,18 @@ class MqttClient {
   template <typename... Args>
   bool _addPacket(Args&&... args) {
     espMqttClientTypes::Error error;
-    if (_outbox.emplace(error, std::forward<Args>(args) ...)) {
-      if (error == espMqttClientTypes::Error::SUCCESS) return true;
-    }
+    espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.emplace(error, std::forward<Args>(args) ...);
+    if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
+    _outbox.remove(it);
     return false;
   }
 
   template <typename... Args>
   bool _addPacketFront(Args&&... args) {
     espMqttClientTypes::Error error;
-    if (_outbox.emplaceFront(error, std::forward<Args>(args) ...)) {
-      if (error == espMqttClientTypes::Error::SUCCESS) return true;
-    }
+    espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.emplaceFront(error, std::forward<Args>(args) ...);
+    if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
+    _outbox.remove(it);
     return false;
   }
 
