@@ -53,10 +53,6 @@ Receiving packets is done via the `onMessage`-callback. This callback gives you 
 
 You can disconnect from the broker by calling `disconnect()`. If you do not force-disconnect, the client will first send the remaining messages that are in the queue and disconnect afterwards. During this period however, no new incoming PUBLISH messages will be processed.
 
-You can use the [editor on GitHub](https://github.com/bertmelis/espMqttClient/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
 # API Reference
 
 ```cpp
