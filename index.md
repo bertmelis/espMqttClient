@@ -241,6 +241,12 @@ Subscribe to the given topic at the given QoS. Return the packet ID or 0 if fail
 - **`topic`**: Topic, expects a null-terminated char array (c-string)
 - **`qos`**: QoS
 
+It is also possible to subscribe to multiple topics at once. Just add the topic/qos pairs to the parameters:
+
+```cpp
+uint16_t packetId = yourclient.subscribe(topic1, qos1, topic2, qos2, topic3, qos3);  // add as many topics as you like*
+```
+
 ```cpp
 uint16_t unsubscribe(const char* topic)
 ```
@@ -248,6 +254,12 @@ uint16_t unsubscribe(const char* topic)
 Unsubscribe from the given topic. Return the packet ID or 0 if failed.
 
 - **`topic`**: Topic, expects a null-terminated char array (c-string)
+
+It is also possible to unsubscribe to multiple topics at once. Just add the topics to the parameters:
+
+```cpp
+uint16_t packetId = yourclient.unsubscribe(topic1, topic2, topic3);  // add as many topics as you like*
+```
 
 ```cpp
 uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8* payload, size_t length)
@@ -271,6 +283,19 @@ Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic
 - **`qos`**: QoS
 - **`retain`**: Retain flag
 - **`payload`**: Payload, expects a null-terminated char array (c-string). Its lenght will be calculated using `strlen(payload)`
+
+```cpp
+uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length)
+```
+
+Publish a packet with a callback for payload handling. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic will be buffered by the library.
+
+- **`topic`**: Topic, expects a null-terminated char array (c-string)
+- **`qos`**: QoS
+- **`retain`**: Retain flag
+- **`callback`**: callback to fetch the payload.
+
+The callback has the following signature: `size_t callback(uint8_t* data, size_t maxSize, size_t index)`. When the library needs payload data, the callback will be invoked. It is the callback's job to write data indo `data` with a maximum of `maxSize` bytes, according the `index` and return the amount of bytes written.
 
 ```cpp
 void clearQueue()
