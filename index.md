@@ -12,17 +12,17 @@
 - Readable and understandable code
 - No dependencies outside the Arduino framework
 
+# Contents
 
 1. [Runtime behaviour](#runtime-behaviour)
 2. [API Reference](#api-reference)
 3. [Compile-time configuration](#compile-time-configuration)
 4. [Code samples](#code-samples)
 
-
-
 # Runtime behaviour
 
 A normal cycle of an MQTT client goes like this:
+
 1. setup the client
 2. connect to the broker
 3. subscribe/publish/receive
@@ -30,7 +30,7 @@ A normal cycle of an MQTT client goes like this:
 
 ### Setup
 
-Setting up the client means to tell which host and port to connect to, possible credentials to use and so on. espMqttClient has a set of methods to configure the client. Setup is generally done in the `setup()` function of the Arduino framework. 
+Setting up the client means to tell which host and port to connect to, possible credentials to use and so on. espMqttClient has a set of methods to configure the client. Setup is generally done in the `setup()` function of the Arduino framework.
 One important thing to remember is that there are a number of settings that are not stored inside the library: `username`, `password`, `willTopic`, `willPayload`, `clientId` and `host`. Make sure these variables stay available during the lifetime of the `espMqttClient`.
 
 For TLS secured connections, the relevant methods from `WiFiClientSecure` have been made available.
@@ -53,196 +53,246 @@ Receiving packets is done via the `onMessage`-callback. This callback gives you 
 
 You can disconnect from the broker by calling `disconnect()`. If you do not force-disconnect, the client will first send the remaining messages that are in the queue and disconnect afterwards. During this period however, no new incoming PUBLISH messages will be processed.
 
-
 You can use the [editor on GitHub](https://github.com/bertmelis/espMqttClient/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
 Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
 # API Reference
 
-### espMqttClient() - espMqttClientSecure()
+```cpp
+espMqttClient()
+espMqttClientSecure()
+```
 
 Instantiate a new espMqttClient or espMqttSecure object.
 On ESP32, two optional parameters are available: `espMqttClient(uint8_t priority = 1, uint8_t core = 1)`. This will change the priority of the MQTT client task and the core on which it runs.
 
 ### Configuration
 
-#### espMqttClient& setKeepAlive(uint16_t `keepAlive`)
+```cpp
+espMqttClient& setKeepAlive(uint16_t `keepAlive`)
+```
 
 Set the keep alive. Defaults to 15 seconds.
 
 * **`keepAlive`**: Keep alive in seconds
 
-#### espMqttClient& setClientId(const char\* `clientId`)
+```cpp
+espMqttClient& setClientId(const char\* `clientId`)
+```
 
-Set the client ID. Defaults to `esp8266<chip ID on 6 hex caracters>`.
+Set the client ID. Defaults to `esp8266-123456` where `123456` is the chip ID.
 The library only stores a pointer to the client ID. Make sure the variable pointed to stays available throughout the lifetime of espMqttClient.
 
-* **`clientId`**: Client ID, expects a null-terminated char array (c-string)
+- **`clientId`**: Client ID, expects a null-terminated char array (c-string)
 
-#### espMqttClient& setCleanSession(bool `cleanSession`)
+```cpp
+espMqttClient& setCleanSession(bool `cleanSession`)
+```
 
 Set the CleanSession flag. Defaults to `true`.
 
-* **`cleanSession`**: clean session wanted or not
+- **`cleanSession`**: clean session wanted or not
 
-#### espMqttClient& setCredentials(const char\* `username`, const char\* `password`)
+```cpp
+espMqttClient& setCredentials(const char\* `username`, const char\* `password`)
+```
 
 Set the username/password. Defaults to non-auth.
 The library only stores a pointer to the username and password. Make sure the variable to pointed stays available throughout the lifetime of espMqttClient.
 
-* **`username`**: Username, expects a null-terminated char array (c-string)
-* **`password`**: Password, expects a null-terminated char array (c-string)
+- **`username`**: Username, expects a null-terminated char array (c-string)
+- **`password`**: Password, expects a null-terminated char array (c-string)
 
-#### espMqttClient& setWill(const char\* `topic`, uint8_t `qos`, bool `retain`, const uint8_t\* `payload`, size_t `length`)
-
-Set the Last Will Testament. Defaults to none.
-The library only stores a pointer to the topic and payload. Make sure the variable pointed to stays available throughout the lifetime of espMqttClient.
-
-* **`topic`**: Topic of the LWT, expects a null-terminated char array (c-string)
-* **`qos`**: QoS of the LWT
-* **`retain`**: Retain flag of the LWT
-* **`payload`**: Payload of the LWT.
-* **`length`**: Payload length
-
-#### espMqttClient& setWill(const char\* `topic`, uint8_t `qos`, bool `retain`, const char\* `payload`)
+```cpp
+espMqttClient& setWill(const char\* `topic`, uint8_t `qos`, bool `retain`, const uint8_t\* `payload`, size_t `length`)
+```
 
 Set the Last Will Testament. Defaults to none.
 The library only stores a pointer to the topic and payload. Make sure the variable pointed to stays available throughout the lifetime of espMqttClient.
 
-* **`topic`**: Topic of the LWT, expects a null-terminated char array (c-string)
-* **`qos`**: QoS of the LWT
-* **`retain`**: Retain flag of the LWT
-* **`payload`**: Payload of the LWT, expects a null-terminated char array (c-string). It's lenght will be calculated using `strlen(payload)`
+- **`topic`**: Topic of the LWT, expects a null-terminated char array (c-string)
+- **`qos`**: QoS of the LWT
+- **`retain`**: Retain flag of the LWT
+- **`payload`**: Payload of the LWT.
+- **`length`**: Payload length
 
-#### espMqttClient& setServer(IPAddress `ip`, uint16_t `port`)
+```cpp
+espMqttClient& setWill(const char\* `topic`, uint8_t `qos`, bool `retain`, const char\* `payload`)
+```
+
+Set the Last Will Testament. Defaults to none.
+The library only stores a pointer to the topic and payload. Make sure the variable pointed to stays available throughout the lifetime of espMqttClient.
+
+- **`topic`**: Topic of the LWT, expects a null-terminated char array (c-string)
+- **`qos`**: QoS of the LWT
+- **`retain`**: Retain flag of the LWT
+- **`payload`**: Payload of the LWT, expects a null-terminated char array (c-string). It's lenght will be calculated using `strlen(payload)`
+
+```cpp
+espMqttClient& setServer(IPAddress `ip`, uint16_t `port`)
+```
 
 Set the server. Mind that when using `espMqttClientSecure` with a certificate, the hostname will be chacked against the certificate. OFten IP-addresses are not valid and the connection will fail.
 
-* **`ip`**: IP of the server
-* **`port`**: Port of the server
+- **`ip`**: IP of the server
+- **`port`**: Port of the server
 
-#### espMqttClient& setServer(const char\* `host`, uint16_t `port`)
+```cpp
+espMqttClient& setServer(const char\* `host`, uint16_t `port`)
+```
 
 Set the server.
 
-* **`host`**: Host of the server, expects a null-terminated char array (c-string)
-* **`port`**: Port of the server
+- **`host`**: Host of the server, expects a null-terminated char array (c-string)
+- **`port`**: Port of the server
 
 #### Options for TLS connections
 
 All common options from WiFiClientSecure to setup an encrypted connection are made available. These include:
 
-* espMqttClientSecure& setInsecure()
-* espMqttClientSecure& setCACert(const char* rootCA) (ESP32 only)
-* espMqttClientSecure& setCertificate(const char* clientCa) (ESP32 only)
-* espMqttClientSecure& setPrivateKey(const char* privateKey) (ESP32 only)
-* espMqttClientSecure& setPreSharedKey(const char* pskIdent, const char* psKey) (ESP32 only)
-* espMqttClientSecure& setFingerprint(const uint8_t fingerprint[20]) (ESP8266 only)
-* espMqttClientSecure& setTrustAnchors(const X509List *ta) (ESP8266 only)
-* espMqttClientSecure& setClientRSACert(const X509List *cert, const PrivateKey *sk) (ESP8266 only)
-* espMqttClientSecure& setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type) (ESP8266 only)
-* espMqttClientSecure& setCertStore(CertStoreBase *certStore) (ESP8266 only)
+- `espMqttClientSecure& setInsecure()`
+- `espMqttClientSecure& setCACert(const char* rootCA)` (ESP32 only)
+- `espMqttClientSecure& setCertificate(const char* clientCa)` (ESP32 only)
+- `espMqttClientSecure& setPrivateKey(const char* privateKey)` (ESP32 only)
+- `espMqttClientSecure& setPreSharedKey(const char* pskIdent, const char* psKey)` (ESP32 only)
+- `espMqttClientSecure& setFingerprint(const uint8_t fingerprint[20])` (ESP8266 only)
+- `espMqttClientSecure& setTrustAnchors(const X509List *ta)` (ESP8266 only)
+- `espMqttClientSecure& setClientRSACert(const X509List *cert, const PrivateKey *sk)` (ESP8266 only)
+- `espMqttClientSecure& setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type)` (ESP8266 only)
+- `espMqttClientSecure& setCertStore(CertStoreBase *certStore)` (ESP8266 only)
 
 For documenation, please go to [ESP8266's documentation](https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/readme.html#bearssl-client-secure-and-server-secure) or [ESP32's documentation](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure)
 
 ### Events handlers
 
-#### espMqttClient& onConnect(espMqttClientTypes::OnConnectCallback `callback`)
+```cpp
+espMqttClient& onConnect(espMqttClientTypes::OnConnectCallback `callback`)
+```
 
 Add a connect event handler.
 
-* **`callback`**: Function to call
+- **`callback`**: Function to call
 
-#### espMqttClient& onDisconnect(espMqttClientTypes::OnDisconnectCallback `callback`)
+```cpp
+espMqttClient& onDisconnect(espMqttClientTypes::OnDisconnectCallback `callback`)
+```
 
 Add a disconnect event handler.
 
-* **`callback`**: Function to call
+- **`callback`**: Function to call
 
-#### espMqttClient& onSubscribe(espMqttClientTypes::OnSubscribeCallback `callback`)
+```cpp
+espMqttClient& onSubscribe(espMqttClientTypes::OnSubscribeCallback `callback`)
+```
 
 Add a subscribe acknowledged event handler.
 
-* **`callback`**: Function to call
+- **`callback`**: Function to call
 
-#### espMqttClient& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback `callback`)
+```cpp
+espMqttClient& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback `callback`)
+```
 
 Add an unsubscribe acknowledged event handler.
 
-* **`callback`**: Function to call
+- **`callback`**: Function to call
 
-#### espMqttClient& onMessage(espMqttClientTypes::OnMessageCallback `callback`)
+```cpp
+espMqttClient& onMessage(espMqttClientTypes::OnMessageCallback `callback`)
+```
 
 Add a publish received event handler.
 
-* **`callback`**: Function to call
+- **`callback`**: Function to call
 
-#### espMqttClient& onPublish(espMqttClientTypes::OnPublishCallback `callback`)
+```cpp
+espMqttClient& onPublish(espMqttClientTypes::OnPublishCallback `callback`)
+```
 
 Add a publish acknowledged event handler.
 
-* **`callback`**: Function to call
+- **`callback`**: Function to call
 
 ### Operational functions
 
-#### bool connected()
+```cpp
+bool connected()
+```
 
 Return if the client is currently connected to the broker or not.
 
-#### void connect()
+```cpp
+void connect()
+```
 
 Connect to the server.
 
-#### void disconnect(bool `force` = false)
+```cpp
+void disconnect(bool `force` = false)
+```
 
 Disconnect from the server.
 when disconnecting with `force` false, the client first tries to handle all the outgoing messages in the queue and disconnect cleanly afterwards. during this time, no incoming PUBLISH messages are handled.
 
-* **`force`**: Whether to force the disconnection. Defaults to `false` (clean disconnection).
+- **`force`**: Whether to force the disconnection. Defaults to `false` (clean disconnection).
 
-#### uint16_t subscribe(const char\* `topic`, uint8_t `qos`)
+```cpp
+uint16_t subscribe(const char\* `topic`, uint8_t `qos`)
+```
 
 Subscribe to the given topic at the given QoS. Return the packet ID or 0 if failed.
 
-* **`topic`**: Topic, expects a null-terminated char array (c-string)
-* **`qos`**: QoS
+- **`topic`**: Topic, expects a null-terminated char array (c-string)
+- **`qos`**: QoS
 
-#### uint16_t unsubscribe(const char\* `topic`)
+```cpp
+uint16_t unsubscribe(const char\* `topic`)
+```
 
 Unsubscribe from the given topic. Return the packet ID or 0 if failed.
 
-* **`topic`**: Topic, expects a null-terminated char array (c-string)
+- **`topic`**: Topic, expects a null-terminated char array (c-string)
 
-#### uint16_t publish(const char\* `topic`, uint8_t `qos`, bool `retain`, const uint8\* `payload`, size_t `length`)
-
-Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic and payload will be buffered by the library.
-
-* **`topic`**: Topic, expects a null-terminated char array (c-string)
-* **`qos`**: QoS
-* **`retain`**: Retain flag
-* **`payload`**: Payload
-* **`length`**: Payload length
-
-#### uint16_t publish(const char\* `topic`, uint8_t `qos`, bool `retain`, const char\* `payload`)
+```cpp
+uint16_t publish(const char\* `topic`, uint8_t `qos`, bool `retain`, const uint8\* `payload`, size_t `length`)
+```
 
 Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic and payload will be buffered by the library.
 
-* **`topic`**: Topic, expects a null-terminated char array (c-string)
-* **`qos`**: QoS
-* **`retain`**: Retain flag
-* **`payload`**: Payload, expects a null-terminated char array (c-string). It's lenght will be calculated using `strlen(payload)`
+- **`topic`**: Topic, expects a null-terminated char array (c-string)
+- **`qos`**: QoS
+- **`retain`**: Retain flag
+- **`payload`**: Payload
+- **`length`**: Payload length
 
-#### void clearQueue()
+```cpp
+uint16_t publish(const char\* `topic`, uint8_t `qos`, bool `retain`, const char\* `payload`)
+```
+
+Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic and payload will be buffered by the library.
+
+- **`topic`**: Topic, expects a null-terminated char array (c-string)
+- **`qos`**: QoS
+- **`retain`**: Retain flag
+- **`payload`**: Payload, expects a null-terminated char array (c-string). It's lenght will be calculated using `strlen(payload)`
+
+```cpp
+void clearQueue()
+```
 
 When disconnected, clears all queued messages.
 Keep in mind that this also deletes any session data and therefore is no MQTT compliant.
 
-#### void loop()
+```cpp
+void loop()
+```
 
 This is the worker function of the MQTT client. For ESP8266 you must call this function in the Arduino loop. For ESP32 this function is only used internally and is not available in the API.
 
-#### const char* getClientId() const
+```cpp
+const char* getClientId() const
+```
 
 Retuns the client ID.
 
@@ -283,11 +333,13 @@ Only used on ESP32. Sets the stack size (in words) of the MQTT client worker tas
 You have to enable logging at compile time. This is done differently on ESP32 and ESP8266.
 
 ESP8266:
-* Enable logging for Arduino [see docs](https://arduino-esp8266.readthedocs.io/en/latest/Troubleshooting/debugging.html)
-* Pass the `DEBUG_ESP_MQTT_CLIENT` flag to the compiler
+
+- Enable logging for Arduino [see docs](https://arduino-esp8266.readthedocs.io/en/latest/Troubleshooting/debugging.html)
+- Pass the `DEBUG_ESP_MQTT_CLIENT` flag to the compiler
 
 ESP32
-* Enable logging for Arduino [see docs](https://docs.espressif.com/projects/arduino-esp32/en/latest/guides/tools_menu.html?#core-debug-level)
+
+- Enable logging for Arduino [see docs](https://docs.espressif.com/projects/arduino-esp32/en/latest/guides/tools_menu.html?#core-debug-level)
 
 # Code samples
 
