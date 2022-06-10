@@ -7,7 +7,7 @@
 
 - MQTT 3.1.1 compliant library
 - Sending and receiving at all QoS levels
-- TCP and TCP/TLS using standard WiFiClient and WiFiClientSecure connections
+- TCP and TCP/TLS using standard `WiFiClient` and `WiFiClientSecure` connections
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
 - No dependencies outside the Arduino framework
@@ -21,31 +21,30 @@
 
 # Runtime behaviour
 
-A normal cycle of an MQTT client goes like this:
+A normal operation cycle of an MQTT client goes like this:
 
 1. setup the client
 2. connect to the broker
 3. subscribe/publish/receive
 4. disconnect/reconnect when disconnected
+5. Cleanly disconnect
 
 ### Setup
 
 Setting up the client means to tell which host and port to connect to, possible credentials to use and so on. espMqttClient has a set of methods to configure the client. Setup is generally done in the `setup()` function of the Arduino framework.
 One important thing to remember is that there are a number of settings that are not stored inside the library: `username`, `password`, `willTopic`, `willPayload`, `clientId` and `host`. Make sure these variables stay available during the lifetime of the `espMqttClient`.
 
-For TLS secured connections, the relevant methods from `WiFiClientSecure` have been made available.
+For TLS secured connections, the relevant methods from `WiFiClientSecure` have been made available to setup the TLS mechanisms.
 
 ### Connecting
 
-After setting up the client, you are ready to connect. A simple call to `connect()` does the trick. If you set a `OnConnectCallback`, you will be notified when the connection has been made. On failure, `OnDisconnectCallback` will be called.
+After setting up the client, you are ready to connect. A simple call to `connect()` does the job. If you set an `OnConnectCallback`, you will be notified when the connection has been made. On failure, `OnDisconnectCallback` will be called. Although good code structure can avoid this, you can call `connect()` multiple times.
 
 ### Subscribing, publishing and receiving
 
-Once connected, you can subscribe, publish and receive. The methods to do this return the packetId of the generated packet or `1` for packets without ID. In case of an error, the method returns `0`. When the client is not connected, you cannot subscribe, unsubscribe or publish.
+Once connected, you can subscribe, publish and receive. The methods to do this return the packetId of the generated packet or `1` for packets without packetId. In case of an error, the method returns `0`. When the client is not connected, you cannot subscribe, unsubscribe or publish.
 
-Receiving packets is done via the `onMessage`-callback. This callback gives you the topic, properties (qos, dup, retain, packetId) and payload. For the payload, you get a pointer to the data, the index, length and total length. On long payloads it is normal that you get multiple callbacks for the same packet. This way, you can receive payloads longer than what could fit in the microcontroller's RAM-memory.
-
-#### Payloads and strings
+Receiving packets is done via the `onMessage`-callback. This callback gives you the topic, properties (qos, dup, retain, packetId) and payload. For the payload, you get a pointer to the data, the index, length and total length. On long payloads it is normal that you get multiple callbacks for the same packet. This way, you can receive payloads longer than what could fit in the microcontroller's memory.
 
 > Beware that MQTT payloads are binary. MQTT payloads are **not** c-strings unless explicitely constructed like that. You therefore can **not** print the payload to your Serial monitor without supporting code.
 
@@ -104,7 +103,7 @@ The library only stores a pointer to the username and password. Make sure the va
 espMqttClient& setWill(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length)
 ```
 
-Set the Last Will Testament. Defaults to none.
+Set the Last Will. Defaults to none.
 The library only stores a pointer to the topic and payload. Make sure the variable pointed to stays available throughout the lifetime of espMqttClient.
 
 - **`topic`**: Topic of the LWT, expects a null-terminated char array (c-string)
@@ -117,19 +116,19 @@ The library only stores a pointer to the topic and payload. Make sure the variab
 espMqttClient& setWill(const char* topic, uint8_t qos, bool retain, const char* payload)
 ```
 
-Set the Last Will Testament. Defaults to none.
+Set the Last Will. Defaults to none.
 The library only stores a pointer to the topic and payload. Make sure the variable pointed to stays available throughout the lifetime of espMqttClient.
 
 - **`topic`**: Topic of the LWT, expects a null-terminated char array (c-string)
 - **`qos`**: QoS of the LWT
 - **`retain`**: Retain flag of the LWT
-- **`payload`**: Payload of the LWT, expects a null-terminated char array (c-string). It's lenght will be calculated using `strlen(payload)`
+- **`payload`**: Payload of the LWT, expects a null-terminated char array (c-string). Its lenght will be calculated using `strlen(payload)`
 
 ```cpp
 espMqttClient& setServer(IPAddress ip, uint16_t port)
 ```
 
-Set the server. Mind that when using `espMqttClientSecure` with a certificate, the hostname will be chacked against the certificate. OFten IP-addresses are not valid and the connection will fail.
+Set the server. Mind that when using `espMqttClientSecure` with a certificate, the hostname will be chacked against the certificate. Often IP-addresses are not valid and the connection will fail.
 
 - **`ip`**: IP of the server
 - **`port`**: Port of the server
@@ -158,7 +157,7 @@ All common options from WiFiClientSecure to setup an encrypted connection are ma
 - `espMqttClientSecure& setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type)` (ESP8266 only)
 - `espMqttClientSecure& setCertStore(CertStoreBase *certStore)` (ESP8266 only)
 
-For documenation, please go to [ESP8266's documentation](https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/readme.html#bearssl-client-secure-and-server-secure) or [ESP32's documentation](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure)
+For documenation, please visit [ESP8266's documentation](https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/readme.html#bearssl-client-secure-and-server-secure) or [ESP32's documentation](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure).
 
 ### Events handlers
 
@@ -216,7 +215,7 @@ Add a publish acknowledged event handler.
 bool connected()
 ```
 
-Return if the client is currently connected to the broker or not.
+Returns if the client is currently connected to the broker or not. Mind that during disconnecting, the client is still connected. This method however will indicate that the client is disconnected.
 
 ```cpp
 void connect()
@@ -229,7 +228,7 @@ void disconnect(bool force = false)
 ```
 
 Disconnect from the server.
-when disconnecting with `force` false, the client first tries to handle all the outgoing messages in the queue and disconnect cleanly afterwards. during this time, no incoming PUBLISH messages are handled.
+When disconnecting with `force` false, the client first tries to handle all the outgoing messages in the queue and disconnect cleanly afterwards. During this time, no incoming PUBLISH messages are handled.
 
 - **`force`**: Whether to force the disconnection. Defaults to `false` (clean disconnection).
 
@@ -271,7 +270,7 @@ Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic
 - **`topic`**: Topic, expects a null-terminated char array (c-string)
 - **`qos`**: QoS
 - **`retain`**: Retain flag
-- **`payload`**: Payload, expects a null-terminated char array (c-string). It's lenght will be calculated using `strlen(payload)`
+- **`payload`**: Payload, expects a null-terminated char array (c-string). Its lenght will be calculated using `strlen(payload)`
 
 ```cpp
 void clearQueue()
@@ -294,7 +293,7 @@ Retuns the client ID.
 
 # Compile time configuration
 
-A number of constants which influence the behaviour or the client can be set at compile time. You can set these options in the `Config.h` file or pass the values as compiler flags. Because these options are compile-time constants, they are used for all instances of `espMqttClient` you create in your program.
+A number of constants which influence the behaviour of the client can be set at compile time. You can set these options in the `Config.h` file or pass the values as compiler flags. Because these options are compile-time constants, they are used for all instances of `espMqttClient` you create in your program.
 
 ### EMC_RX_BUFFER_SIZE 1440
 
@@ -302,23 +301,23 @@ The client copies incoming data into a buffer before parsing. This sets the buff
 
 ### EMC_MAX_TOPIC_LENGTH 128
 
-For **incoming** messages, a maximum topic length is set. Topics longer then this will be truncated.
+For **incoming** messages, a maximum topic length is set. Topics longer than this will be truncated.
 
 ### EMC_PAYLOAD_BUFFER_SIZE 32
 
-Set the incoming payload buffer size for SUBACK messages. Although the library needs this value, it doesn't currently influence the behaviour.
+Set the incoming payload buffer size for SUBACK messages. When subscribing to multiple topics at once, the acknowledgement contains all the return codes in its payload. The detault of 32 means you can theoretically subscribe to 32 topics at once.
 
 ### EMC_MIN_FREE_MEMORY 4096
 
-The client keeps all outgoing packets in a queue which stores it's data in heap memory. With this option, you can set the minimum available (contiguous) heap memory that needs to be available for adding a message to the queue.
+The client keeps all outgoing packets in a queue which stores its data in heap memory. With this option, you can set the minimum available (contiguous) heap memory that needs to be available for adding a message to the queue.
 
 ### EMC_ESP8266_MULTITHREADING 0
 
-ESP8266 doesn't use multithreading and is only single-core. There is therefore no need for semaphores/mutexes on this platform. However, you can still enable this.
+ESP8266 doesn't use multithreading and is only single-core. There is therefore no need for semaphores/mutexes on this platform. You can however still enable this.
 
 ### EMC_CLIENTID_LENGTH 18 + 1
 
-The (maximum) length of the client ID.
+The (maximum) length of the client ID. (Keep in mind that this is a c-string. You need to have 1 position available for the null-termination.)
 
 ### EMC_TASK_STACK_SIZE 10000
 
@@ -326,7 +325,7 @@ Only used on ESP32. Sets the stack size (in words) of the MQTT client worker tas
 
 ### Logging
 
-You have to enable logging at compile time. This is done differently on ESP32 and ESP8266.
+If needed, you have to enable logging at compile time. This is done differently on ESP32 and ESP8266.
 
 ESP8266:
 
@@ -341,13 +340,14 @@ ESP32
 
 A number of examples are in the [examples](/examples) directory. These include basic operation on ESP8266 and ESP32. Please examine these to understand the basic operation of the MQTT client.
 
-Below are examples on specific points for working with this library
+Below are examples on specific points for working with this library.
 
 ### Printing payloads
 
-MQTT 3.1.1 payloads have no format and need to be treated as binary. If you want to print a payload to the Arduino serial console, you have to make sure that the payload is null-terminated (c-strin).
+MQTT 3.1.1 defines no special format for the payload so it is treated as binary. If you want to print a payload to the Arduino serial console, you have to make sure that the payload is null-terminated (c-string).
 
 ```cpp
+// option one: print the payload char by char
 void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
   Serial.println("Publish received:");
   Serial.printf("  topic: %s\n  payload:", topic);
@@ -360,6 +360,8 @@ void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, cons
 ```
 
 ```cpp
+// option two: copy the payload into a c-string
+// you cannot just do payload[len] = 0 because you do not own this memory location! 
 void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
   Serial.println("Publish received:");
   Serial.printf("  topic: %s\n  payload:", topic);
@@ -373,10 +375,9 @@ void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, cons
 
 ### Assembling chunked messages
 
-The `onMessage`-callback is called as data comes in. So if the data comes in chuncked, the callback will be called on every receipt on a chunk, with the proper `index`, (chunk)`size` and `total` set. With little code, you can reassemble chunked messages yourself.
+The `onMessage`-callback is called as data comes in. So if the data comes in partially, the callback will be called on every receipt on a chunk, with the proper `index`, (chunk)`size` and `total` set. With little code, you can reassemble chunked messages yourself.
 
 ```cpp
-
 const size_t maxPayloadSize = 8192;
 uint8_t* payloadbuffer = nullptr;
 size_t payloadbufferSize = 0;
@@ -398,25 +399,31 @@ void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, cons
   }
 
   // start new packet, increase buffer size if neccesary
-  if (index == 0 || !payloadBuffer) {
+  if (index == 0) {
     if (total > payloadbufferSize) {
       delete[] payloadbuffer;
       payloadbufferSize = total;
-      payloadbuffer = new uint8_t[payloadbufferSize];  // you may want to check for nullptr after this operation
+      payloadbuffer = new (std::nothrow) uint8_t[payloadbufferSize];
+      if (!payloadbuffer) {
+        // no buffer could be created. you might want to log this somewhere
+        return;
+      }
     }
     payloadbufferIndex = 0;
   }
 
   // add data and dispatch when done
-  memcpy(&payloadbuffer[payloadbufferIndex], payload, len);
-  payloadbufferIndex += len;
-  if (payloadbufferIndex == total) {
-    // message is complete here
-    onCompleteMqttMessage(properties, topic, payloadBuffer, total, 0, total);
-    // optionally:
-    delete[] payloadBuffer;
-    payloadBuffer = nullptr;
-    payloadbufferSize = 0;
+  if (payloadBuffer) {
+    memcpy(&payloadbuffer[payloadbufferIndex], payload, len);
+    payloadbufferIndex += len;
+    if (payloadbufferIndex == total) {
+      // message is complete here
+      onCompleteMqttMessage(properties, topic, payloadBuffer, total, 0, total);
+      // optionally:
+      delete[] payloadBuffer;
+      payloadBuffer = nullptr;
+      payloadbufferSize = 0;
+    }
   }
 }
 ```
