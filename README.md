@@ -19,7 +19,7 @@ Aims to be a non-blocking fully compliant MQTT 3.1.1 client.
 
 # Documentation
 
-See [documentation](docs)
+See [documentation](https://bert.emelis.net/espMqttClient/)
 
 ## Limitations
 
