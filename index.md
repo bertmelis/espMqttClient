@@ -70,7 +70,7 @@ On ESP32, two optional parameters are available: `espMqttClient(uint8_t priority
 ### Configuration
 
 ```cpp
-espMqttClient& setKeepAlive(uint16_t `keepAlive`)
+espMqttClient& setKeepAlive(uint16_t keepAlive)
 ```
 
 Set the keep alive. Defaults to 15 seconds.
@@ -78,7 +78,7 @@ Set the keep alive. Defaults to 15 seconds.
 * **`keepAlive`**: Keep alive in seconds
 
 ```cpp
-espMqttClient& setClientId(const char\* `clientId`)
+espMqttClient& setClientId(const char* clientId)
 ```
 
 Set the client ID. Defaults to `esp8266-123456` where `123456` is the chip ID.
@@ -87,7 +87,7 @@ The library only stores a pointer to the client ID. Make sure the variable point
 - **`clientId`**: Client ID, expects a null-terminated char array (c-string)
 
 ```cpp
-espMqttClient& setCleanSession(bool `cleanSession`)
+espMqttClient& setCleanSession(bool cleanSession)
 ```
 
 Set the CleanSession flag. Defaults to `true`.
@@ -95,7 +95,7 @@ Set the CleanSession flag. Defaults to `true`.
 - **`cleanSession`**: clean session wanted or not
 
 ```cpp
-espMqttClient& setCredentials(const char\* `username`, const char\* `password`)
+espMqttClient& setCredentials(const char* username, const char* password)
 ```
 
 Set the username/password. Defaults to non-auth.
@@ -105,7 +105,7 @@ The library only stores a pointer to the username and password. Make sure the va
 - **`password`**: Password, expects a null-terminated char array (c-string)
 
 ```cpp
-espMqttClient& setWill(const char\* `topic`, uint8_t `qos`, bool `retain`, const uint8_t\* `payload`, size_t `length`)
+espMqttClient& setWill(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length)
 ```
 
 Set the Last Will Testament. Defaults to none.
@@ -118,7 +118,7 @@ The library only stores a pointer to the topic and payload. Make sure the variab
 - **`length`**: Payload length
 
 ```cpp
-espMqttClient& setWill(const char\* `topic`, uint8_t `qos`, bool `retain`, const char\* `payload`)
+espMqttClient& setWill(const char* topic, uint8_t qos, bool retain, const char* payload)
 ```
 
 Set the Last Will Testament. Defaults to none.
@@ -130,7 +130,7 @@ The library only stores a pointer to the topic and payload. Make sure the variab
 - **`payload`**: Payload of the LWT, expects a null-terminated char array (c-string). It's lenght will be calculated using `strlen(payload)`
 
 ```cpp
-espMqttClient& setServer(IPAddress `ip`, uint16_t `port`)
+espMqttClient& setServer(IPAddress ip, uint16_t port)
 ```
 
 Set the server. Mind that when using `espMqttClientSecure` with a certificate, the hostname will be chacked against the certificate. OFten IP-addresses are not valid and the connection will fail.
@@ -139,7 +139,7 @@ Set the server. Mind that when using `espMqttClientSecure` with a certificate, t
 - **`port`**: Port of the server
 
 ```cpp
-espMqttClient& setServer(const char\* `host`, uint16_t `port`)
+espMqttClient& setServer(const char* host, uint16_t port)
 ```
 
 Set the server.
@@ -167,7 +167,7 @@ For documenation, please go to [ESP8266's documentation](https://arduino-esp8266
 ### Events handlers
 
 ```cpp
-espMqttClient& onConnect(espMqttClientTypes::OnConnectCallback `callback`)
+espMqttClient& onConnect(espMqttClientTypes::OnConnectCallback callback)
 ```
 
 Add a connect event handler.
@@ -175,7 +175,7 @@ Add a connect event handler.
 - **`callback`**: Function to call
 
 ```cpp
-espMqttClient& onDisconnect(espMqttClientTypes::OnDisconnectCallback `callback`)
+espMqttClient& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback)
 ```
 
 Add a disconnect event handler.
@@ -183,7 +183,7 @@ Add a disconnect event handler.
 - **`callback`**: Function to call
 
 ```cpp
-espMqttClient& onSubscribe(espMqttClientTypes::OnSubscribeCallback `callback`)
+espMqttClient& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback)
 ```
 
 Add a subscribe acknowledged event handler.
@@ -191,7 +191,7 @@ Add a subscribe acknowledged event handler.
 - **`callback`**: Function to call
 
 ```cpp
-espMqttClient& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback `callback`)
+espMqttClient& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback)
 ```
 
 Add an unsubscribe acknowledged event handler.
@@ -199,7 +199,7 @@ Add an unsubscribe acknowledged event handler.
 - **`callback`**: Function to call
 
 ```cpp
-espMqttClient& onMessage(espMqttClientTypes::OnMessageCallback `callback`)
+espMqttClient& onMessage(espMqttClientTypes::OnMessageCallback callback)
 ```
 
 Add a publish received event handler.
@@ -207,7 +207,7 @@ Add a publish received event handler.
 - **`callback`**: Function to call
 
 ```cpp
-espMqttClient& onPublish(espMqttClientTypes::OnPublishCallback `callback`)
+espMqttClient& onPublish(espMqttClientTypes::OnPublishCallback callback)
 ```
 
 Add a publish acknowledged event handler.
@@ -229,7 +229,7 @@ void connect()
 Connect to the server.
 
 ```cpp
-void disconnect(bool `force` = false)
+void disconnect(bool force = false)
 ```
 
 Disconnect from the server.
@@ -238,7 +238,7 @@ when disconnecting with `force` false, the client first tries to handle all the 
 - **`force`**: Whether to force the disconnection. Defaults to `false` (clean disconnection).
 
 ```cpp
-uint16_t subscribe(const char\* `topic`, uint8_t `qos`)
+uint16_t subscribe(const char* topic, uint8_t qos)
 ```
 
 Subscribe to the given topic at the given QoS. Return the packet ID or 0 if failed.
@@ -247,7 +247,7 @@ Subscribe to the given topic at the given QoS. Return the packet ID or 0 if fail
 - **`qos`**: QoS
 
 ```cpp
-uint16_t unsubscribe(const char\* `topic`)
+uint16_t unsubscribe(const char* topic)
 ```
 
 Unsubscribe from the given topic. Return the packet ID or 0 if failed.
@@ -255,7 +255,7 @@ Unsubscribe from the given topic. Return the packet ID or 0 if failed.
 - **`topic`**: Topic, expects a null-terminated char array (c-string)
 
 ```cpp
-uint16_t publish(const char\* `topic`, uint8_t `qos`, bool `retain`, const uint8\* `payload`, size_t `length`)
+uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8* payload, size_t length)
 ```
 
 Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic and payload will be buffered by the library.
@@ -267,7 +267,7 @@ Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic
 - **`length`**: Payload length
 
 ```cpp
-uint16_t publish(const char\* `topic`, uint8_t `qos`, bool `retain`, const char\* `payload`)
+uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload)
 ```
 
 Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic and payload will be buffered by the library.
