@@ -165,7 +165,7 @@ For documenation, please visit [ESP8266's documentation](https://arduino-esp8266
 espMqttClient& onConnect(espMqttClientTypes::OnConnectCallback callback)
 ```
 
-Add a connect event handler.
+Add a connect event handler. Function signature: `void(bool sessionPresent)`
 
 - **`callback`**: Function to call
 
@@ -173,7 +173,7 @@ Add a connect event handler.
 espMqttClient& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback)
 ```
 
-Add a disconnect event handler.
+Add a disconnect event handler. Function signature: `void(espMqttClientTypes::DisconnectReason reason)`
 
 - **`callback`**: Function to call
 
@@ -181,7 +181,7 @@ Add a disconnect event handler.
 espMqttClient& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback)
 ```
 
-Add a subscribe acknowledged event handler.
+Add a subscribe acknowledged event handler. Function signature: `void(uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len)`
 
 - **`callback`**: Function to call
 
@@ -189,7 +189,7 @@ Add a subscribe acknowledged event handler.
 espMqttClient& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback)
 ```
 
-Add an unsubscribe acknowledged event handler.
+Add an unsubscribe acknowledged event handler. Function signature: `void(uint16_t packetId)`
 
 - **`callback`**: Function to call
 
@@ -197,7 +197,7 @@ Add an unsubscribe acknowledged event handler.
 espMqttClient& onMessage(espMqttClientTypes::OnMessageCallback callback)
 ```
 
-Add a publish received event handler.
+Add a publish received event handler. Function signature: `void(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)`
 
 - **`callback`**: Function to call
 
@@ -205,7 +205,7 @@ Add a publish received event handler.
 espMqttClient& onPublish(espMqttClientTypes::OnPublishCallback callback)
 ```
 
-Add a publish acknowledged event handler.
+Add a publish acknowledged event handler. Function signature: `void(uint16_t packetId)`
 
 - **`callback`**: Function to call
 
