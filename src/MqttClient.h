@@ -14,7 +14,7 @@ the LICENSE file.
 #include <atomic>
 #include <utility>
 
-#if defined(esp32)
+#if defined(ESP32)
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
 #endif
