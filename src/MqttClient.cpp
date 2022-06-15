@@ -406,7 +406,7 @@ void MqttClient::_onPublish() {
     EMC_SEMAPHORE_TAKE();
     espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
     while (it) {
-      if (((it.get()->packetType()) == PacketType.PUBREC || (it.get()->packetType()) == PacketType.PUBCOMP) && it.get()->packetId() == packetId) {
+      if ((it.get()->packetType()) == PacketType.PUBREC && it.get()->packetId() == packetId) {
         callback = false;
         emc_log_e("QoS2 packet previously delivered");
         break;
