@@ -48,10 +48,10 @@ struct IncomingPacket {
   void reset();
 };
 
-enum ParserResult : uint8_t {
-  AWAIT_DATA,
-  PACKET,
-  PROTOCOL_ERROR
+enum class ParserResult : uint8_t {
+  awaitData,
+  packet,
+  protocolError
 };
 
 class Parser;

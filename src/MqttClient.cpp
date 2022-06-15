@@ -42,7 +42,7 @@ MqttClient::MqttClient()
 , _willRetain(false)
 , _generatedClientId{0}
 , _packetId(0)
-, _state(DISCONNECTED)
+, _state(State::disconnected)
 #if defined(ESP32)
 , _xSemaphore(nullptr)
 , _taskHandle(nullptr)
@@ -80,13 +80,13 @@ MqttClient::~MqttClient() {
 }
 
 bool MqttClient::connected() const {
-  if (_state == CONNECTED) return true;
+  if (_state == State::connected) return true;
   return false;
 }
 
 bool MqttClient::connect() {
   bool result = true;
-  if (_state == DISCONNECTED) {
+  if (_state == State::disconnected) {
     EMC_SEMAPHORE_TAKE();
     if (_addPacketFront(_cleanSession,
                         _username,
@@ -101,7 +101,7 @@ bool MqttClient::connect() {
       #if defined(ESP32)
       vTaskResume(_taskHandle);
       #endif
-      _state = CONNECTINGTCP;
+      _state = State::connectingTcp;
     } else {
       EMC_SEMAPHORE_GIVE();
       emc_log_e("Could not create CONNECT packet");
@@ -114,12 +114,12 @@ bool MqttClient::connect() {
 }
 
 bool MqttClient::disconnect(bool force) {
-  if (force && _state != DISCONNECTED && _state != DISCONNECTINGTCP) {
-    _state = DISCONNECTINGTCP;
+  if (force && _state != State::disconnected && _state != State::disconnectingTcp) {
+    _state = State::disconnectingTcp;
     return true;
   }
-  if (!force && _state == CONNECTED) {
-    _state = DISCONNECTINGMQTT1;
+  if (!force && _state == State::connected) {
+    _state = State::disconnectingMqtt1;
     return true;
   }
   return false;
@@ -127,7 +127,7 @@ bool MqttClient::disconnect(bool force) {
 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  if (_state != CONNECTED) {
+  if (_state != State::connected) {
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
@@ -148,7 +148,7 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  if (_state != CONNECTED) {
+  if (_state != State::connected) {
     packetId = 0;
   } else {
     EMC_SEMAPHORE_TAKE();
@@ -168,26 +168,26 @@ void MqttClient::clearQueue(bool all) {
 
 void MqttClient::loop() {
   switch (_state) {
-    case DISCONNECTED:
+    case State::disconnected:
 #if defined(ESP32)
       vTaskSuspend(_taskHandle);
 #endif
       break;
-    case CONNECTINGTCP:
+    case State::connectingTcp:
       if ((_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) == 1) {
         #if defined(ARDUINO_ARCH_ESP8266)
         // reset 'sync' and 'nodelay' at every connect. ESP8266 resets to default on disconnect
         _transport->setSync(false);
         #endif
         _transport->setNoDelay(true);
-        _state = CONNECTINGMQTT;
+        _state = State::connectingMqtt;
         _lastClientActivity = _lastServerActivity = millis();
       } else {
-        _state = DISCONNECTINGTCP;
+        _state = State::disconnectingTcp;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
-    case DISCONNECTINGMQTT1:
+    case State::disconnectingMqtt1:
       EMC_SEMAPHORE_TAKE();
       if (_outbox.empty()) {
         if (!_addPacket(PacketType.DISCONNECT)) {
@@ -195,35 +195,35 @@ void MqttClient::loop() {
           emc_log_e("Could not create DISCONNECT packet");
           _onError(0, Error::OUT_OF_MEMORY);
         } else {
-          _state = DISCONNECTINGMQTT2;
+          _state = State::disconnectingMqtt2;
         }
       }
       EMC_SEMAPHORE_GIVE();
       // fall through to CONNECTED to send out DISCONN packet
-    case DISCONNECTINGMQTT2:
-    case CONNECTINGMQTT:
+    case State::disconnectingMqtt2:
+    case State::connectingMqtt:
       // receipt of CONNACK packet will set state to CONNECTED
       // client however is allowed to send packets before CONNACK is received
       // so we fall through to CONNECTED
-    case CONNECTED:
+    case State::connected:
       if (_transport->connected()) {
         // CONNECT packet is first in the queue
         _checkOutgoing();
         _checkIncoming();
         _checkPing();
       } else {
-        _state = DISCONNECTINGTCP;
+        _state = State::disconnectingTcp;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
-    case DISCONNECTINGTCP:
+    case State::disconnectingTcp:
       #if defined(ARDUINO_ARCH_ESP32)
       _transport->stop();
       #elif defined(ARDUINO_ARCH_ESP8266)
       _transport->stop(0);
       #endif
       _clearQueue(false);
-      _state = DISCONNECTED;
+      _state = State::disconnected;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
       break;
     // all cases covered, no default case
@@ -277,7 +277,7 @@ void MqttClient::_checkOutgoing() {
     _bytesSent += written;
     emc_log_i("tx %zu/%zu", _bytesSent, packet->size());
     if (_bytesSent == packet->size()) {
-      if ((packet->packetType()) == PacketType.DISCONNECT) _state = DISCONNECTINGTCP;
+      if ((packet->packetType()) == PacketType.DISCONNECT) _state = State::disconnectingTcp;
       if (packet->removable()) {
         _outbox.removeCurrent();
       } else {
@@ -302,22 +302,22 @@ void MqttClient::_checkIncoming() {
     size_t index = 0;
     while (remainingBufferLength > 0) {
       espMqttClientInternals::ParserResult result = _parser.parse(&_rxBuffer[index], remainingBufferLength, &bytesParsed);
-      if (result == espMqttClientInternals::ParserResult::PACKET) {
+      if (result == espMqttClientInternals::ParserResult::packet) {
         espMqttClientInternals::MQTTPacketType packetType = _parser.getPacket().fixedHeader.packetType & 0xF0;
-        if (_state == CONNECTINGMQTT && packetType != PacketType.CONNACK) {
+        if (_state == State::connectingMqtt && packetType != PacketType.CONNACK) {
           emc_log_w("Disconnecting, expected CONNACK - protocol error");
-          _state = DISCONNECTINGTCP;
+          _state = State::disconnectingTcp;
           return;
         }
         switch (packetType & 0xF0) {
           case PacketType.CONNACK:
             _onConnack();
-            if (_state != CONNECTED) {
+            if (_state != State::connected) {
               return;
             }
             break;
           case PacketType.PUBLISH:
-            if (_state == DISCONNECTINGMQTT1 || _state == DISCONNECTINGMQTT2) break;  // stop processing incoming once user has called disconnect
+            if (_state == State::disconnectingMqtt1 || _state == State::disconnectingMqtt2) break;  // stop processing incoming once user has called disconnect
             _onPublish();
             break;
           case PacketType.PUBACK:
@@ -342,9 +342,9 @@ void MqttClient::_checkIncoming() {
             // nothing to do
             break;
         }
-      } else if (result ==  espMqttClientInternals::ParserResult::PROTOCOL_ERROR) {
+      } else if (result ==  espMqttClientInternals::ParserResult::protocolError) {
         emc_log_w("Disconnecting, protocol error");
-        _state = DISCONNECTINGTCP;
+        _state = State::disconnectingTcp;
         return;
       }
       remainingBufferLength -= bytesParsed;
@@ -361,7 +361,7 @@ void MqttClient::_checkPing() {
   // disconnect when server was inactive for twice the keepalive time
   if (millis() - _lastServerActivity > 2000 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
-    _state = DISCONNECTINGTCP;
+    _state = State::disconnectingTcp;
     return;
   }
 
@@ -376,7 +376,7 @@ void MqttClient::_checkPing() {
 
 void MqttClient::_onConnack() {
   if (_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode == 0x00) {
-    _state = CONNECTED;
+    _state = State::connected;
     if (_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent == 0) {
       _clearQueue(true);
     }
@@ -384,7 +384,7 @@ void MqttClient::_onConnack() {
       _onConnectCallback(_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent);
     }
   } else {
-    _state = DISCONNECTINGTCP;
+    _state = State::disconnectingTcp;
     // cast is safe because the parser already checked for a valid return code
     _disconnectReason = static_cast<DisconnectReason>(_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode);
   }

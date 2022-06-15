@@ -40,7 +40,7 @@ class MqttClient {
   template <typename... Args>
   uint16_t subscribe(const char* topic, uint8_t qos, Args&&... args) {
     uint16_t packetId = _getNextPacketId();
-    if (_state != CONNECTED) {
+    if (_state != State::connected) {
       packetId = 0;
     } else {
       EMC_SEMAPHORE_TAKE();
@@ -55,7 +55,7 @@ class MqttClient {
   template <typename... Args>
   uint16_t unsubscribe(const char* topic, Args&&... args) {
     uint16_t packetId = _getNextPacketId();
-    if (_state != CONNECTED) {
+    if (_state != State::connected) {
       packetId = 0;
     } else {
       EMC_SEMAPHORE_TAKE();
@@ -112,14 +112,14 @@ class MqttClient {
   char _generatedClientId[EMC_CLIENTID_LENGTH];
   uint16_t _packetId;
 
-  enum State {
-    DISCONNECTED,
-    CONNECTINGTCP,
-    CONNECTINGMQTT,
-    CONNECTED,
-    DISCONNECTINGMQTT1,
-    DISCONNECTINGMQTT2,
-    DISCONNECTINGTCP
+  enum class State {
+    disconnected,
+    connectingTcp,
+    connectingMqtt,
+    connected,
+    disconnectingMqtt1,
+    disconnectingMqtt2,
+    disconnectingTcp
   };
   std::atomic<State> _state;
 
