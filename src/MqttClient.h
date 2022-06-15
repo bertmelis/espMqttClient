@@ -14,7 +14,7 @@ the LICENSE file.
 #include <atomic>
 #include <utility>
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
   #include "esp_task_wdt.h"
@@ -72,14 +72,14 @@ class MqttClient {
   uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
   void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
   const char* getClientId() const;
-  #if defined(ESP32)
+  #if defined(ARDUINO_ARCH_ESP32)
 
  private:
   #endif
   void loop();
 
  protected:
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
   explicit MqttClient(uint8_t priority = 1, uint8_t core = 1);
 #else
   MqttClient();
@@ -123,7 +123,7 @@ class MqttClient {
   };
   std::atomic<State> _state;
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
   SemaphoreHandle_t _xSemaphore;
   TaskHandle_t _taskHandle;
   static void _loop(MqttClient* c);
@@ -175,7 +175,9 @@ class MqttClient {
   void _clearQueue(bool clearSession);
   void _onError(uint16_t packetId, espMqttClientTypes::Error error);
 
-#if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
+  #if defined(ARDUINO_ARCH_ESP32)
+  #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
   size_t _highWaterMark;
-#endif
+  #endif
+  #endif
 };

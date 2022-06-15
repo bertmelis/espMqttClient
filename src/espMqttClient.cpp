@@ -9,7 +9,7 @@ the LICENSE file.
 #include "espMqttClient.h"
 
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
 : MqttClientSetup(priority, core)
 , _client() {
@@ -22,7 +22,7 @@ espMqttClient::espMqttClient()
 }
 #endif
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
 espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
 : MqttClientSetup(priority, core)
 , _client() {
@@ -40,7 +40,7 @@ espMqttClientSecure& espMqttClientSecure::setInsecure() {
   return *this;
 }
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
 espMqttClientSecure& espMqttClientSecure::setCACert(const char* rootCA) {
   _client.setCACert(rootCA);
   return *this;
@@ -60,7 +60,7 @@ espMqttClientSecure& espMqttClientSecure::setPreSharedKey(const char* pskIdent, 
   _client.setPreSharedKey(pskIdent, psKey);
   return *this;
 }
-#elif defined(ESP8266)
+#elif defined(ARDUINO_ARCH_ESP8266)
 espMqttClientSecure& espMqttClientSecure::setFingerprint(const uint8_t fingerprint[20]) {
   _client.setFingerprint(fingerprint);
   return *this;
