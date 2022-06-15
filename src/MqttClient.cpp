@@ -13,7 +13,7 @@ using espMqttClientInternals::PacketType;
 using espMqttClientTypes::DisconnectReason;
 using espMqttClientTypes::Error;
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
 MqttClient::MqttClient(uint8_t priority, uint8_t core)
 #else
 MqttClient::MqttClient()
@@ -43,7 +43,7 @@ MqttClient::MqttClient()
 , _generatedClientId{0}
 , _packetId(0)
 , _state(State::disconnected)
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
 , _xSemaphore(nullptr)
 , _taskHandle(nullptr)
 #endif
@@ -54,16 +54,18 @@ MqttClient::MqttClient()
 , _lastClientActivity(0)
 , _lastServerActivity(0)
 , _disconnectReason(DisconnectReason::TCP_DISCONNECTED)
+#if defined(ARDUINO_ARCH_ESP32)
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
 , _highWaterMark(4294967295)
 #endif
+#endif
   {
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
   snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp32-%06llx", ESP.getEfuseMac());
   _xSemaphore = xSemaphoreCreateMutex();
   EMC_SEMAPHORE_GIVE();  // release before first use
   xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
-#elif defined(ESP8266)
+#elif defined(ARDUINO_ARCH_ESP8266)
   snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp8266-%06x", ESP.getChipId());
 #endif
   _clientId = _generatedClientId;
@@ -72,7 +74,7 @@ MqttClient::MqttClient()
 MqttClient::~MqttClient() {
   disconnect(true);
   _clearQueue(true);
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
   vSemaphoreDelete(_xSemaphore);
   esp_task_wdt_delete(_taskHandle);  // not sure if this is really needed
   vTaskDelete(_taskHandle);
@@ -98,7 +100,7 @@ bool MqttClient::connect() {
                         _willPayloadLength,
                         _keepAlive,
                         _clientId)) {
-      #if defined(ESP32)
+      #if defined(ARDUINO_ARCH_ESP32)
       vTaskResume(_taskHandle);
       #endif
       _state = State::connectingTcp;
@@ -169,7 +171,7 @@ void MqttClient::clearQueue(bool all) {
 void MqttClient::loop() {
   switch (_state) {
     case State::disconnected:
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
       vTaskSuspend(_taskHandle);
 #endif
       break;
@@ -231,7 +233,7 @@ void MqttClient::loop() {
   EMC_YIELD();
 }
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
 void MqttClient::_loop(MqttClient* c) {
   if (esp_task_wdt_add(NULL) != ESP_OK) {
     emc_log_e("Failed to add async task to WDT");
