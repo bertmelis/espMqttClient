@@ -114,17 +114,15 @@ bool MqttClient::connect() {
 }
 
 bool MqttClient::disconnect(bool force) {
-  bool result = true;
-  if (_state != CONNECTED) {
-    result = false;
-  } else {
-    if (force) {
-      _state = DISCONNECTINGTCP;
-    } else {
-      _state = DISCONNECTINGMQTT1;
-    }
+  if (force && _state != DISCONNECTED && _state != DISCONNECTINGTCP) {
+    _state = DISCONNECTINGTCP;
+    return true;
   }
-  return result;
+  if (!force && _state == CONNECTED) {
+    _state = DISCONNECTINGMQTT1;
+    return true;
+  }
+  return false;
 }
 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
