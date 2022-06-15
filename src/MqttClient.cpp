@@ -74,6 +74,7 @@ MqttClient::~MqttClient() {
   _clearQueue(true);
 #if defined(ESP32)
   vSemaphoreDelete(_xSemaphore);
+  esp_task_wdt_delete(_taskHandle);  // not sure if this is really needed
   vTaskDelete(_taskHandle);
 #endif
 }
@@ -234,6 +235,9 @@ void MqttClient::loop() {
 
 #if defined(ESP32)
 void MqttClient::_loop(MqttClient* c) {
+  if (esp_task_wdt_add(NULL) != ESP_OK) {
+    emc_log_e("Failed to add async task to WDT");
+  }
   for (;;) {
     c->loop();
     #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
@@ -243,6 +247,7 @@ void MqttClient::_loop(MqttClient* c) {
       emc_log_i("Free stack space: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
     }
     #endif
+    esp_task_wdt_reset();
   }
 }
 #endif
