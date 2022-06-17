@@ -165,7 +165,7 @@ For documenation, please visit [ESP8266's documentation](https://arduino-esp8266
 espMqttClient& onConnect(espMqttClientTypes::OnConnectCallback callback)
 ```
 
-Add a connect event handler.
+Add a connect event handler. Function signature: `void(bool sessionPresent)`
 
 - **`callback`**: Function to call
 
@@ -173,7 +173,7 @@ Add a connect event handler.
 espMqttClient& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback)
 ```
 
-Add a disconnect event handler.
+Add a disconnect event handler. Function signature: `void(espMqttClientTypes::DisconnectReason reason)`
 
 - **`callback`**: Function to call
 
@@ -181,7 +181,7 @@ Add a disconnect event handler.
 espMqttClient& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback)
 ```
 
-Add a subscribe acknowledged event handler.
+Add a subscribe acknowledged event handler. Function signature: `void(uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len)`
 
 - **`callback`**: Function to call
 
@@ -189,7 +189,7 @@ Add a subscribe acknowledged event handler.
 espMqttClient& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback)
 ```
 
-Add an unsubscribe acknowledged event handler.
+Add an unsubscribe acknowledged event handler. Function signature: `void(uint16_t packetId)`
 
 - **`callback`**: Function to call
 
@@ -197,7 +197,7 @@ Add an unsubscribe acknowledged event handler.
 espMqttClient& onMessage(espMqttClientTypes::OnMessageCallback callback)
 ```
 
-Add a publish received event handler.
+Add a publish received event handler. Function signature: `void(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)`
 
 - **`callback`**: Function to call
 
@@ -205,7 +205,7 @@ Add a publish received event handler.
 espMqttClient& onPublish(espMqttClientTypes::OnPublishCallback callback)
 ```
 
-Add a publish acknowledged event handler.
+Add a publish acknowledged event handler. Function signature: `void(uint16_t packetId)`
 
 - **`callback`**: Function to call
 
@@ -241,6 +241,12 @@ Subscribe to the given topic at the given QoS. Return the packet ID or 0 if fail
 - **`topic`**: Topic, expects a null-terminated char array (c-string)
 - **`qos`**: QoS
 
+It is also possible to subscribe to multiple topics at once. Just add the topic/qos pairs to the parameters:
+
+```cpp
+uint16_t packetId = yourclient.subscribe(topic1, qos1, topic2, qos2, topic3, qos3);  // add as many topics as you like*
+```
+
 ```cpp
 uint16_t unsubscribe(const char* topic)
 ```
@@ -248,6 +254,12 @@ uint16_t unsubscribe(const char* topic)
 Unsubscribe from the given topic. Return the packet ID or 0 if failed.
 
 - **`topic`**: Topic, expects a null-terminated char array (c-string)
+
+It is also possible to unsubscribe to multiple topics at once. Just add the topics to the parameters:
+
+```cpp
+uint16_t packetId = yourclient.unsubscribe(topic1, topic2, topic3);  // add as many topics as you like*
+```
 
 ```cpp
 uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8* payload, size_t length)
@@ -271,6 +283,19 @@ Publish a packet. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic
 - **`qos`**: QoS
 - **`retain`**: Retain flag
 - **`payload`**: Payload, expects a null-terminated char array (c-string). Its lenght will be calculated using `strlen(payload)`
+
+```cpp
+uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length)
+```
+
+Publish a packet with a callback for payload handling. Return the packet ID (or 1 if QoS 0) or 0 if failed. The topic will be buffered by the library.
+
+- **`topic`**: Topic, expects a null-terminated char array (c-string)
+- **`qos`**: QoS
+- **`retain`**: Retain flag
+- **`callback`**: callback to fetch the payload.
+
+The callback has the following signature: `size_t callback(uint8_t* data, size_t maxSize, size_t index)`. When the library needs payload data, the callback will be invoked. It is the callback's job to write data indo `data` with a maximum of `maxSize` bytes, according the `index` and return the amount of bytes written.
 
 ```cpp
 void clearQueue()
