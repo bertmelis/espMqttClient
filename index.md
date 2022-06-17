@@ -390,11 +390,11 @@ void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, cons
 void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
   Serial.println("Publish received:");
   Serial.printf("  topic: %s\n  payload:", topic);
-  char* p = new char[len + 1];
-  memcpy(p, payload, len);
-  payload[len] = "\0";
-  Serial.println(p);
-  delete[] p;
+  char* strval = new char[len + 1];
+  memcpy(strval, payload, len);
+  strval[len] = "\0";
+  Serial.println(strval);
+  delete[] strval;
 }
 ```
 
