@@ -15,6 +15,7 @@ Packet::~Packet() {
 }
 
 size_t Packet::available(size_t index) {
+  if (index >= _size) return 0;
   if (!_getPayload) return _size - index;
   return _chunkedAvailable(index);
 }
@@ -412,7 +413,7 @@ void Packet::_createUnsubscribe(espMqttClientTypes::Error& error,
 }
 
 size_t Packet::_chunkedAvailable(size_t index) {
-  if (index >= _size) return 0;
+  // index vs size check done in 'available(index)'
 
   // index points to header or first payload byte
   if (index < _payloadIndex) {
