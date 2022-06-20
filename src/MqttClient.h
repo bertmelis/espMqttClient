@@ -14,14 +14,7 @@ the LICENSE file.
 #include <atomic>
 #include <utility>
 
-#if defined(ARDUINO_ARCH_ESP32)
-  #include "freertos/FreeRTOS.h"
-  #include "freertos/task.h"
-  #include "esp_task_wdt.h"
-#endif
-
-#include <Arduino.h>  // millis()
-#include <WiFiClient.h>
+#include "PlatformIncludes.h"
 
 #include "Config.h"
 #include "TypeDefs.h"
