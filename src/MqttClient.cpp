@@ -26,6 +26,8 @@ MqttClient::MqttClient()
 , _onMessageCallback(nullptr)
 , _onPublishCallback(nullptr)
 , _onErrorCallback(nullptr)
+, _onConnectHook(nullptr)
+, _onConnectHookArg(nullptr)
 , _clientId(nullptr)
 , _ip()
 , _host(nullptr)
@@ -130,21 +132,17 @@ bool MqttClient::disconnect(bool force) {
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
   #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
   if (_state != State::connected) {
-   return 0;
+    return 0;
   }
   #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  if (_state != State::connected) {
+  EMC_SEMAPHORE_TAKE();
+  if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
+    emc_log_e("Could not create PUBLISH packet");
+    _onError(packetId, Error::OUT_OF_MEMORY);
     packetId = 0;
-  } else {
-    EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
-      emc_log_e("Could not create PUBLISH packet");
-      _onError(packetId, Error::OUT_OF_MEMORY);
-      packetId = 0;
-    }
-    EMC_SEMAPHORE_GIVE();
   }
+  EMC_SEMAPHORE_GIVE();
   return packetId;
 }
 
@@ -160,22 +158,18 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqt
   }
   #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  if (_state != State::connected) {
+  EMC_SEMAPHORE_TAKE();
+  if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
+    emc_log_e("Could not create PUBLISH packet");
+    _onError(packetId, Error::OUT_OF_MEMORY);
     packetId = 0;
-  } else {
-    EMC_SEMAPHORE_TAKE();
-    if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
-      emc_log_e("Could not create PUBLISH packet");
-      _onError(packetId, Error::OUT_OF_MEMORY);
-      packetId = 0;
-    }
-    EMC_SEMAPHORE_GIVE();
   }
+  EMC_SEMAPHORE_GIVE();
   return packetId;
 }
 
 void MqttClient::clearQueue(bool all) {
-  _clearQueue(true);
+  _clearQueue(all);
 }
 
 void MqttClient::loop() {
@@ -187,11 +181,7 @@ void MqttClient::loop() {
       break;
     case State::connectingTcp:
       if ((_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) == 1) {
-        #if defined(ARDUINO_ARCH_ESP8266)
-        // reset 'sync' and 'nodelay' at every connect. ESP8266 resets to default on disconnect
-        _transport->setSync(false);
-        #endif
-        _transport->setNoDelay(true);
+        if (_onConnectHook) _onConnectHook(_onConnectHookArg);
         _state = State::connectingMqtt;
         _lastClientActivity = _lastServerActivity = millis();
       } else {
@@ -229,11 +219,7 @@ void MqttClient::loop() {
       }
       break;
     case State::disconnectingTcp:
-      #if defined(ARDUINO_ARCH_ESP32)
       _transport->stop();
-      #elif defined(ARDUINO_ARCH_ESP8266)
-      _transport->stop(0);
-      #endif
       _clearQueue(false);
       _state = State::disconnected;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
