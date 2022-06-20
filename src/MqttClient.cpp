@@ -393,9 +393,9 @@ void MqttClient::_onConnack() {
 
 void MqttClient::_onPublish() {
   espMqttClientInternals::IncomingPacket p = _parser.getPacket();
-  uint8_t qos = (p.fixedHeader.packetType & 0x06) >> 1;  // mask 0x00000110
-  bool retain = p.fixedHeader.packetType & 0x01;         // mask 0x00000001
-  bool dup = p.fixedHeader.packetType & 0x08;            // mask 0x00001000
+  uint8_t qos = p.qos();
+  bool retain = p.retain();
+  bool dup = p.dup();
   uint16_t packetId = p.variableHeader.fixed.packetId;
   bool callback = true;
   if (qos == 1) {

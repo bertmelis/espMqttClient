@@ -10,6 +10,18 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
+uint8_t IncomingPacket::qos() const {
+  return (fixedHeader.packetType & 0x06) >> 1;  // mask 0x00000110
+}
+
+bool IncomingPacket::retain() const {
+  return fixedHeader.packetType & 0x01;  // mask 0x00000001
+}
+
+bool IncomingPacket::dup() const {
+  return fixedHeader.packetType & 0x08;  // mask 0x00001000
+}
+
 void IncomingPacket::reset() {
   fixedHeader.packetType = 0;
   variableHeader.topicLength = 0;

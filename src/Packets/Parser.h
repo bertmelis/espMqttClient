@@ -45,6 +45,9 @@ struct IncomingPacket {
     size_t total;
   } payload;
 
+  uint8_t qos() const;
+  bool retain() const;
+  bool dup() const;
   void reset();
 };
 
