@@ -30,4 +30,3 @@ the LICENSE file.
 #else
   #define EMC_GET_FREE_MEMORY() 1000000000
 #endif
-
