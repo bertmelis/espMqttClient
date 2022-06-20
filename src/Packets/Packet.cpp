@@ -54,18 +54,6 @@ bool Packet::removable() const {
   return false;
 }
 
-Packet::Packet(espMqttClientTypes::Error& error)
-: token(nullptr)
-, _packetId(0)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
-  // to be implemented in derived class
-}
-
 Packet::Packet(espMqttClientTypes::Error& error,
                bool cleanSession,
                const char* username,
