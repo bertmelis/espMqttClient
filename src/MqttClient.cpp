@@ -128,6 +128,11 @@ bool MqttClient::disconnect(bool force) {
 }
 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
+  #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
+  if (_state != State::connected) {
+   return 0;
+  }
+  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
   if (_state != State::connected) {
     packetId = 0;
@@ -149,6 +154,11 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
 }
 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
+  #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
+  if (_state != State::connected) {
+    return 0;
+  }
+  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
   if (_state != State::connected) {
     packetId = 0;
