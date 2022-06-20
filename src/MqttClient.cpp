@@ -202,11 +202,14 @@ void MqttClient::loop() {
       }
       EMC_SEMAPHORE_GIVE();
       // fall through to CONNECTED to send out DISCONN packet
+      [[fallthrough]];
     case State::disconnectingMqtt2:
+      [[fallthrough]];
     case State::connectingMqtt:
       // receipt of CONNACK packet will set state to CONNECTED
       // client however is allowed to send packets before CONNACK is received
       // so we fall through to CONNECTED
+      [[fallthrough]];
     case State::connected:
       if (_transport->connected()) {
         // CONNECT packet is first in the queue
@@ -478,7 +481,9 @@ void MqttClient::_onPubrec() {
     }
     ++it;
   }
-  if (!success) emc_log_w("No matching PUBLISH packet found");
+  if (!success) {
+    emc_log_w("No matching PUBLISH packet found");
+  }
   EMC_SEMAPHORE_GIVE();
 }
 
@@ -504,7 +509,9 @@ void MqttClient::_onPubrel() {
     }
     ++it;
   }
-  if (!success) emc_log_w("No matching PUBREC packet found");
+  if (!success) {
+    emc_log_w("No matching PUBREC packet found");
+  }
   EMC_SEMAPHORE_GIVE();
 }
 
