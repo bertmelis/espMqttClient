@@ -25,6 +25,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient> {
 
  protected:
   WiFiClient _client;
+  static void _setupClient(espMqttClient* c);
 };
 
 class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
@@ -50,4 +51,5 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
 
  protected:
   WiFiClientSecure _client;
+  static void _setupClient(espMqttClientSecure* c);
 };

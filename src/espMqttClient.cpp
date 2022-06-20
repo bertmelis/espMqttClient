@@ -13,27 +13,41 @@ the LICENSE file.
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
 : MqttClientSetup(priority, core)
 , _client() {
-  _transport = &_client;
-}
 #else
 espMqttClient::espMqttClient()
 : _client() {
-  _transport = &_client;
-}
 #endif
+  _transport = &_client;
+  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  _onConnectHookArg = this;
+}
+
+void espMqttClient::_setupClient(espMqttClient* c) {
+  c->_client.setNoDelay(true);
+  #if defined(ARDUINO_ARCH_ESP8266)
+  c->_client.setSync(false);
+  #endif
+}
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
 : MqttClientSetup(priority, core)
 , _client() {
-  _transport = &_client;
-}
 #else
 espMqttClientSecure::espMqttClientSecure()
 : _client() {
-  _transport = &_client;
-}
 #endif
+  _transport = &_client;
+  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  _onConnectHookArg = this;
+}
+
+void espMqttClientSecure::_setupClient(espMqttClientSecure* c) {
+  c->_client.setNoDelay(true);
+  #if defined(ARDUINO_ARCH_ESP8266)
+  c->_client.setSync(false);
+  #endif
+}
 
 espMqttClientSecure& espMqttClientSecure::setInsecure() {
   _client.setInsecure();

@@ -84,7 +84,7 @@ class MqttClient {
 #else
   MqttClient();
 #endif
-  WiFiClient* _transport;
+  Client* _transport;
 
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
   espMqttClientTypes::OnDisconnectCallback _onDisconnectCallback;
@@ -93,6 +93,9 @@ class MqttClient {
   espMqttClientTypes::OnMessageCallback _onMessageCallback;
   espMqttClientTypes::OnPublishCallback _onPublishCallback;
   espMqttClientTypes::OnErrorCallback _onErrorCallback;
+  typedef void(*OnConnectHook)(void* arg);
+  OnConnectHook _onConnectHook;
+  void* _onConnectHookArg;
   const char* _clientId;
   IPAddress _ip;
   const char* _host;
