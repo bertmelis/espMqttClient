@@ -9,12 +9,18 @@ the LICENSE file.
 #pragma once
 
 #ifdef ARDUINO
-#include <Arduino.h>  // millis()
-#include <Client.h>
+  #include <Arduino.h>  // millis()
+  #include <Client.h>
+
+
+  #ifdef ARDUINO_ARCH_ESP32
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/task.h"
+    #include "esp_task_wdt.h"
+  #endif
+
 #endif
 
-#ifdef ARDUINO_ARCH_ESP32
-  #include "freertos/FreeRTOS.h"
-  #include "freertos/task.h"
-  #include "esp_task_wdt.h"
+#ifdef NATIVE
+  // to be implemented
 #endif
