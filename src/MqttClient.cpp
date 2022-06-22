@@ -78,7 +78,9 @@ MqttClient::~MqttClient() {
   _clearQueue(true);
 #if defined(ARDUINO_ARCH_ESP32)
   vSemaphoreDelete(_xSemaphore);
+  #if EMC_USE_WATCHDOG
   esp_task_wdt_delete(_taskHandle);  // not sure if this is really needed
+  #endif
   vTaskDelete(_taskHandle);
 #endif
 }
@@ -234,19 +236,23 @@ void MqttClient::loop() {
 
 #if defined(ARDUINO_ARCH_ESP32)
 void MqttClient::_loop(MqttClient* c) {
+  #if EMC_USE_WATCHDOG
   if (esp_task_wdt_add(NULL) != ESP_OK) {
     emc_log_e("Failed to add async task to WDT");
   }
+  #endif
   for (;;) {
     c->loop();
     #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
     size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
     if (waterMark < c->_highWaterMark) {
       c->_highWaterMark = waterMark;
-      emc_log_i("Free stack space: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
+      emc_log_i("Stack usage: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
     }
     #endif
+    #if EMC_USE_WATCHDOG
     esp_task_wdt_reset();
+    #endif
   }
 }
 #endif
