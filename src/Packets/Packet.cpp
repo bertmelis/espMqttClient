@@ -74,6 +74,21 @@ Packet::Packet(espMqttClientTypes::Error& error,
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
+  if (willPayload && willPayloadLength == 0) {
+    size_t length = strlen(reinterpret_cast<const char*>(willPayload));
+    if (length > UINT16_MAX) {
+      emc_log_w("Payload length truncated (l:%zu)", length);
+      willPayloadLength = UINT16_MAX;
+    } else {
+      willPayloadLength = length;
+    }
+  }
+  if (!clientId || strlen(clientId) == 0) {
+    emc_log_w("clientId not set error");
+    error = espMqttClientTypes::Error::MALFORMED_PARAMETER;
+    return;
+  }
+
   // Calculate size
   size_t remainingLength =
   6 +  // protocol
@@ -128,9 +143,6 @@ Packet::Packet(espMqttClientTypes::Error& error,
   // will
   if (willTopic != nullptr && willPayload != nullptr) {
     pos += encodeString(willTopic, &_data[pos]);
-    if (willPayloadLength == 0) {
-      willPayloadLength = strlen(reinterpret_cast<const char*>(willPayload));
-    }
     _data[pos++] = willPayloadLength >> 8;
     _data[pos++] = willPayloadLength & 0xFF;
     memcpy(&_data[pos], willPayload, willPayloadLength);
