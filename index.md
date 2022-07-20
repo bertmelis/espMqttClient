@@ -340,6 +340,10 @@ The client keeps all outgoing packets in a queue which stores its data in heap m
 
 ESP8266 doesn't use multithreading and is only single-core. There is therefore no need for semaphores/mutexes on this platform. You can however still enable this.
 
+### EMC_ALLOW_NOT_CONNECTED_PUBLISH 1
+
+By default, you can publish when the client is not connected. If you don't want this, set this to 0.
+
 ### EMC_CLIENTID_LENGTH 18 + 1
 
 The (maximum) length of the client ID. (Keep in mind that this is a c-string. You need to have 1 position available for the null-termination.)
@@ -347,6 +351,14 @@ The (maximum) length of the client ID. (Keep in mind that this is a c-string. Yo
 ### EMC_TASK_STACK_SIZE 10000
 
 Only used on ESP32. Sets the stack size (in words) of the MQTT client worker task.
+
+### EMC_USE_WATCHDOG 0
+
+(ESP32 only)
+
+**Experimental**
+
+You can enable a watchdog on the MQTT task. This is experimental and will probably result in resets because some (framework) function calls block but don't feed the dog.
 
 ### Logging
 
