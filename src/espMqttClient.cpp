@@ -9,52 +9,38 @@ the LICENSE file.
 #include "espMqttClient.h"
 
 
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
 : MqttClientSetup(priority, core)
 , _client() {
+  _transport = &_client;
+}
 #else
 espMqttClient::espMqttClient()
 : _client() {
-#endif
   _transport = &_client;
-  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
-  _onConnectHookArg = this;
 }
+#endif
 
-void espMqttClient::_setupClient(espMqttClient* c) {
-  c->_client.setNoDelay(true);
-  #if defined(ARDUINO_ARCH_ESP8266)
-  c->_client.setSync(false);
-  #endif
-}
-
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
 espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
 : MqttClientSetup(priority, core)
 , _client() {
+  _transport = &_client;
+}
 #else
 espMqttClientSecure::espMqttClientSecure()
 : _client() {
-#endif
   _transport = &_client;
-  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
-  _onConnectHookArg = this;
 }
-
-void espMqttClientSecure::_setupClient(espMqttClientSecure* c) {
-  c->_client.setNoDelay(true);
-  #if defined(ARDUINO_ARCH_ESP8266)
-  c->_client.setSync(false);
-  #endif
-}
+#endif
 
 espMqttClientSecure& espMqttClientSecure::setInsecure() {
   _client.setInsecure();
   return *this;
 }
 
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
 espMqttClientSecure& espMqttClientSecure::setCACert(const char* rootCA) {
   _client.setCACert(rootCA);
   return *this;
@@ -74,7 +60,7 @@ espMqttClientSecure& espMqttClientSecure::setPreSharedKey(const char* pskIdent, 
   _client.setPreSharedKey(pskIdent, psKey);
   return *this;
 }
-#elif defined(ARDUINO_ARCH_ESP8266)
+#elif defined(ESP8266)
 espMqttClientSecure& espMqttClientSecure::setFingerprint(const uint8_t fingerprint[20]) {
   _client.setFingerprint(fingerprint);
   return *this;

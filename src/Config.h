@@ -32,10 +32,6 @@ the LICENSE file.
 #define EMC_ESP8266_MULTITHREADING 0
 #endif
 
-#ifndef EMC_ALLOW_NOT_CONNECTED_PUBLISH
-#define EMC_ALLOW_NOT_CONNECTED_PUBLISH 1
-#endif
-
 #ifndef EMC_CLIENTID_LENGTH
 // esp8266-abc123 and esp32-abcdef123456
 #define EMC_CLIENTID_LENGTH 18 + 1
@@ -43,8 +39,4 @@ the LICENSE file.
 
 #ifndef EMC_TASK_STACK_SIZE
 #define EMC_TASK_STACK_SIZE 10000
-#endif
-
-#ifndef EMC_USE_WATCHDOG
-#define EMC_USE_WATCHDOG 0
 #endif

@@ -13,7 +13,7 @@ using espMqttClientInternals::PacketType;
 using espMqttClientTypes::DisconnectReason;
 using espMqttClientTypes::Error;
 
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
 MqttClient::MqttClient(uint8_t priority, uint8_t core)
 #else
 MqttClient::MqttClient()
@@ -26,8 +26,6 @@ MqttClient::MqttClient()
 , _onMessageCallback(nullptr)
 , _onPublishCallback(nullptr)
 , _onErrorCallback(nullptr)
-, _onConnectHook(nullptr)
-, _onConnectHookArg(nullptr)
 , _clientId(nullptr)
 , _ip()
 , _host(nullptr)
@@ -44,8 +42,8 @@ MqttClient::MqttClient()
 , _willRetain(false)
 , _generatedClientId{0}
 , _packetId(0)
-, _state(State::disconnected)
-#if defined(ARDUINO_ARCH_ESP32)
+, _state(DISCONNECTED)
+#if defined(ESP32)
 , _xSemaphore(nullptr)
 , _taskHandle(nullptr)
 #endif
@@ -56,18 +54,16 @@ MqttClient::MqttClient()
 , _lastClientActivity(0)
 , _lastServerActivity(0)
 , _disconnectReason(DisconnectReason::TCP_DISCONNECTED)
-#if defined(ARDUINO_ARCH_ESP32)
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
 , _highWaterMark(4294967295)
 #endif
-#endif
   {
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
   snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp32-%06llx", ESP.getEfuseMac());
   _xSemaphore = xSemaphoreCreateMutex();
   EMC_SEMAPHORE_GIVE();  // release before first use
   xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
-#elif defined(ARDUINO_ARCH_ESP8266)
+#elif defined(ESP8266)
   snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp8266-%06x", ESP.getChipId());
 #endif
   _clientId = _generatedClientId;
@@ -76,23 +72,20 @@ MqttClient::MqttClient()
 MqttClient::~MqttClient() {
   disconnect(true);
   _clearQueue(true);
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
   vSemaphoreDelete(_xSemaphore);
-  #if EMC_USE_WATCHDOG
-  esp_task_wdt_delete(_taskHandle);  // not sure if this is really needed
-  #endif
   vTaskDelete(_taskHandle);
 #endif
 }
 
 bool MqttClient::connected() const {
-  if (_state == State::connected) return true;
+  if (_state == CONNECTED) return true;
   return false;
 }
 
 bool MqttClient::connect() {
   bool result = true;
-  if (_state == State::disconnected) {
+  if (_state == DISCONNECTED) {
     EMC_SEMAPHORE_TAKE();
     if (_addPacketFront(_cleanSession,
                         _username,
@@ -104,10 +97,10 @@ bool MqttClient::connect() {
                         _willPayloadLength,
                         _keepAlive,
                         _clientId)) {
-      #if defined(ARDUINO_ARCH_ESP32)
+      #if defined(ESP32)
       vTaskResume(_taskHandle);
       #endif
-      _state = State::connectingTcp;
+      _state = CONNECTINGTCP;
     } else {
       EMC_SEMAPHORE_GIVE();
       emc_log_e("Could not create CONNECT packet");
@@ -120,31 +113,32 @@ bool MqttClient::connect() {
 }
 
 bool MqttClient::disconnect(bool force) {
-  if (force && _state != State::disconnected && _state != State::disconnectingTcp) {
-    _state = State::disconnectingTcp;
-    return true;
+  bool result = true;
+  if (_state != CONNECTED) {
+    result = false;
+  } else {
+    if (force) {
+      _state = DISCONNECTINGTCP;
+    } else {
+      _state = DISCONNECTINGMQTT1;
+    }
   }
-  if (!force && _state == State::connected) {
-    _state = State::disconnectingMqtt1;
-    return true;
-  }
-  return false;
+  return result;
 }
 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
-  #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
-  if (_state != State::connected) {
-    return 0;
-  }
-  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  EMC_SEMAPHORE_TAKE();
-  if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
-    emc_log_e("Could not create PUBLISH packet");
-    _onError(packetId, Error::OUT_OF_MEMORY);
+  if (_state != CONNECTED) {
     packetId = 0;
+  } else {
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
+      emc_log_e("Could not create PUBLISH packet");
+      _onError(packetId, Error::OUT_OF_MEMORY);
+      packetId = 0;
+    }
+    EMC_SEMAPHORE_GIVE();
   }
-  EMC_SEMAPHORE_GIVE();
   return packetId;
 }
 
@@ -154,44 +148,47 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
 }
 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
-  #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
-  if (_state != State::connected) {
-    return 0;
-  }
-  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  EMC_SEMAPHORE_TAKE();
-  if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
-    emc_log_e("Could not create PUBLISH packet");
-    _onError(packetId, Error::OUT_OF_MEMORY);
+  if (_state != CONNECTED) {
     packetId = 0;
+  } else {
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
+      emc_log_e("Could not create PUBLISH packet");
+      _onError(packetId, Error::OUT_OF_MEMORY);
+      packetId = 0;
+    }
+    EMC_SEMAPHORE_GIVE();
   }
-  EMC_SEMAPHORE_GIVE();
   return packetId;
 }
 
 void MqttClient::clearQueue(bool all) {
-  _clearQueue(all);
+  _clearQueue(true);
 }
 
 void MqttClient::loop() {
   switch (_state) {
-    case State::disconnected:
-#if defined(ARDUINO_ARCH_ESP32)
+    case DISCONNECTED:
+#if defined(ESP32)
       vTaskSuspend(_taskHandle);
 #endif
       break;
-    case State::connectingTcp:
+    case CONNECTINGTCP:
       if ((_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) == 1) {
-        if (_onConnectHook) _onConnectHook(_onConnectHookArg);
-        _state = State::connectingMqtt;
+        #if defined(ARDUINO_ARCH_ESP8266)
+        // reset 'sync' and 'nodelay' at every connect. ESP8266 resets to default on disconnect
+        _transport->setSync(false);
+        #endif
+        _transport->setNoDelay(true);
+        _state = CONNECTINGMQTT;
         _lastClientActivity = _lastServerActivity = millis();
       } else {
-        _state = State::disconnectingTcp;
+        _state = DISCONNECTINGTCP;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
-    case State::disconnectingMqtt1:
+    case DISCONNECTINGMQTT1:
       EMC_SEMAPHORE_TAKE();
       if (_outbox.empty()) {
         if (!_addPacket(PacketType.DISCONNECT)) {
@@ -199,34 +196,35 @@ void MqttClient::loop() {
           emc_log_e("Could not create DISCONNECT packet");
           _onError(0, Error::OUT_OF_MEMORY);
         } else {
-          _state = State::disconnectingMqtt2;
+          _state = DISCONNECTINGMQTT2;
         }
       }
       EMC_SEMAPHORE_GIVE();
       // fall through to CONNECTED to send out DISCONN packet
-      [[fallthrough]];
-    case State::disconnectingMqtt2:
-      [[fallthrough]];
-    case State::connectingMqtt:
+    case DISCONNECTINGMQTT2:
+    case CONNECTINGMQTT:
       // receipt of CONNACK packet will set state to CONNECTED
       // client however is allowed to send packets before CONNACK is received
       // so we fall through to CONNECTED
-      [[fallthrough]];
-    case State::connected:
+    case CONNECTED:
       if (_transport->connected()) {
         // CONNECT packet is first in the queue
         _checkOutgoing();
         _checkIncoming();
         _checkPing();
       } else {
-        _state = State::disconnectingTcp;
+        _state = DISCONNECTINGTCP;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
-    case State::disconnectingTcp:
+    case DISCONNECTINGTCP:
+      #if defined(ARDUINO_ARCH_ESP32)
       _transport->stop();
+      #elif defined(ARDUINO_ARCH_ESP8266)
+      _transport->stop(0);
+      #endif
       _clearQueue(false);
-      _state = State::disconnected;
+      _state = DISCONNECTED;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
       break;
     // all cases covered, no default case
@@ -234,24 +232,16 @@ void MqttClient::loop() {
   EMC_YIELD();
 }
 
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
 void MqttClient::_loop(MqttClient* c) {
-  #if EMC_USE_WATCHDOG
-  if (esp_task_wdt_add(NULL) != ESP_OK) {
-    emc_log_e("Failed to add async task to WDT");
-  }
-  #endif
   for (;;) {
     c->loop();
     #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
     size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
     if (waterMark < c->_highWaterMark) {
       c->_highWaterMark = waterMark;
-      emc_log_i("Stack usage: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
+      emc_log_i("Free stack space: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
     }
-    #endif
-    #if EMC_USE_WATCHDOG
-    esp_task_wdt_reset();
     #endif
   }
 }
@@ -284,7 +274,7 @@ void MqttClient::_checkOutgoing() {
     _bytesSent += written;
     emc_log_i("tx %zu/%zu", _bytesSent, packet->size());
     if (_bytesSent == packet->size()) {
-      if ((packet->packetType()) == PacketType.DISCONNECT) _state = State::disconnectingTcp;
+      if ((packet->packetType()) == PacketType.DISCONNECT) _state = DISCONNECTINGTCP;
       if (packet->removable()) {
         _outbox.removeCurrent();
       } else {
@@ -309,22 +299,22 @@ void MqttClient::_checkIncoming() {
     size_t index = 0;
     while (remainingBufferLength > 0) {
       espMqttClientInternals::ParserResult result = _parser.parse(&_rxBuffer[index], remainingBufferLength, &bytesParsed);
-      if (result == espMqttClientInternals::ParserResult::packet) {
+      if (result == espMqttClientInternals::ParserResult::PACKET) {
         espMqttClientInternals::MQTTPacketType packetType = _parser.getPacket().fixedHeader.packetType & 0xF0;
-        if (_state == State::connectingMqtt && packetType != PacketType.CONNACK) {
+        if (_state == CONNECTINGMQTT && packetType != PacketType.CONNACK) {
           emc_log_w("Disconnecting, expected CONNACK - protocol error");
-          _state = State::disconnectingTcp;
+          _state = DISCONNECTINGTCP;
           return;
         }
         switch (packetType & 0xF0) {
           case PacketType.CONNACK:
             _onConnack();
-            if (_state != State::connected) {
+            if (_state != CONNECTED) {
               return;
             }
             break;
           case PacketType.PUBLISH:
-            if (_state == State::disconnectingMqtt1 || _state == State::disconnectingMqtt2) break;  // stop processing incoming once user has called disconnect
+            if (_state == DISCONNECTINGMQTT1 || _state == DISCONNECTINGMQTT2) break;  // stop processing incoming once user has called disconnect
             _onPublish();
             break;
           case PacketType.PUBACK:
@@ -349,9 +339,9 @@ void MqttClient::_checkIncoming() {
             // nothing to do
             break;
         }
-      } else if (result ==  espMqttClientInternals::ParserResult::protocolError) {
+      } else if (result ==  espMqttClientInternals::ParserResult::PROTOCOL_ERROR) {
         emc_log_w("Disconnecting, protocol error");
-        _state = State::disconnectingTcp;
+        _state = DISCONNECTINGTCP;
         return;
       }
       remainingBufferLength -= bytesParsed;
@@ -368,7 +358,7 @@ void MqttClient::_checkPing() {
   // disconnect when server was inactive for twice the keepalive time
   if (millis() - _lastServerActivity > 2000 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
-    _state = State::disconnectingTcp;
+    _state = DISCONNECTINGTCP;
     return;
   }
 
@@ -383,7 +373,7 @@ void MqttClient::_checkPing() {
 
 void MqttClient::_onConnack() {
   if (_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode == 0x00) {
-    _state = State::connected;
+    _state = CONNECTED;
     if (_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent == 0) {
       _clearQueue(true);
     }
@@ -391,7 +381,7 @@ void MqttClient::_onConnack() {
       _onConnectCallback(_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent);
     }
   } else {
-    _state = State::disconnectingTcp;
+    _state = DISCONNECTINGTCP;
     // cast is safe because the parser already checked for a valid return code
     _disconnectReason = static_cast<DisconnectReason>(_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode);
   }
@@ -399,9 +389,9 @@ void MqttClient::_onConnack() {
 
 void MqttClient::_onPublish() {
   espMqttClientInternals::IncomingPacket p = _parser.getPacket();
-  uint8_t qos = p.qos();
-  bool retain = p.retain();
-  bool dup = p.dup();
+  uint8_t qos = (p.fixedHeader.packetType & 0x06) >> 1;  // mask 0x00000110
+  bool retain = p.fixedHeader.packetType & 0x01;         // mask 0x00000001
+  bool dup = p.fixedHeader.packetType & 0x08;            // mask 0x00001000
   uint16_t packetId = p.variableHeader.fixed.packetId;
   bool callback = true;
   if (qos == 1) {
@@ -487,9 +477,7 @@ void MqttClient::_onPubrec() {
     }
     ++it;
   }
-  if (!success) {
-    emc_log_w("No matching PUBLISH packet found");
-  }
+  if (!success) emc_log_w("No matching PUBLISH packet found");
   EMC_SEMAPHORE_GIVE();
 }
 
@@ -515,9 +503,7 @@ void MqttClient::_onPubrel() {
     }
     ++it;
   }
-  if (!success) {
-    emc_log_w("No matching PUBREC packet found");
-  }
+  if (!success) emc_log_w("No matching PUBREC packet found");
   EMC_SEMAPHORE_GIVE();
 }
 

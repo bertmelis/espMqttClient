@@ -35,8 +35,7 @@ enum class Error : uint8_t {
   SUCCESS = 0,
   OUT_OF_MEMORY = 1,
   MAX_RETRIES = 2,
-  MALFORMED_PARAMETER = 3,
-  MISC_ERROR = 4
+  MISC_ERROR = 3
 };
 
 struct MessageProperties {

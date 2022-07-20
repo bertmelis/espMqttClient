@@ -8,53 +8,7 @@ using espMqttClientInternals::PacketType;
 void setUp() {}
 void tearDown() {}
 
-void test_encodeConnect0() {
-  const uint8_t check[] = {
-    0b00010000,                 // header
-    0x0F,                       // remaining length
-    0x00,0x04,'M','Q','T','T',  // protocol
-    0b00000100,                 // protocol level
-    0b00000010,                 // connect flags
-    0x00,0x10,                  // keepalive (16)
-    0x00,0x03,'c','l','i'       // client id
-  };
-  const uint32_t length = 17;
-
-  bool cleanSession = true;
-  const char* username = nullptr;
-  const char* password = nullptr;
-  const char* willTopic = nullptr;
-  bool willRemain = false;
-  uint8_t willQoS = 0;
-  const uint8_t* willPayload = nullptr;
-  uint16_t willPayloadLength = 0;
-  uint16_t keepalive = 16;
-  const char* clientId = "cli";
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
-
-  Packet packet(error,
-                cleanSession,
-                username,
-                password,
-                willTopic,
-                willRemain,
-                willQoS,
-                willPayload,
-                willPayloadLength,
-                keepalive,
-                clientId);
-
-  packet.setDup();  // no effect
-
-  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
-  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.CONNECT, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
-  TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
-}
-
-void test_encodeConnect1() {
+void test_encodeConnect() {
   const uint8_t check[] = {
     0b00010000,                 // header
     0x20,                       // remaining length
@@ -98,127 +52,11 @@ void test_encodeConnect1() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.CONNECT, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
 }
 
-void test_encodeConnect2() {
-  const uint8_t check[] = {
-    0b00010000,                 // header
-    0x20,                       // remaining length
-    0x00,0x04,'M','Q','T','T',  // protocol
-    0b00000100,                 // protocol level
-    0b11110110,                 // connect flags
-    0x00,0x10,                  // keepalive (16)
-    0x00,0x03,'c','l','i',      // client id
-    0x00,0x03,'t','o','p',      // will topic
-    0x00,0x02,'p','l',          // will payload
-    0x00,0x02,'u','n',          // username
-    0x00,0x02,'p','a'           // password
-  };
-  const uint32_t length = 34;
-
-  bool cleanSession = true;
-  const char* username = "un";
-  const char* password = "pa";
-  const char* willTopic = "top";
-  bool willRemain = true;
-  uint8_t willQoS = 2;
-  const uint8_t willPayload[] = {'p', 'l', '\0'};
-  uint16_t willPayloadLength = 0;
-  uint16_t keepalive = 16;
-  const char* clientId = "cli";
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
-
-  Packet packet(error,
-                cleanSession,
-                username,
-                password,
-                willTopic,
-                willRemain,
-                willQoS,
-                willPayload,
-                willPayloadLength,
-                keepalive,
-                clientId);
-
-  packet.setDup();  // no effect
-
-  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
-  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.CONNECT, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
-  TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
-}
-
-void test_encodeConnectFail0() {
-  bool cleanSession = true;
-  const char* username = nullptr;
-  const char* password = nullptr;
-  const char* willTopic = nullptr;
-  bool willRemain = false;
-  uint8_t willQoS = 0;
-  const uint8_t* willPayload = nullptr;
-  uint16_t willPayloadLength = 0;
-  uint16_t keepalive = 16;
-  const char* clientId = "";
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::SUCCESS;
-
-  Packet packet(error,
-                cleanSession,
-                username,
-                password,
-                willTopic,
-                willRemain,
-                willQoS,
-                willPayload,
-                willPayloadLength,
-                keepalive,
-                clientId);
-
-  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::MALFORMED_PARAMETER, error);
-}
-
-void test_encodePublish0() {
-  const uint8_t check[] = {
-    0b00110000,                 // header, dup, qos, retain
-    0x09,
-    0x00,0x03,'t','o','p',      // topic
-    0x01,0x02,0x03,0x04         // payload
-  };
-  const uint32_t length = 11;
-
-  const char* topic = "top";
-  uint8_t qos = 0;
-  bool retain = false;
-  const uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
-  uint16_t payloadLength = 4;
-  uint16_t packetId = 22; // any value except 0 for testing
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
-
-  Packet packet(error,
-                packetId,
-                topic,
-                payload,
-                payloadLength,
-                qos,
-                retain);
-
-  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
-  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PUBLISH, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
-  TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
-
-  packet.setDup();
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
-}
-
-void test_encodePublish1() {
+void test_encodePublish() {
   const uint8_t check[] = {
     0b00110011,                 // header, dup, qos, retain
     0x0B,
@@ -246,58 +84,11 @@ void test_encodePublish1() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PUBLISH, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 
   const uint8_t checkDup[] = {
     0b00111011,                 // header, dup, qos, retain
-    0x0B,
-    0x00,0x03,'t','o','p',      // topic
-    0x00,0x16,                  // packet Id
-    0x01,0x02,0x03,0x04         // payload
-  };
-
-  packet.setDup();
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(checkDup, packet.data(0), length);
-}
-
-void test_encodePublish2() {
-  const uint8_t check[] = {
-    0b00110101,                 // header, dup, qos, retain
-    0x0B,
-    0x00,0x03,'t','o','p',      // topic
-    0x00,0x16,                  // packet Id
-    0x01,0x02,0x03,0x04         // payload
-  };
-  const uint32_t length = 13;
-
-  const char* topic = "top";
-  uint8_t qos = 2;
-  bool retain = true;
-  const uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
-  uint16_t payloadLength = 4;
-  uint16_t packetId = 22;
-  espMqttClientTypes::Error error = espMqttClientTypes::Error::MISC_ERROR;
-
-  Packet packet(error,
-                packetId,
-                topic,
-                payload,
-                payloadLength,
-                qos,
-                retain);
-
-  TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
-  TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PUBLISH, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
-  TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
-  TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
-
-  const uint8_t checkDup[] = {
-    0b00111101,                 // header, dup, qos, retain
     0x0B,
     0x00,0x03,'t','o','p',      // topic
     0x00,0x16,                  // packet Id
@@ -323,8 +114,6 @@ void test_encodePubAck() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PUBACK, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -344,8 +133,6 @@ void test_encodePubRec() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PUBREC, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -365,8 +152,6 @@ void test_encodePubRel() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PUBREL, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -386,8 +171,6 @@ void test_encodePubComp() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PUBCOMP, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -411,8 +194,6 @@ void test_encodeSubscribe() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.SUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -440,8 +221,6 @@ void test_encodeMultiSubscribe2() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.SUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -473,8 +252,6 @@ void test_encodeMultiSubscribe3() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.SUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -496,8 +273,6 @@ void test_encodeUnsubscribe() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.UNSUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -521,8 +296,6 @@ void test_encodeMultiUnsubscribe2() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.UNSUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -548,8 +321,6 @@ void test_encodeMultiUnsubscribe3() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.UNSUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -567,8 +338,6 @@ void test_encodePingReq() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.PINGREQ, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
 }
@@ -586,14 +355,11 @@ void test_encodeDisconnect() {
 
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
-  TEST_ASSERT_EQUAL_UINT8(PacketType.DISCONNECT, packet.packetType());
-  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(0, packet.packetId());
 }
 
 size_t getData(uint8_t* dest, size_t len, size_t index) {
-  (void) index;
   static uint8_t i = 1;
   memset(dest, i, len);
   ++i;
@@ -690,13 +456,8 @@ void test_encodeChunkedPublish() {
 
 int main() {
   UNITY_BEGIN();
-  RUN_TEST(test_encodeConnect0);
-  RUN_TEST(test_encodeConnect1);
-  RUN_TEST(test_encodeConnect2);
-  RUN_TEST(test_encodeConnectFail0);
-  RUN_TEST(test_encodePublish0);
-  RUN_TEST(test_encodePublish1);
-  RUN_TEST(test_encodePublish2);
+  RUN_TEST(test_encodeConnect);
+  RUN_TEST(test_encodePublish);
   RUN_TEST(test_encodePubAck);
   RUN_TEST(test_encodePubRec);
   RUN_TEST(test_encodePubRel);

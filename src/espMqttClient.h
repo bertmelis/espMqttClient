@@ -17,7 +17,7 @@ the LICENSE file.
 
 class espMqttClient : public MqttClientSetup<espMqttClient> {
  public:
-#if defined(ARDUINO_ARCH_ESP32)
+#if defined(ESP32)
   explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1);
 #else
   espMqttClient();
@@ -25,18 +25,17 @@ class espMqttClient : public MqttClientSetup<espMqttClient> {
 
  protected:
   WiFiClient _client;
-  static void _setupClient(espMqttClient* c);
 };
 
 class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
  public:
-  #if defined(ARDUINO_ARCH_ESP32)
+  #if defined(ESP32)
   explicit espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1);
   #else
   espMqttClientSecure();
   #endif
   espMqttClientSecure& setInsecure();
-  #if defined(ARDUINO_ARCH_ESP32)
+  #if defined(ESP32)
   espMqttClientSecure& setCACert(const char* rootCA);
   espMqttClientSecure& setCertificate(const char* clientCa);
   espMqttClientSecure& setPrivateKey(const char* privateKey);
@@ -51,5 +50,4 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
 
  protected:
   WiFiClientSecure _client;
-  static void _setupClient(espMqttClientSecure* c);
 };

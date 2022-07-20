@@ -36,6 +36,8 @@ class Packet {
   void* token;  // native typeless variable to store any additional data
 
  protected:
+  explicit Packet(espMqttClientTypes::Error& error);  // NOLINT(runtime/references)
+
   uint16_t _packetId;  // save as separate variable: will be accessed frequently
   uint8_t* _data;
   size_t _size;
