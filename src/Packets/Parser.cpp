@@ -11,14 +11,17 @@ the LICENSE file.
 namespace espMqttClientInternals {
 
 uint8_t IncomingPacket::qos() const {
+  if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
   return (fixedHeader.packetType & 0x06) >> 1;  // mask 0x00000110
 }
 
 bool IncomingPacket::retain() const {
+  if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
   return fixedHeader.packetType & 0x01;  // mask 0x00000001
 }
 
 bool IncomingPacket::dup() const {
+  if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
   return fixedHeader.packetType & 0x08;  // mask 0x00001000
 }
 
