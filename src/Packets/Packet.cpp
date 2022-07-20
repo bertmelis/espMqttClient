@@ -35,7 +35,8 @@ size_t Packet::size() const {
 
 void Packet::setDup() {
   if (!_data) return;
-  if ((_data[0] & 0xF0) != PacketType.PUBLISH) return;
+  if (packetType() != PacketType.PUBLISH) return;
+  if (_packetId == 0) return;
   _data[0] |= 0x08;
 }
 
@@ -50,7 +51,7 @@ MQTTPacketType Packet::packetType() const {
 
 bool Packet::removable() const {
   if (_packetId == 0) return true;
-  if (((_data[0] & 0xF0) == PacketType.PUBACK) || ((_data[0] & 0xF0) == PacketType.PUBCOMP)) return true;
+  if ((packetType() == PacketType.PUBACK) || (packetType() == PacketType.PUBCOMP)) return true;
   return false;
 }
 
@@ -168,7 +169,6 @@ Packet::Packet(espMqttClientTypes::Error& error,
   }
 
   if (!_allocate(remainingLength)) {
-    emc_log_w("ended here");
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
