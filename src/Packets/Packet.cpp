@@ -15,6 +15,7 @@ Packet::~Packet() {
 }
 
 size_t Packet::available(size_t index) {
+  if (index >= _size) return 0;
   if (!_getPayload) return _size - index;
   return _chunkedAvailable(index);
 }
@@ -34,7 +35,8 @@ size_t Packet::size() const {
 
 void Packet::setDup() {
   if (!_data) return;
-  if ((_data[0] & 0xF0) != PacketType.PUBLISH) return;
+  if (packetType() != PacketType.PUBLISH) return;
+  if (_packetId == 0) return;
   _data[0] |= 0x08;
 }
 
@@ -49,20 +51,8 @@ MQTTPacketType Packet::packetType() const {
 
 bool Packet::removable() const {
   if (_packetId == 0) return true;
-  if (((_data[0] & 0xF0) == PacketType.PUBACK) || ((_data[0] & 0xF0) == PacketType.PUBCOMP)) return true;
+  if ((packetType() == PacketType.PUBACK) || (packetType() == PacketType.PUBCOMP)) return true;
   return false;
-}
-
-Packet::Packet(espMqttClientTypes::Error& error)
-: token(nullptr)
-, _packetId(0)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
-  // to be implemented in derived class
 }
 
 Packet::Packet(espMqttClientTypes::Error& error,
@@ -84,6 +74,21 @@ Packet::Packet(espMqttClientTypes::Error& error,
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
+  if (willPayload && willPayloadLength == 0) {
+    size_t length = strlen(reinterpret_cast<const char*>(willPayload));
+    if (length > UINT16_MAX) {
+      emc_log_w("Payload length truncated (l:%zu)", length);
+      willPayloadLength = UINT16_MAX;
+    } else {
+      willPayloadLength = length;
+    }
+  }
+  if (!clientId || strlen(clientId) == 0) {
+    emc_log_w("clientId not set error");
+    error = espMqttClientTypes::Error::MALFORMED_PARAMETER;
+    return;
+  }
+
   // Calculate size
   size_t remainingLength =
   6 +  // protocol
@@ -138,9 +143,6 @@ Packet::Packet(espMqttClientTypes::Error& error,
   // will
   if (willTopic != nullptr && willPayload != nullptr) {
     pos += encodeString(willTopic, &_data[pos]);
-    if (willPayloadLength == 0) {
-      willPayloadLength = strlen(reinterpret_cast<const char*>(willPayload));
-    }
     _data[pos++] = willPayloadLength >> 8;
     _data[pos++] = willPayloadLength & 0xFF;
     memcpy(&_data[pos], willPayload, willPayloadLength);
@@ -179,7 +181,6 @@ Packet::Packet(espMqttClientTypes::Error& error,
   }
 
   if (!_allocate(remainingLength)) {
-    emc_log_w("ended here");
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
@@ -412,7 +413,7 @@ void Packet::_createUnsubscribe(espMqttClientTypes::Error& error,
 }
 
 size_t Packet::_chunkedAvailable(size_t index) {
-  if (index >= _size) return 0;
+  // index vs size check done in 'available(index)'
 
   // index points to header or first payload byte
   if (index < _payloadIndex) {

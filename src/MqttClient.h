@@ -14,13 +14,7 @@ the LICENSE file.
 #include <atomic>
 #include <utility>
 
-#if defined(esp32)
-  #include "freertos/FreeRTOS.h"
-  #include "freertos/task.h"
-#endif
-
-#include <Arduino.h>  // millis()
-#include <WiFiClient.h>
+#include "PlatformIncludes.h"
 
 #include "Config.h"
 #include "TypeDefs.h"
@@ -39,7 +33,7 @@ class MqttClient {
   template <typename... Args>
   uint16_t subscribe(const char* topic, uint8_t qos, Args&&... args) {
     uint16_t packetId = _getNextPacketId();
-    if (_state != CONNECTED) {
+    if (_state != State::connected) {
       packetId = 0;
     } else {
       EMC_SEMAPHORE_TAKE();
@@ -54,7 +48,7 @@ class MqttClient {
   template <typename... Args>
   uint16_t unsubscribe(const char* topic, Args&&... args) {
     uint16_t packetId = _getNextPacketId();
-    if (_state != CONNECTED) {
+    if (_state != State::connected) {
       packetId = 0;
     } else {
       EMC_SEMAPHORE_TAKE();
@@ -71,19 +65,19 @@ class MqttClient {
   uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
   void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
   const char* getClientId() const;
-  #if defined(ESP32)
+  #if defined(ARDUINO_ARCH_ESP32)
 
  private:
   #endif
   void loop();
 
  protected:
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
   explicit MqttClient(uint8_t priority = 1, uint8_t core = 1);
 #else
   MqttClient();
 #endif
-  WiFiClient* _transport;
+  Client* _transport;
 
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
   espMqttClientTypes::OnDisconnectCallback _onDisconnectCallback;
@@ -92,6 +86,9 @@ class MqttClient {
   espMqttClientTypes::OnMessageCallback _onMessageCallback;
   espMqttClientTypes::OnPublishCallback _onPublishCallback;
   espMqttClientTypes::OnErrorCallback _onErrorCallback;
+  typedef void(*OnConnectHook)(void*);
+  OnConnectHook _onConnectHook;
+  void* _onConnectHookArg;
   const char* _clientId;
   IPAddress _ip;
   const char* _host;
@@ -111,18 +108,18 @@ class MqttClient {
   char _generatedClientId[EMC_CLIENTID_LENGTH];
   uint16_t _packetId;
 
-  enum State {
-    DISCONNECTED,
-    CONNECTINGTCP,
-    CONNECTINGMQTT,
-    CONNECTED,
-    DISCONNECTINGMQTT1,
-    DISCONNECTINGMQTT2,
-    DISCONNECTINGTCP
+  enum class State {
+    disconnected,
+    connectingTcp,
+    connectingMqtt,
+    connected,
+    disconnectingMqtt1,
+    disconnectingMqtt2,
+    disconnectingTcp
   };
   std::atomic<State> _state;
 
-#if defined(ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
   SemaphoreHandle_t _xSemaphore;
   TaskHandle_t _taskHandle;
   static void _loop(MqttClient* c);
@@ -174,7 +171,9 @@ class MqttClient {
   void _clearQueue(bool clearSession);
   void _onError(uint16_t packetId, espMqttClientTypes::Error error);
 
-#if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
+  #if defined(ARDUINO_ARCH_ESP32)
+  #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
   size_t _highWaterMark;
-#endif
+  #endif
+  #endif
 };
