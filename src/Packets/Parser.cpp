@@ -10,21 +10,6 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
-uint8_t IncomingPacket::qos() const {
-  if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
-  return (fixedHeader.packetType & 0x06) >> 1;  // mask 0x00000110
-}
-
-bool IncomingPacket::retain() const {
-  if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
-  return fixedHeader.packetType & 0x01;  // mask 0x00000001
-}
-
-bool IncomingPacket::dup() const {
-  if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
-  return fixedHeader.packetType & 0x08;  // mask 0x00001000
-}
-
 void IncomingPacket::reset() {
   fixedHeader.packetType = 0;
   variableHeader.topicLength = 0;
@@ -48,8 +33,8 @@ ParserResult Parser::parse(const uint8_t* data, size_t len, size_t* bytesRead) {
   _data = data;
   _len = len;
   _bytesRead = 0;
-  ParserResult result = ParserResult::awaitData;
-  while (result == ParserResult::awaitData && _bytesRead < _len) {
+  ParserResult result = AWAIT_DATA;
+  while (result == AWAIT_DATA && _bytesRead < _len) {
     result = _parse(this);
     ++_bytesRead;
   }
@@ -84,7 +69,7 @@ ParserResult Parser::_fixedHeader(Parser* p) {
       p->_bytePos = 0;
     } else {
       emc_log_w("Invalid packet header: 0x%02x", p->_packet.fixedHeader.packetType);
-      return ParserResult::protocolError;
+      return PROTOCOL_ERROR;
     }
   } else {
     switch (p->_packet.fixedHeader.packetType) {
@@ -105,11 +90,11 @@ ParserResult Parser::_fixedHeader(Parser* p) {
         break;
       default:
         emc_log_w("Invalid packet header: 0x%02x", p->_packet.fixedHeader.packetType);
-        return ParserResult::protocolError;
+        return PROTOCOL_ERROR;
     }
   }
   emc_log_i("Packet type: 0x%02x", p->_packet.fixedHeader.packetType);
-  return ParserResult::awaitData;
+  return AWAIT_DATA;
 }
 
 ParserResult Parser::_remainingLengthFixed(Parser* p) {
@@ -122,11 +107,11 @@ ParserResult Parser::_remainingLengthFixed(Parser* p) {
       p->_parse = _varHeaderConnack1;
     }
     emc_log_i("Remaining length: %zu", p->_packet.fixedHeader.remainingLength.remainingLength);
-    return ParserResult::awaitData;
+    return AWAIT_DATA;
   }
   p->_parse = _fixedHeader;
   emc_log_w("Invalid remaining length (fixed): %zu",  p->_packet.fixedHeader.remainingLength.remainingLength);
-  return ParserResult::protocolError;
+  return PROTOCOL_ERROR;
 }
 
 ParserResult Parser::_remainingLengthVariable(Parser* p) {
@@ -135,9 +120,9 @@ ParserResult Parser::_remainingLengthVariable(Parser* p) {
     p->_bytePos++;
     if (p->_bytePos == 4) {
       emc_log_w("Invalid remaining length (variable)");
-      return ParserResult::protocolError;
+      return PROTOCOL_ERROR;
     } else {
-      return ParserResult::awaitData;
+      return AWAIT_DATA;
     }
   }
 
@@ -147,7 +132,7 @@ ParserResult Parser::_remainingLengthVariable(Parser* p) {
   if ((p->_packet.fixedHeader.packetType & 0xF0) == PacketType.PUBLISH) {
     p->_parse = _varHeaderTopicLength1;
     emc_log_i("Remaining length: %zu", p->_packet.fixedHeader.remainingLength.remainingLength);
-    return ParserResult::awaitData;
+    return AWAIT_DATA;
   } else {
     int32_t payloadSize = p->_packet.fixedHeader.remainingLength.remainingLength - 2;  // total - packet ID
     if (0 < payloadSize && payloadSize < EMC_PAYLOAD_BUFFER_SIZE) {
@@ -158,13 +143,13 @@ ParserResult Parser::_remainingLengthVariable(Parser* p) {
       p->_packet.payload.total = payloadSize;
       p->_parse = _varHeaderPacketId1;
       emc_log_i("Remaining length: %zu", p->_packet.fixedHeader.remainingLength.remainingLength);
-      return ParserResult::awaitData;
+      return AWAIT_DATA;
     } else {
       emc_log_w("Invalid payload length");
     }
   }
   p->_parse = _fixedHeader;
-  return ParserResult::protocolError;
+  return PROTOCOL_ERROR;
 }
 
 ParserResult Parser::_remainingLengthNone(Parser* p) {
@@ -172,10 +157,10 @@ ParserResult Parser::_remainingLengthNone(Parser* p) {
   p->_parse = _fixedHeader;
   if (p->_packet.fixedHeader.remainingLength.remainingLength == 0) {
     emc_log_i("Remaining length: %zu", p->_packet.fixedHeader.remainingLength.remainingLength);
-    return ParserResult::packet;
+    return PACKET;
   }
   emc_log_w("Invalid remaining length (none)");
-  return ParserResult::protocolError;
+  return PROTOCOL_ERROR;
 }
 
 ParserResult Parser::_varHeaderConnack1(Parser* p) {
@@ -183,11 +168,11 @@ ParserResult Parser::_varHeaderConnack1(Parser* p) {
   if (data < 2) {  // session present flag: equal to 0 or 1
     p->_packet.variableHeader.fixed.connackVarHeader.sessionPresent = data;
     p->_parse = _varHeaderConnack2;
-    return ParserResult::awaitData;
+    return AWAIT_DATA;
   }
   p->_parse = _fixedHeader;
   emc_log_w("Invalid session flags");
-  return ParserResult::protocolError;
+  return PROTOCOL_ERROR;
 }
 
 ParserResult Parser::_varHeaderConnack2(Parser* p) {
@@ -196,16 +181,16 @@ ParserResult Parser::_varHeaderConnack2(Parser* p) {
   if (data <= 5) {  // connect return code max is 5
     p->_packet.variableHeader.fixed.connackVarHeader.returnCode = data;
     emc_log_i("Packet complete");
-    return ParserResult::packet;
+    return PACKET;
   }
   emc_log_w("Invalid connack return code");
-  return ParserResult::protocolError;
+  return PROTOCOL_ERROR;
 }
 
 ParserResult Parser::_varHeaderPacketId1(Parser* p) {
   p->_packet.variableHeader.fixed.packetId |= p->_data[p->_bytesRead] << 8;
   p->_parse = _varHeaderPacketId2;
-  return ParserResult::awaitData;
+  return AWAIT_DATA;
 }
 
 ParserResult Parser::_varHeaderPacketId2(Parser* p) {
@@ -215,26 +200,26 @@ ParserResult Parser::_varHeaderPacketId2(Parser* p) {
     if ((p->_packet.fixedHeader.packetType & 0xF0) == PacketType.SUBACK) {
       p->_parse = _payloadSuback;
       emc_log_i("Packet variable header complete");
-      return ParserResult::awaitData;
+      return AWAIT_DATA;
     } else if ((p->_packet.fixedHeader.packetType & 0xF0) == PacketType.PUBLISH) {
       p->_packet.payload.total -= 2;  // substract packet id length from payload
       p->_parse = _payloadPublish;
       emc_log_i("Packet variable header complete");
-      return ParserResult::awaitData;
+      return AWAIT_DATA;
     } else {
       emc_log_i("Packet complete");
-      return ParserResult::packet;
+      return PACKET;
     }
   } else {
     emc_log_w("Invalid packet id");
-    return ParserResult::protocolError;
+    return PROTOCOL_ERROR;
   }
 }
 
 ParserResult Parser::_varHeaderTopicLength1(Parser* p) {
   p->_packet.variableHeader.topicLength = p->_data[p->_bytesRead] << 8;
   p->_parse = _varHeaderTopicLength2;
-  return ParserResult::awaitData;
+  return AWAIT_DATA;
 }
 
 ParserResult Parser::_varHeaderTopicLength2(Parser* p) {
@@ -247,11 +232,11 @@ ParserResult Parser::_varHeaderTopicLength2(Parser* p) {
     p->_parse = _varHeaderTopic;
     p->_bytePos = 0;
     p->_packet.payload.total = p->_packet.fixedHeader.remainingLength.remainingLength - 2 - p->_packet.variableHeader.topicLength;
-    return ParserResult::awaitData;
+    return AWAIT_DATA;
   }
   emc_log_w("Invalid topic length: %u > %zu", p->_packet.variableHeader.topicLength, maxTopicLength);
   p->_parse = _fixedHeader;
-  return ParserResult::protocolError;
+  return PROTOCOL_ERROR;
 }
 
 ParserResult Parser::_varHeaderTopic(Parser* p) {
@@ -263,7 +248,7 @@ ParserResult Parser::_varHeaderTopic(Parser* p) {
     p->_parse = ((p->_packet.fixedHeader.packetType & (HeaderFlag.PUBLISH_QOS1 | HeaderFlag.PUBLISH_QOS2)) ? _varHeaderPacketId1 : _payloadPublish);
     emc_log_i("Packet variable header topic complete");
   }
-  return ParserResult::awaitData;
+  return AWAIT_DATA;
 }
 
 ParserResult Parser::_payloadSuback(Parser* p) {
@@ -274,14 +259,14 @@ ParserResult Parser::_payloadSuback(Parser* p) {
   } else {
     p->_parse = _fixedHeader;
     emc_log_w("Invalid suback return code");
-    return ParserResult::protocolError;
+    return PROTOCOL_ERROR;
   }
   if (p->_bytePos == p->_packet.payload.total) {
     p->_parse = _fixedHeader;
     emc_log_i("Packet complete");
-    return ParserResult::packet;
+    return PACKET;
   }
-  return ParserResult::awaitData;
+  return AWAIT_DATA;
 }
 
 ParserResult Parser::_payloadPublish(Parser* p) {
@@ -293,7 +278,7 @@ ParserResult Parser::_payloadPublish(Parser* p) {
   if (p->_packet.payload.index + p->_packet.payload.length == p->_packet.payload.total) {
     p->_parse = _fixedHeader;
   }
-  return ParserResult::packet;
+  return PACKET;
 }
 
 }  // end namespace espMqttClientInternals
