@@ -61,7 +61,7 @@ void onMqttConnect(bool sessionPresent) {
 }
 
 void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
-  Serial.printf("Disconnected from MQTT: %u\n", (unsigned int)reason);
+  Serial.printf("Disconnected from MQTT: %u.\n", static_cast<uint8_t>(reason));
 
   if (WiFi.isConnected()) {
     reconnectTimer.once(5, connectToMqtt);
