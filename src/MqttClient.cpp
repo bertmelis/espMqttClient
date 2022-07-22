@@ -174,6 +174,10 @@ void MqttClient::clearQueue(bool all) {
   _clearQueue(all);
 }
 
+const char* MqttClient::getClientId() const {
+  return _clientId;
+}
+
 void MqttClient::loop() {
   switch (_state) {
     case State::disconnected:
