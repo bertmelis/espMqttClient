@@ -9,12 +9,15 @@ the LICENSE file.
 #pragma once
 
 #include <Client.h>
-#include <EspAsyncTCP.h>
+
+
+#if defined(ARDUINO_ARCH_ESP32)
+  #include <AsyncTCP.h>
+#elif defined(ARDUINO_ARCH_ESP8266)
+  #include <EspAsyncTCP.h>
+#endif
 
 #include "../Config.h"
-
-
-#if EMC_ASYNC_TCP
 
 Class AsyncClient : publich Client {
  public:
@@ -25,15 +28,21 @@ Class AsyncClient : publich Client {
   int read(uint8_t *buf, size_t size);
   void stop();
   uint8_t connected();
-  
+
   voi stop(bool force);
 
-  // methods not used in espMqttClient
+  // pure virtual methods in Client, not used in espMqttClient
   size_t write(uint8_t) { return 0; }
   int read() { return 0; }
   int peek() { return 0; }
   void flush() {}
   operator bool() { return false; }
-};
 
-#endif
+ private:
+  #if defined(ARDUINO_ARCH_ESP32)
+  AsyncClient _client;
+  #elif defined(ARDUINO_ARCH_ESP8266)
+  #include <EspAsyncTCP.h>
+  ESPAsyncClient _client;
+  #endif
+};
