@@ -14,11 +14,9 @@ the LICENSE file.
 #include <atomic>
 #include <utility>
 
-#include "PlatformIncludes.h"
-
+#include "Helpers.h"
 #include "Config.h"
 #include "TypeDefs.h"
-#include "Helpers.h"
 #include "Logging.h"
 #include "Outbox.h"
 #include "Packets/Packet.h"

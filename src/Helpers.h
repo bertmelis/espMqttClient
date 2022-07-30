@@ -8,8 +8,16 @@ the LICENSE file.
 
 #pragma once
 
+#ifdef ARDUINO
+  #include <Arduino.h>  // millis()
+  #include <Client.h>
+#endif
+
 #if defined(ARDUINO_ARCH_ESP32)
   #include <Arduino.h>  // ESP.getFreeHeap();
+  #include "freertos/FreeRTOS.h"
+  #include "freertos/task.h"
+  #include "esp_task_wdt.h"
   #define EMC_SEMAPHORE_TAKE() xSemaphoreTake(_xSemaphore, portMAX_DELAY)
   #define EMC_SEMAPHORE_GIVE() xSemaphoreGive(_xSemaphore)
   #define EMC_GET_FREE_MEMORY() ESP.getMaxAllocHeap()
