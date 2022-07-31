@@ -10,6 +10,7 @@ the LICENSE file.
 
 #include <Client.h>
 
+#include "freertos/FreeRTOS.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
   #include <AsyncTCP.h>
@@ -19,7 +20,7 @@ the LICENSE file.
 
 #include "../Config.h"
 
-class AsyncClient : publich Client {
+class ClientAsync : public Client {
  public:
   int connect(IPAddress ip, uint16_t port);
   int connect(const char *host, uint16_t port);
@@ -29,7 +30,7 @@ class AsyncClient : publich Client {
   void stop();
   uint8_t connected();
 
-  voi stop(bool force);
+  void stop(bool force);
 
   // pure virtual methods in Client, not used in espMqttClient
   size_t write(uint8_t) { return 0; }
@@ -42,7 +43,6 @@ class AsyncClient : publich Client {
   #if defined(ARDUINO_ARCH_ESP32)
   AsyncClient _client;
   #elif defined(ARDUINO_ARCH_ESP8266)
-  #include <EspAsyncTCP.h>
   ESPAsyncClient _client;
   #endif
 };

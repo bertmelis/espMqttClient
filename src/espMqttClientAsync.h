@@ -11,18 +11,18 @@ the LICENSE file.
 
 #pragma once
 
-#include "Transport/AsyncClient.h"
+#include "Transport/ClientAsync.h"
 
 #include "MqttClientSetup.h"
 
-class espMqttClientAsync : public MqttClientSetup<espMqttClient> {
+class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync> {
  public:
 #if defined(ARDUINO_ARCH_ESP32)
-  explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1);
+  explicit espMqttClientAsync(uint8_t priority = 1, uint8_t core = 1);
 #else
-  espMqttClient();
+  espMqttClientAsync();
 #endif
 
  protected:
-  AsyncClient _client;
+  ClientAsync _client;
 };
