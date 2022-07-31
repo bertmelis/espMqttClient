@@ -21,6 +21,7 @@ the LICENSE file.
 
 class ClientAsync : public Client {
  public:
+  ClientAsync();
   int connect(IPAddress ip, uint16_t port);
   int connect(const char *host, uint16_t port);
   size_t write(const uint8_t *buf, size_t size);
@@ -31,6 +32,12 @@ class ClientAsync : public Client {
 
   void stop(bool force);
 
+  #if defined(ARDUINO_ARCH_ESP32)
+  AsyncClient* getClient();
+  #elif defined(ARDUINO_ARCH_ESP8266)
+  ESPAsyncClient* getClient();
+  #endif
+
   // pure virtual methods in Client, not used in espMqttClient
   size_t write(uint8_t) { return 0; }
   int read() { return 0; }
@@ -39,9 +46,7 @@ class ClientAsync : public Client {
   operator bool() { return false; }
 
  private:
-  #if defined(ARDUINO_ARCH_ESP32)
   AsyncClient _client;
-  #elif defined(ARDUINO_ARCH_ESP8266)
-  ESPAsyncClient _client;
-  #endif
+  size_t _available;
+  void* _buff;
 };
