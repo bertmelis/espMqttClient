@@ -63,12 +63,12 @@ MqttClient::MqttClient()
 #endif
   {
 #if defined(ARDUINO_ARCH_ESP32)
-  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp32-%06llx", ESP.getEfuseMac());
+  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp32%06llx", ESP.getEfuseMac());
   _xSemaphore = xSemaphoreCreateMutex();
   EMC_SEMAPHORE_GIVE();  // release before first use
   xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
 #elif defined(ARDUINO_ARCH_ESP8266)
-  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp8266-%06x", ESP.getChipId());
+  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp8266%06x", ESP.getChipId());
 #endif
   _clientId = _generatedClientId;
 }
@@ -172,6 +172,10 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqt
 
 void MqttClient::clearQueue(bool all) {
   _clearQueue(all);
+}
+
+const char* MqttClient::getClientId() const {
+  return _clientId;
 }
 
 void MqttClient::loop() {

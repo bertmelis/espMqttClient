@@ -37,8 +37,8 @@ the LICENSE file.
 #endif
 
 #ifndef EMC_CLIENTID_LENGTH
-// esp8266-abc123 and esp32-abcdef123456
-#define EMC_CLIENTID_LENGTH 18 + 1
+// esp8266abc123 and esp32abcdef123456
+#define EMC_CLIENTID_LENGTH 23 + 1
 #endif
 
 #ifndef EMC_TASK_STACK_SIZE
