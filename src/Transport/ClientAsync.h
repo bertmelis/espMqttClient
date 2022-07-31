@@ -14,7 +14,7 @@ the LICENSE file.
   #include "freertos/FreeRTOS.h"
   #include <AsyncTCP.h>
 #elif defined(ARDUINO_ARCH_ESP8266)
-  #include <EspAsyncTCP.h>
+  #include <ESPAsyncTCP.h>
 #endif
 
 #include "../Config.h"
