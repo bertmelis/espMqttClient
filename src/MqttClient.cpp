@@ -107,7 +107,7 @@ bool MqttClient::connect() {
       #if defined(ARDUINO_ARCH_ESP32)
       vTaskResume(_taskHandle);
       #endif
-      _state = State::connectingTcp;
+      _state = State::connectingTcp1;
     } else {
       EMC_SEMAPHORE_GIVE();
       emc_log_e("Could not create CONNECT packet");
@@ -181,14 +181,23 @@ void MqttClient::loop() {
       vTaskSuspend(_taskHandle);
 #endif
       break;
-    case State::connectingTcp:
-      if ((_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) == 1) {
-        if (_onConnectHook) _onConnectHook(_onConnectHookArg);
-        _state = State::connectingMqtt;
-        _lastClientActivity = _lastServerActivity = millis();
+    case State::connectingTcp1:
+      // connect returns 0 or 1 for WiFiClient and true or false for async
+      if (_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) {
+        _state = State::connectingTcp2;
       } else {
         _state = State::disconnectingTcp;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
+        break;
+      }
+      // For async it doesn't make sense to fall through but it also doesn't hurt
+      // for WiFiclient, falling through enables advancing directly to MQTT connection
+      [[fallthrough]];
+    case State::connectingTcp2:
+      if (_transport->connected()) {
+        if (_onConnectHook) _onConnectHook(_onConnectHookArg);
+        _lastClientActivity = _lastServerActivity = millis();
+        _state = State::connectingMqtt;
       }
       break;
     case State::disconnectingMqtt1:

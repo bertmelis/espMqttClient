@@ -108,7 +108,8 @@ class MqttClient {
 
   enum class State {
     disconnected,
-    connectingTcp,
+    connectingTcp1,
+    connectingTcp2,
     connectingMqtt,
     connected,
     disconnectingMqtt1,
