@@ -19,7 +19,7 @@ the LICENSE file.
 
 #include "../Config.h"
 
-Class AsyncClient : publich Client {
+class AsyncClient : publich Client {
  public:
   int connect(IPAddress ip, uint16_t port);
   int connect(const char *host, uint16_t port);
