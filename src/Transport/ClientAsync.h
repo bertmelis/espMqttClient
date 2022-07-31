@@ -10,9 +10,8 @@ the LICENSE file.
 
 #include <Client.h>
 
-#include "freertos/FreeRTOS.h"
-
 #if defined(ARDUINO_ARCH_ESP32)
+  #include "freertos/FreeRTOS.h"
   #include <AsyncTCP.h>
 #elif defined(ARDUINO_ARCH_ESP8266)
   #include <EspAsyncTCP.h>
