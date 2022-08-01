@@ -25,4 +25,5 @@ class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync> {
 
  protected:
   ClientAsync _client;
+  static void _setupClient(espMqttClient* c);
 };

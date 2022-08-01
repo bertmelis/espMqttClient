@@ -18,4 +18,10 @@ espMqttClientAsync::espMqttClientAsync()
 : _client() {
 #endif
   _transport = &_client;
+  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  _onConnectHookArg = this;
+}
+
+void espMqttClient::_setupClient(espMqttClient* c) {
+  // add all callbacks to ClientAsync
 }

@@ -16,15 +16,15 @@ ClientAsync::ClientAsync()
 }
 
 int ClientAsync::connect(IPAddress ip, uint16_t port) {
-  _client.connect(ip, port);
+  return _client.connect(ip, port) ? 1 : 0;
 }
 
 int ClientAsync::connect(const char *host, uint16_t port) {
-  _client.connect(host, port);
+  return _client.connect(host, port) ? 1 : 0;
 }
 
 size_t ClientAsync::write(const uint8_t *buf, size_t size) {
-  _client.write(buf, size);
+  return _client.write(reinterpret_cast<const char*>(buf), size);
 }
 
 int ClientAsync::available() {
@@ -32,7 +32,9 @@ int ClientAsync::available() {
 }
 
 int ClientAsync::read(uint8_t* buf, size_t size) {
+  size_t willRead = std::min(size, _available);
   memcpy(buf, _buff, std::min(size, _available));
+  return willRead;
 }
 
 void ClientAsync::stop() {
@@ -51,10 +53,6 @@ void stop(bool force) {
   }
 }
 
-#if defined(ARDUINO_ARCH_ESP32)
 AsyncClient* ClientAsync::getClient() {
-#elif defined(ARDUINO_ARCH_ESP8266)
-ESPAsyncClient* ClientAsync::getClient() {
-#endif
-  return _client;
+  return &_client;
 }

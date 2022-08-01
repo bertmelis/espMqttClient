@@ -31,12 +31,7 @@ class ClientAsync : public Client {
   uint8_t connected();
 
   void stop(bool force);
-
-  #if defined(ARDUINO_ARCH_ESP32)
   AsyncClient* getClient();
-  #elif defined(ARDUINO_ARCH_ESP8266)
-  ESPAsyncClient* getClient();
-  #endif
 
   // pure virtual methods in Client, not used in espMqttClient
   size_t write(uint8_t) { return 0; }
