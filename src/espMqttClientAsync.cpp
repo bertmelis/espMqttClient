@@ -22,6 +22,6 @@ espMqttClientAsync::espMqttClientAsync()
   _onConnectHookArg = this;
 }
 
-void espMqttClient::_setupClient(espMqttClient* c) {
+void espMqttClientAsync::_setupClient(espMqttClientAsync* c) {
   // add all callbacks to ClientAsync
 }
