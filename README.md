@@ -1,7 +1,7 @@
 # espMqttClient
 
 MQTT client library for the Espressif devices ESP8266 and ESP32 on the Arduino framework.
-Aims to be a non-blocking fully compliant MQTT 3.1.1 client.
+Aims to be a non-blocking, fully compliant MQTT 3.1.1 client.
 
 ![platformio](https://github.com/bertmelis/espMqttClient/actions/workflows/build_platformio.yml/badge.svg)
 ![cpplint](https://github.com/bertmelis/espMqttClient/actions/workflows/cpplint.yml/badge.svg)
