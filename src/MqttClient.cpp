@@ -247,11 +247,11 @@ void MqttClient::loop() {
       }
       break;
     case State::disconnectingTcp:
-      // async directs to here when the tcp client disconnects so we have to prevent double stopping the transport
-      if (_transport->connected()) _transport->stop();
+      // async directs to here when the tcp client disconnects but it can handle double stopping
+      _transport->stop();
       _clearQueue(false);
       _state = State::disconnected;
-        if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
+      if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
       break;
     // all cases covered, no default case
   }

@@ -27,14 +27,16 @@ the LICENSE file.
   #if EMC_ESP8266_MULTITHREADING
     // This lib doesn't run use multithreading on ESP8266
     // _xSemaphore defined as std::atomic<bool>
-    #define SEMAPHORE_TAKE() while (_xSemaphore) { /*ESP.wdtFeed();*/ } _xSemaphore = true
-    #define SEMAPHORE_GIVE() _xSemaphore = false
+    #define EMC_SEMAPHORE_TAKE() while (_xSemaphore) { /*ESP.wdtFeed();*/ } _xSemaphore = true
+    #define EMC_SEMAPHORE_GIVE() _xSemaphore = false
   #else
     #define EMC_SEMAPHORE_TAKE()
     #define EMC_SEMAPHORE_GIVE()
   #endif
   #define EMC_GET_FREE_MEMORY() ESP.getMaxFreeBlockSize()
-  #define EMC_YIELD() yield()
+  // no need to yield for ESP8266, the Arduino framework does this internally
+  // yielding in async is forbidden (will crash)
+  #define EMC_YIELD()
 #else
   #define EMC_GET_FREE_MEMORY() 1000000000
 #endif
