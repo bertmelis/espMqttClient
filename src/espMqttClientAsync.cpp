@@ -18,8 +18,8 @@ espMqttClientAsync::espMqttClientAsync()
 : _clientAsync() {
 #endif
   _transport = &_clientAsync;
-  //_onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
-  //_onConnectHookArg = this;
+  // _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  // _onConnectHookArg = this;
   _clientAsync.tcpClient.onConnect(onConnectCb, this);
   _clientAsync.tcpClient.onDisconnect(onDisconnectCb, this);
   _clientAsync.tcpClient.onData(onDataCb, this);
