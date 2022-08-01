@@ -17,7 +17,7 @@
   "version": "1.1.1",
   "frameworks": "arduino",
   "platforms": ["espressif8266", "espressif32"],
-  "headers": ["espMqttClient.h"],
+  "headers": ["espMqttClient.h", "espMqttClientAsync.h"],
   "dependencies": [
     {
       "name": "ESPAsyncTCP",
@@ -29,5 +29,9 @@
       "version": ">=1.1.1",
       "platforms": "espressif32"
     }
-  ]
+  ],
+  "build":
+  {
+    "libLDFMode": "deep+"
+  }
 }

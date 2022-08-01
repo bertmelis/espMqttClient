@@ -14,11 +14,13 @@ using espMqttClientTypes::DisconnectReason;
 using espMqttClientTypes::Error;
 
 #if defined(ARDUINO_ARCH_ESP32)
-MqttClient::MqttClient(uint8_t priority, uint8_t core)
+MqttClient::MqttClient(bool useTask, uint8_t priority, uint8_t core)
+: _useTask(useTask)
+, _transport(nullptr)
 #else
 MqttClient::MqttClient()
-#endif
 : _transport(nullptr)
+#endif
 , _onConnectCallback(nullptr)
 , _onDisconnectCallback(nullptr)
 , _onSubscribeCallback(nullptr)
@@ -42,9 +44,9 @@ MqttClient::MqttClient()
 , _willPayloadLength(0)
 , _willQos(0)
 , _willRetain(false)
+, _state(State::disconnected)
 , _generatedClientId{0}
 , _packetId(0)
-, _state(State::disconnected)
 #if defined(ARDUINO_ARCH_ESP32)
 , _xSemaphore(nullptr)
 , _taskHandle(nullptr)
@@ -66,7 +68,9 @@ MqttClient::MqttClient()
   snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp32%06llx", ESP.getEfuseMac());
   _xSemaphore = xSemaphoreCreateMutex();
   EMC_SEMAPHORE_GIVE();  // release before first use
-  xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
+  if (useTask) {
+    xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
+  }
 #elif defined(ARDUINO_ARCH_ESP8266)
   snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp8266%06x", ESP.getChipId());
 #endif
@@ -78,10 +82,12 @@ MqttClient::~MqttClient() {
   _clearQueue(true);
 #if defined(ARDUINO_ARCH_ESP32)
   vSemaphoreDelete(_xSemaphore);
-  #if EMC_USE_WATCHDOG
-  esp_task_wdt_delete(_taskHandle);  // not sure if this is really needed
-  #endif
-  vTaskDelete(_taskHandle);
+  if (_useTask) {
+    #if EMC_USE_WATCHDOG
+    esp_task_wdt_delete(_taskHandle);  // not sure if this is really needed
+    #endif
+    vTaskDelete(_taskHandle);
+  }
 #endif
 }
 
@@ -105,7 +111,9 @@ bool MqttClient::connect() {
                         _keepAlive,
                         _clientId)) {
       #if defined(ARDUINO_ARCH_ESP32)
-      vTaskResume(_taskHandle);
+      if (_useTask) {
+        vTaskResume(_taskHandle);
+      }
       #endif
       _state = State::connectingTcp1;
     } else {
@@ -181,9 +189,11 @@ const char* MqttClient::getClientId() const {
 void MqttClient::loop() {
   switch (_state) {
     case State::disconnected:
-#if defined(ARDUINO_ARCH_ESP32)
-      vTaskSuspend(_taskHandle);
-#endif
+      #if defined(ARDUINO_ARCH_ESP32)
+      if (_useTask) {
+        vTaskSuspend(_taskHandle);
+      }
+      #endif
       break;
     case State::connectingTcp1:
       // connect returns 0 or 1 for WiFiClient and true or false for async
@@ -237,7 +247,8 @@ void MqttClient::loop() {
       }
       break;
     case State::disconnectingTcp:
-      _transport->stop();
+      // async directs to here when the tcp client disconnects so we have to prevent double stopping the transport
+      if (_transport->connected()) _transport->stop();
       _clearQueue(false);
       _state = State::disconnected;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
@@ -245,6 +256,13 @@ void MqttClient::loop() {
     // all cases covered, no default case
   }
   EMC_YIELD();
+  #if defined(ARDUINO_ARCH_ESP32) && ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
+  size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
+  if (waterMark < _highWaterMark) {
+    _highWaterMark = waterMark;
+    emc_log_i("Stack usage: %zu/%i", _highWaterMark, EMC_TASK_STACK_SIZE);
+  }
+  #endif
 }
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -256,13 +274,6 @@ void MqttClient::_loop(MqttClient* c) {
   #endif
   for (;;) {
     c->loop();
-    #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
-    size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
-    if (waterMark < c->_highWaterMark) {
-      c->_highWaterMark = waterMark;
-      emc_log_i("Stack usage: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
-    }
-    #endif
     #if EMC_USE_WATCHDOG
     esp_task_wdt_reset();
     #endif

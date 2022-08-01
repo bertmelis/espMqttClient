@@ -11,7 +11,7 @@ the LICENSE file.
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
-: MqttClientSetup(priority, core)
+: MqttClientSetup(true, priority, core)
 , _client() {
 #else
 espMqttClient::espMqttClient()

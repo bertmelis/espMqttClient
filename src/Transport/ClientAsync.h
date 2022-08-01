@@ -18,20 +18,20 @@ the LICENSE file.
 #endif
 
 #include "../Config.h"
+#include "../Logging.h"
 
 class ClientAsync : public Client {
  public:
   ClientAsync();
   int connect(IPAddress ip, uint16_t port);
-  int connect(const char *host, uint16_t port);
-  size_t write(const uint8_t *buf, size_t size);
+  int connect(const char* host, uint16_t port);
+  size_t write(const uint8_t* buf, size_t size);
   int available();
-  int read(uint8_t *buf, size_t size);
+  int read(uint8_t* buf, size_t size);
   void stop();
   uint8_t connected();
 
   void stop(bool force);
-  AsyncClient* getClient();
 
   // pure virtual methods in Client, not used in espMqttClient
   size_t write(uint8_t) { return 0; }
@@ -40,8 +40,7 @@ class ClientAsync : public Client {
   void flush() {}
   operator bool() { return false; }
 
- private:
-  AsyncClient _client;
-  size_t _available;
-  void* _buff;
+  AsyncClient tcpClient;
+  size_t availableData;
+  uint8_t* bufData;
 };

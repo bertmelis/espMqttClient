@@ -9,50 +9,50 @@ the LICENSE file.
 #include "ClientAsync.h"
 
 ClientAsync::ClientAsync()
-: _client()
-, _available(0)
-, _buff(nullptr) {
-  // empty
+: tcpClient()
+, availableData(0)
+, bufData(nullptr) {
+  tcpClient.setNoDelay(true);
 }
 
 int ClientAsync::connect(IPAddress ip, uint16_t port) {
-  return _client.connect(ip, port) ? 1 : 0;
+  return tcpClient.connect(ip, port) ? 1 : 0;
 }
 
-int ClientAsync::connect(const char *host, uint16_t port) {
-  return _client.connect(host, port) ? 1 : 0;
+int ClientAsync::connect(const char* host, uint16_t port) {
+  return tcpClient.connect(host, port) ? 1 : 0;
 }
 
-size_t ClientAsync::write(const uint8_t *buf, size_t size) {
-  return _client.write(reinterpret_cast<const char*>(buf), size);
+size_t ClientAsync::write(const uint8_t* buf, size_t size) {
+  return tcpClient.write(reinterpret_cast<const char*>(buf), size);
 }
 
 int ClientAsync::available() {
-  return _available;
+  return static_cast<int>(availableData);  // availableData will never be large enough to cause an overflow
 }
 
 int ClientAsync::read(uint8_t* buf, size_t size) {
-  size_t willRead = std::min(size, _available);
-  memcpy(buf, _buff, std::min(size, _available));
+  size_t willRead = std::min(size, availableData);
+  memcpy(buf, bufData, std::min(size, availableData));
+  if (availableData > size) {
+    emc_log_w("Buffer is smaller than available data: %zu - %zu", size, availableData);
+  }
+  availableData = 0;
   return willRead;
 }
 
 void ClientAsync::stop() {
-  _client.stop();
+  tcpClient.stop();
 }
 
 uint8_t ClientAsync::connected() {
-  return _client.connected();
+  return tcpClient.connected();
 }
 
 void ClientAsync::stop(bool force) {
   if (force) {
-    _client.stop();
+    tcpClient.stop();
   } else {
-    _client.close();
+    tcpClient.close();
   }
-}
-
-AsyncClient* ClientAsync::getClient() {
-  return &_client;
 }

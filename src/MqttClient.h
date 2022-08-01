@@ -63,18 +63,18 @@ class MqttClient {
   uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
   void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
   const char* getClientId() const;
-  #if defined(ARDUINO_ARCH_ESP32)
 
- private:
+  #if defined(ARDUINO_ARCH_ESP32)
+ protected:
   #endif
   void loop();
-
+  #if defined(ARDUINO_ARCH_ESP32)
+  explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
+  bool _useTask;
+  #else
  protected:
-#if defined(ARDUINO_ARCH_ESP32)
-  explicit MqttClient(uint8_t priority = 1, uint8_t core = 1);
-#else
   MqttClient();
-#endif
+  #endif
   Client* _transport;
 
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
@@ -102,10 +102,8 @@ class MqttClient {
   uint8_t _willQos;
   bool _willRetain;
 
- private:
-  char _generatedClientId[EMC_CLIENTID_LENGTH];
-  uint16_t _packetId;
-
+  // state is protected to allow state changes by the transport system, defined in child classes
+  // eg. to allow AsyncTCP
   enum class State {
     disconnected,
     connectingTcp1,
@@ -117,6 +115,10 @@ class MqttClient {
     disconnectingTcp
   };
   std::atomic<State> _state;
+
+ private:
+  char _generatedClientId[EMC_CLIENTID_LENGTH];
+  uint16_t _packetId;
 
 #if defined(ARDUINO_ARCH_ESP32)
   SemaphoreHandle_t _xSemaphore;
