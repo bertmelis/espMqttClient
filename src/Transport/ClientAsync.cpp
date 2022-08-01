@@ -45,7 +45,7 @@ uint8_t ClientAsync::connected() {
   return _client.connected();
 }
 
-void stop(bool force) {
+void ClientAsync::stop(bool force) {
   if (force) {
     _client.stop();
   } else {
