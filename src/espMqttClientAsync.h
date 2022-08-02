@@ -27,6 +27,7 @@ class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync> {
  protected:
   ClientAsync _clientAsync;
   static void _setupClient(espMqttClientAsync* c);
+  static void _disconnectClient(espMqttClientAsync* c);
 
   static void onConnectCb(void* a, AsyncClient* c);
   static void onDataCb(void* a, AsyncClient* c, void* data, size_t len);

@@ -85,9 +85,11 @@ class MqttClient {
   espMqttClientTypes::OnMessageCallback _onMessageCallback;
   espMqttClientTypes::OnPublishCallback _onPublishCallback;
   espMqttClientTypes::OnErrorCallback _onErrorCallback;
-  typedef void(*OnConnectHook)(void*);
-  OnConnectHook _onConnectHook;
+  typedef void(*mqttClientHook)(void*);
+  mqttClientHook _onConnectHook;
   void* _onConnectHookArg;
+  mqttClientHook _onDisconnectHook;
+  void* _onDisconnectHookArg;
   const char* _clientId;
   IPAddress _ip;
   const char* _host;
@@ -113,7 +115,8 @@ class MqttClient {
     connected,
     disconnectingMqtt1,
     disconnectingMqtt2,
-    disconnectingTcp
+    disconnectingTcp1,
+    disconnectingTcp2
   };
   std::atomic<State> _state;
 

@@ -18,8 +18,10 @@ espMqttClient::espMqttClient()
 : _client() {
 #endif
   _transport = &_client;
-  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  _onConnectHook = reinterpret_cast<MqttClient::mqttClientHook>(_setupClient);
   _onConnectHookArg = this;
+  _onDisconnectHook = reinterpret_cast<MqttClient::mqttClientHook>(_disconnectClient);
+  _onDisconnectHookArg = this;
 }
 
 void espMqttClient::_setupClient(espMqttClient* c) {
@@ -27,6 +29,10 @@ void espMqttClient::_setupClient(espMqttClient* c) {
   #if defined(ARDUINO_ARCH_ESP8266)
   c->_client.setSync(false);
   #endif
+}
+
+void espMqttClient::_disconnectClient(espMqttClient* c) {
+  c->_state = State::disconnectingTcp2;
 }
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -38,8 +44,10 @@ espMqttClientSecure::espMqttClientSecure()
 : _client() {
 #endif
   _transport = &_client;
-  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  _onConnectHook = reinterpret_cast<MqttClient::mqttClientHook>(_setupClient);
   _onConnectHookArg = this;
+  _onDisconnectHook = reinterpret_cast<MqttClient::mqttClientHook>(_disconnectClient);
+  _onDisconnectHookArg = this;
 }
 
 void espMqttClientSecure::_setupClient(espMqttClientSecure* c) {
@@ -47,6 +55,10 @@ void espMqttClientSecure::_setupClient(espMqttClientSecure* c) {
   #if defined(ARDUINO_ARCH_ESP8266)
   c->_client.setSync(false);
   #endif
+}
+
+void espMqttClientSecure::_disconnectClient(espMqttClientSecure* c) {
+  c->_state = State::disconnectingTcp2;
 }
 
 espMqttClientSecure& espMqttClientSecure::setInsecure() {

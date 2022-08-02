@@ -30,6 +30,8 @@ MqttClient::MqttClient()
 , _onErrorCallback(nullptr)
 , _onConnectHook(nullptr)
 , _onConnectHookArg(nullptr)
+, _onDisconnectHook(nullptr)
+, _onDisconnectHookArg(nullptr)
 , _clientId(nullptr)
 , _ip()
 , _host(nullptr)
@@ -128,8 +130,8 @@ bool MqttClient::connect() {
 }
 
 bool MqttClient::disconnect(bool force) {
-  if (force && _state != State::disconnected && _state != State::disconnectingTcp) {
-    _state = State::disconnectingTcp;
+  if (force && _state != State::disconnected && _state != State::disconnectingTcp1 && _state != State::disconnectingTcp2) {
+    _state = State::disconnectingTcp1;
     return true;
   }
   if (!force && _state == State::connected) {
@@ -200,7 +202,7 @@ void MqttClient::loop() {
       if (_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) {
         _state = State::connectingTcp2;
       } else {
-        _state = State::disconnectingTcp;
+        _state = State::disconnectingTcp1;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
         break;
       }
@@ -242,13 +244,17 @@ void MqttClient::loop() {
         _checkIncoming();
         _checkPing();
       } else {
-        _state = State::disconnectingTcp;
+        _state = State::disconnectingTcp1;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
-    case State::disconnectingTcp:
+    case State::disconnectingTcp1:
       // async directs to here when the tcp client disconnects but it can handle double stopping
       _transport->stop();
+      if (_onDisconnectHook) _onDisconnectHook(_onDisconnectHookArg);
+      break;
+    case State::disconnectingTcp2:
+      // async directs to here when the tcp client disconnects but it can handle double stopping
       _clearQueue(false);
       _state = State::disconnected;
       if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
@@ -308,7 +314,7 @@ void MqttClient::_checkOutgoing() {
     _bytesSent += written;
     emc_log_i("tx %zu/%zu", _bytesSent, packet->size());
     if (_bytesSent == packet->size()) {
-      if ((packet->packetType()) == PacketType.DISCONNECT) _state = State::disconnectingTcp;
+      if ((packet->packetType()) == PacketType.DISCONNECT) _state = State::disconnectingTcp1;
       if (packet->removable()) {
         _outbox.removeCurrent();
       } else {
@@ -337,7 +343,7 @@ void MqttClient::_checkIncoming() {
         espMqttClientInternals::MQTTPacketType packetType = _parser.getPacket().fixedHeader.packetType & 0xF0;
         if (_state == State::connectingMqtt && packetType != PacketType.CONNACK) {
           emc_log_w("Disconnecting, expected CONNACK - protocol error");
-          _state = State::disconnectingTcp;
+          _state = State::disconnectingTcp1;
           return;
         }
         switch (packetType & 0xF0) {
@@ -375,7 +381,7 @@ void MqttClient::_checkIncoming() {
         }
       } else if (result ==  espMqttClientInternals::ParserResult::protocolError) {
         emc_log_w("Disconnecting, protocol error");
-        _state = State::disconnectingTcp;
+        _state = State::disconnectingTcp1;
         return;
       }
       remainingBufferLength -= bytesParsed;
@@ -392,7 +398,7 @@ void MqttClient::_checkPing() {
   // disconnect when server was inactive for twice the keepalive time
   if (millis() - _lastServerActivity > 2000 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
-    _state = State::disconnectingTcp;
+    _state = State::disconnectingTcp1;
     return;
   }
 
@@ -415,7 +421,7 @@ void MqttClient::_onConnack() {
       _onConnectCallback(_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent);
     }
   } else {
-    _state = State::disconnectingTcp;
+    _state = State::disconnectingTcp1;
     // cast is safe because the parser already checked for a valid return code
     _disconnectReason = static_cast<DisconnectReason>(_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode);
   }

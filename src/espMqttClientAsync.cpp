@@ -33,16 +33,18 @@ bool espMqttClientAsync::connect() {
 }
 
 void espMqttClientAsync::_setupClient(espMqttClientAsync* c) {
-  // empty
+  (void)c;
 }
 
 void espMqttClientAsync::onConnectCb(void* a, AsyncClient* c) {
+  (void)c;
   espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
   client->_state = MqttClient::State::connectingTcp2;
   client->loop();
 }
 
 void espMqttClientAsync::onDataCb(void* a, AsyncClient* c, void* data, size_t len) {
+  (void)c;
   espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
   client->_clientAsync.bufData = reinterpret_cast<uint8_t*>(data);
   client->_clientAsync.availableData = len;
@@ -50,12 +52,14 @@ void espMqttClientAsync::onDataCb(void* a, AsyncClient* c, void* data, size_t le
 }
 
 void espMqttClientAsync::onDisconnectCb(void* a, AsyncClient* c) {
+  (void)c;
   espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
-  client->_state = MqttClient::State::disconnectingTcp;
+  client->_state = MqttClient::State::disconnectingTcp2;
   client->loop();
 }
 
 void espMqttClientAsync::onPollCb(void* a, AsyncClient* c) {
+  (void)c;
   espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
   client->loop();
 }
