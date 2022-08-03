@@ -17,7 +17,7 @@ template <typename T>
 class MqttClientSetup : public MqttClient {
  public:
   T& setKeepAlive(uint16_t keepAlive) {
-    _keepAlive = keepAlive;
+    _keepAlive = keepAlive * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
     return static_cast<T&>(*this);
   }
 
