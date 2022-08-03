@@ -6,258 +6,98 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
-#include "MqttClient.h"
+#include "espMqttClient.h"
 
-using espMqttClientInternals::Packet;
-using espMqttClientInternals::PacketType;
-using espMqttClientTypes::DisconnectReason;
-using espMqttClientTypes::Error;
 
 #if defined(ARDUINO_ARCH_ESP32)
-MqttClient::MqttClient(uint8_t priority, uint8_t core)
+espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
+: MqttClientSetup(priority, core)
+, _client() {
 #else
-MqttClient::MqttClient()
+espMqttClient::espMqttClient()
+: _client() {
 #endif
-: _transport(nullptr)
-, _onConnectCallback(nullptr)
-, _onDisconnectCallback(nullptr)
-, _onSubscribeCallback(nullptr)
-, _onUnsubscribeCallback(nullptr)
-, _onMessageCallback(nullptr)
-, _onPublishCallback(nullptr)
-, _onErrorCallback(nullptr)
-, _onConnectHook(nullptr)
-, _onConnectHookArg(nullptr)
-, _clientId(nullptr)
-, _ip()
-, _host(nullptr)
-, _port(1183)
-, _useIp(false)
-, _keepAlive(15)
-, _cleanSession(false)
-, _username(nullptr)
-, _password(nullptr)
-, _willTopic(nullptr)
-, _willPayload(nullptr)
-, _willPayloadLength(0)
-, _willQos(0)
-, _willRetain(false)
-, _generatedClientId{0}
-, _packetId(0)
-, _state(State::disconnected)
+  _transport = &_client;
+  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  _onConnectHookArg = this;
+}
+
+void espMqttClient::_setupClient(espMqttClient* c) {
+  c->_client.setNoDelay(true);
+  #if defined(ARDUINO_ARCH_ESP8266)
+  c->_client.setSync(false);
+  #endif
+}
+
 #if defined(ARDUINO_ARCH_ESP32)
-, _xSemaphore(nullptr)
-, _taskHandle(nullptr)
+espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
+: MqttClientSetup(priority, core)
+, _client() {
+#else
+espMqttClientSecure::espMqttClientSecure()
+: _client() {
 #endif
-, _rxBuffer{0}
-, _outbox()
-, _bytesSent(0)
-, _parser()
-, _lastClientActivity(0)
-, _lastServerActivity(0)
-, _disconnectReason(DisconnectReason::TCP_DISCONNECTED)
+  _transport = &_client;
+  _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
+  _onConnectHookArg = this;
+}
+
+void espMqttClientSecure::_setupClient(espMqttClientSecure* c) {
+  c->_client.setNoDelay(true);
+  #if defined(ARDUINO_ARCH_ESP8266)
+  c->_client.setSync(false);
+  #endif
+}
+
+espMqttClientSecure& espMqttClientSecure::setInsecure() {
+  _client.setInsecure();
+  return *this;
+}
+
 #if defined(ARDUINO_ARCH_ESP32)
-#if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
-, _highWaterMark(4294967295)
-#endif
-#endif
-  {
-#if defined(ARDUINO_ARCH_ESP32)
-  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp32%06llx", ESP.getEfuseMac());
-  _xSemaphore = xSemaphoreCreateMutex();
-  EMC_SEMAPHORE_GIVE();  // release before first use
-  xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
+espMqttClientSecure& espMqttClientSecure::setCACert(const char* rootCA) {
+  _client.setCACert(rootCA);
+  return *this;
+}
+
+espMqttClientSecure& espMqttClientSecure::setCertificate(const char* clientCa) {
+  _client.setCertificate(clientCa);
+  return *this;
+}
+
+espMqttClientSecure& espMqttClientSecure::setPrivateKey(const char* privateKey) {
+  _client.setPrivateKey(privateKey);
+  return *this;
+}
+
+espMqttClientSecure& espMqttClientSecure::setPreSharedKey(const char* pskIdent, const char* psKey) {
+  _client.setPreSharedKey(pskIdent, psKey);
+  return *this;
+}
 #elif defined(ARDUINO_ARCH_ESP8266)
-  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp8266%06x", ESP.getChipId());
-#endif
-  _clientId = _generatedClientId;
+espMqttClientSecure& espMqttClientSecure::setFingerprint(const uint8_t fingerprint[20]) {
+  _client.setFingerprint(fingerprint);
+  return *this;
 }
 
-MqttClient::~MqttClient() {
-  disconnect(true);
-  _clearQueue(true);
-#if defined(ARDUINO_ARCH_ESP32)
-  vSemaphoreDelete(_xSemaphore);
-  #if EMC_USE_WATCHDOG
-  esp_task_wdt_delete(_taskHandle);  // not sure if this is really needed
-  #endif
-  vTaskDelete(_taskHandle);
-#endif
+espMqttClientSecure& espMqttClientSecure::setTrustAnchors(const X509List *ta) {
+  _client.setTrustAnchors(ta);
+  return *this;
 }
 
-bool MqttClient::connected() const {
-  if (_state == State::connected) return true;
-  return false;
+espMqttClientSecure& espMqttClientSecure::setClientRSACert(const X509List *cert, const PrivateKey *sk) {
+  _client.setClientRSACert(cert, sk);
+  return *this;
 }
 
-bool MqttClient::connect() {
-  bool result = true;
-  if (_state == State::disconnected) {
-    EMC_SEMAPHORE_TAKE();
-    if (_addPacketFront(_cleanSession,
-                        _username,
-                        _password,
-                        _willTopic,
-                        _willRetain,
-                        _willQos,
-                        _willPayload,
-                        _willPayloadLength,
-                        _keepAlive,
-                        _clientId)) {
-      #if defined(ARDUINO_ARCH_ESP32)
-      vTaskResume(_taskHandle);
-      #endif
-      _state = State::connectingTcp;
-    } else {
-      EMC_SEMAPHORE_GIVE();
-      emc_log_e("Could not create CONNECT packet");
-      _onError(0, Error::OUT_OF_MEMORY);
-      result = false;
-    }
-    EMC_SEMAPHORE_GIVE();
-  }
-  return result;
+espMqttClientSecure& espMqttClientSecure::setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type) {
+  _client.setClientECCert(cert, sk, allowed_usages, cert_issuer_key_type);
+  return *this;
 }
 
-bool MqttClient::disconnect(bool force) {
-  if (force && _state != State::disconnected && _state != State::disconnectingTcp) {
-    _state = State::disconnectingTcp;
-    return true;
-  }
-  if (!force && _state == State::connected) {
-    _state = State::disconnectingMqtt1;
-    return true;
-  }
-  return false;
-}
-
-uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
-  #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
-  if (_state != State::connected) {
-    return 0;
-  }
-  #endif
-  uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  EMC_SEMAPHORE_TAKE();
-  if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
-    emc_log_e("Could not create PUBLISH packet");
-    _onError(packetId, Error::OUT_OF_MEMORY);
-    packetId = 0;
-  }
-  EMC_SEMAPHORE_GIVE();
-  return packetId;
-}
-
-uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const char* payload) {
-  size_t len = strlen(payload);
-  return publish(topic, qos, retain, reinterpret_cast<const uint8_t*>(payload), len);
-}
-
-uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
-  #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
-  if (_state != State::connected) {
-    return 0;
-  }
-  #endif
-  uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
-  EMC_SEMAPHORE_TAKE();
-  if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
-    emc_log_e("Could not create PUBLISH packet");
-    _onError(packetId, Error::OUT_OF_MEMORY);
-    packetId = 0;
-  }
-  EMC_SEMAPHORE_GIVE();
-  return packetId;
-}
-
-void MqttClient::clearQueue(bool all) {
-  _clearQueue(all);
-}
-
-const char* MqttClient::getClientId() const {
-  return _clientId;
-}
-
-void MqttClient::loop() {
-  switch (_state) {
-    case State::disconnected:
-#if defined(ARDUINO_ARCH_ESP32)
-      vTaskSuspend(_taskHandle);
-#endif
-      break;
-    case State::connectingTcp:
-      if ((_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) == 1) {
-        if (_onConnectHook) _onConnectHook(_onConnectHookArg);
-        _state = State::connectingMqtt;
-        _lastClientActivity = _lastServerActivity = millis();
-      } else {
-        _state = State::disconnectingTcp;
-        _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
-      }
-      break;
-    case State::disconnectingMqtt1:
-      EMC_SEMAPHORE_TAKE();
-      if (_outbox.empty()) {
-        if (!_addPacket(PacketType.DISCONNECT)) {
-          EMC_SEMAPHORE_GIVE();
-          emc_log_e("Could not create DISCONNECT packet");
-          _onError(0, Error::OUT_OF_MEMORY);
-        } else {
-          _state = State::disconnectingMqtt2;
-        }
-      }
-      EMC_SEMAPHORE_GIVE();
-      // fall through to CONNECTED to send out DISCONN packet
-      [[fallthrough]];
-    case State::disconnectingMqtt2:
-      [[fallthrough]];
-    case State::connectingMqtt:
-      // receipt of CONNACK packet will set state to CONNECTED
-      // client however is allowed to send packets before CONNACK is received
-      // so we fall through to CONNECTED
-      [[fallthrough]];
-    case State::connected:
-      if (_transport->connected()) {
-        // CONNECT packet is first in the queue
-        _checkOutgoing();
-        _checkIncoming();
-        _checkPing();
-      } else {
-        _state = State::disconnectingTcp;
-        _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
-      }
-      break;
-    case State::disconnectingTcp:
-      _transport->stop();
-      _clearQueue(false);
-      _state = State::disconnected;
-        if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
-      break;
-    // all cases covered, no default case
-  }
-  EMC_YIELD();
-}
-
-#if defined(ARDUINO_ARCH_ESP32)
-void MqttClient::_loop(MqttClient* c) {
-  #if EMC_USE_WATCHDOG
-  if (esp_task_wdt_add(NULL) != ESP_OK) {
-    emc_log_e("Failed to add async task to WDT");
-  }
-  #endif
-  for (;;) {
-    c->loop();
-    #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
-    size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
-    if (waterMark < c->_highWaterMark) {
-      c->_highWaterMark = waterMark;
-      emc_log_i("Stack usage: %zu/%i", c->_highWaterMark, EMC_TASK_STACK_SIZE);
-    }
-    #endif
-    #if EMC_USE_WATCHDOG
-    esp_task_wdt_reset();
-    #endif
-  }
+espMqttClientSecure& espMqttClientSecure::setCertStore(CertStoreBase *certStore) {
+  _client.setCertStore(certStore);
+  return *this;
 }
 #endif
 
