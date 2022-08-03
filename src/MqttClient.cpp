@@ -102,7 +102,7 @@ bool MqttClient::connect() {
                         _willQos,
                         _willPayload,
                         _willPayloadLength,
-                        _keepAlive / 1000,  // 32b to 16b doesn't overflow because it comes from 16b orignally
+                        (uint16_t)(_keepAlive / 1000),  // 32b to 16b doesn't overflow because it comes from 16b orignally
                         _clientId)) {
       #if defined(ARDUINO_ARCH_ESP32)
       vTaskResume(_taskHandle);
