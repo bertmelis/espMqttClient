@@ -369,15 +369,18 @@ void MqttClient::_checkIncoming() {
 void MqttClient::_checkPing() {
   if (_keepAlive == 0) return;  // keepalive is disabled
 
+  uint32_t currentMillis = millis();
   // disconnect when server was inactive for twice the keepalive time
-  if (millis() - _lastServerActivity > 2000 * _keepAlive) {
+  if (currentMillis - _lastServerActivity > 2000 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
     _state = State::disconnectingTcp;
     return;
   }
 
   // send ping when client was inactive for 0.7 times the keepalive time
-  if (millis() - _lastClientActivity > 700 * _keepAlive) {
+  // or when server hasn't responded within keepalive time (typically due to QOS 0)
+  if ((currentMillis - _lastClientActivity > 700 * _keepAlive) ||
+      (currentMillis - _lastServerActivity > 1000 * _keepAlive)) {
     emc_log_i("Near keepalive, sending PING");
     if (!_addPacket(PacketType.PINGREQ)) {
       emc_log_e("Could not create PING packet");
