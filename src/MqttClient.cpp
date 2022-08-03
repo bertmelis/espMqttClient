@@ -218,6 +218,7 @@ void MqttClient::_checkPing() {
   }
 
   // send ping when client was inactive for 0.7 times the keepalive time
+  // or when server hasn't responded within keepalive time (typically due to QOS 0)
   if ((currentMillis - _lastClientActivity > 700 * _keepAlive) ||
       (currentMillis - _lastServerActivity > 1000 * _keepAlive)) {
     emc_log_i("Near keepalive, sending PING");
