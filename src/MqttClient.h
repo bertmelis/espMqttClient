@@ -94,7 +94,7 @@ class MqttClient {
   const char* _host;
   uint16_t _port;
   bool _useIp;
-  uint16_t _keepAlive;
+  uint32_t _keepAlive;
   bool _cleanSession;
   const char* _username;
   const char* _password;
