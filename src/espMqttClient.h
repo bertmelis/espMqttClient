@@ -50,5 +50,5 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
   #endif
 
  protected:
-   espMqttClientInternals::ClientSecureSync _client;
+  espMqttClientInternals::ClientSecureSync _client;
 };

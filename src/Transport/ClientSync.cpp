@@ -51,4 +51,4 @@ bool ClientSync::disconnected() {
   return !client.connected();
 }
 
-}  // end namespaceespMqttClientInternals
+}  // namespace espMqttClientInternals

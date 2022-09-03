@@ -24,4 +24,4 @@ class Transport {
   virtual bool disconnected() = 0;
 };
 
-}  // espMqttClientInternals
+}  // namespace espMqttClientInternals

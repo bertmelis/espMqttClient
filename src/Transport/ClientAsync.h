@@ -26,18 +26,18 @@ namespace espMqttClientInternals {
 class ClientAsync : public Transport {
  public:
   ClientAsync();
-  bool connect(IPAddress ip, uint16_t port);
-  bool connect(const char* host, uint16_t port);
-  size_t write(const uint8_t* buf, size_t size);
-  int available();
-  int read(uint8_t* buf, size_t size);
-  void stop();
-  bool connected();
-  bool disconnected();
+  bool connect(IPAddress ip, uint16_t port) override;
+  bool connect(const char* host, uint16_t port) override;
+  size_t write(const uint8_t* buf, size_t size) override;
+  int available() override;
+  int read(uint8_t* buf, size_t size) override;
+  void stop() override;
+  bool connected() override;
+  bool disconnected() override;
 
   AsyncClient client;
   size_t availableData;
   uint8_t* bufData;
 };
 
-}  // end namespace espMqttClientInternals
+}  // namespace espMqttClientInternals
