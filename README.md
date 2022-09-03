@@ -1,7 +1,7 @@
 # espMqttClient
 
 MQTT client library for the Espressif devices ESP8266 and ESP32 on the Arduino framework.
-Aims to be a non-blocking fully compliant MQTT 3.1.1 client.
+Aims to be a non-blocking, fully compliant MQTT 3.1.1 client.
 
 ![platformio](https://github.com/bertmelis/espMqttClient/actions/workflows/build_platformio.yml/badge.svg)
 ![cpplint](https://github.com/bertmelis/espMqttClient/actions/workflows/cpplint.yml/badge.svg)
@@ -15,11 +15,11 @@ Aims to be a non-blocking fully compliant MQTT 3.1.1 client.
 - TCP and TCP/TLS using standard WiFiClient and WiFiClientSecure connections
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
-- No dependencies outside the Arduino framework
+- Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported)
 
 # Documentation
 
-See [documentation](https://bert.emelis.net/espMqttClient/)
+See [documentation](https://bert.emelis.net/espMqttClient/) and the [examples](examples/).
 
 ## Limitations
 
@@ -30,6 +30,8 @@ Outgoing messages and session data are not stored in non-volatile memory. Any ev
 ### Non-blocking
 
 This library aims to be fully non-blocking. It is however limited by the underlying `WiFiClient` library which is part of the Arduino framework and has a blocking `connect` method. On ESP32 it is not an issue since the call is offloaded to a separate task. On ESP8266 however, connecting will block until succesful or until the connection timeouts.
+
+If you need a fully asynchronous MQTT client, you can use `espMqttClientAsync` which uses AsyncTCP/ESPAsyncTCP under the hood. These underlying libraries do not support TLS (anymore). I will not provide support TLS for the async client.
 
 # Bugs and feature requests
 

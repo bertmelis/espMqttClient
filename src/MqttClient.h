@@ -14,15 +14,14 @@ the LICENSE file.
 #include <atomic>
 #include <utility>
 
-#include "PlatformIncludes.h"
-
+#include "Helpers.h"
 #include "Config.h"
 #include "TypeDefs.h"
-#include "Helpers.h"
 #include "Logging.h"
 #include "Outbox.h"
 #include "Packets/Packet.h"
 #include "Packets/Parser.h"
+#include "Transport/Transport.h"
 
 class MqttClient {
  public:
@@ -67,17 +66,18 @@ class MqttClient {
   const char* getClientId() const;
   #if defined(ARDUINO_ARCH_ESP32)
 
- private:
+ protected:
   #endif
   void loop();
+  #if defined(ARDUINO_ARCH_ESP32)
+  explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
+  bool _useTask;
+  #else
 
  protected:
-#if defined(ARDUINO_ARCH_ESP32)
-  explicit MqttClient(uint8_t priority = 1, uint8_t core = 1);
-#else
   MqttClient();
-#endif
-  Client* _transport;
+  #endif
+  espMqttClientInternals::Transport* _transport;
 
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
   espMqttClientTypes::OnDisconnectCallback _onDisconnectCallback;
@@ -86,9 +86,7 @@ class MqttClient {
   espMqttClientTypes::OnMessageCallback _onMessageCallback;
   espMqttClientTypes::OnPublishCallback _onPublishCallback;
   espMqttClientTypes::OnErrorCallback _onErrorCallback;
-  typedef void(*OnConnectHook)(void*);
-  OnConnectHook _onConnectHook;
-  void* _onConnectHookArg;
+  typedef void(*mqttClientHook)(void*);
   const char* _clientId;
   IPAddress _ip;
   const char* _host;
@@ -104,20 +102,24 @@ class MqttClient {
   uint8_t _willQos;
   bool _willRetain;
 
- private:
-  char _generatedClientId[EMC_CLIENTID_LENGTH];
-  uint16_t _packetId;
-
+  // state is protected to allow state changes by the transport system, defined in child classes
+  // eg. to allow AsyncTCP
   enum class State {
     disconnected,
-    connectingTcp,
+    connectingTcp1,
+    connectingTcp2,
     connectingMqtt,
     connected,
     disconnectingMqtt1,
     disconnectingMqtt2,
-    disconnectingTcp
+    disconnectingTcp1,
+    disconnectingTcp2
   };
   std::atomic<State> _state;
+
+ private:
+  char _generatedClientId[EMC_CLIENTID_LENGTH];
+  uint16_t _packetId;
 
 #if defined(ARDUINO_ARCH_ESP32)
   SemaphoreHandle_t _xSemaphore;
