@@ -8,24 +8,15 @@ the LICENSE file.
 
 #pragma once
 
-#include <Client.h>
-
-#if defined(ARDUINO_ARCH_ESP32)
-  #include "freertos/FreeRTOS.h"
-  #include <AsyncTCP.h>
-#elif defined(ARDUINO_ARCH_ESP8266)
-  #include <ESPAsyncTCP.h>
-#endif
+#include <WiFiClient.h>  // includes IPAddress
 
 #include "Transport.h"
-#include "../Config.h"
-#include "../Logging.h"
 
 namespace espMqttClientInternals {
 
-class ClientAsync : public Transport {
+class ClientSync : public Transport {
  public:
-  ClientAsync();
+  ClientSync();
   bool connect(IPAddress ip, uint16_t port);
   bool connect(const char* host, uint16_t port);
   size_t write(const uint8_t* buf, size_t size);
@@ -34,10 +25,7 @@ class ClientAsync : public Transport {
   void stop();
   bool connected();
   bool disconnected();
-
-  AsyncClient client;
-  size_t availableData;
-  uint8_t* bufData;
+  WiFiClient client;
 };
 
-}  // end namespace espMqttClientInternals
+}  // espMqttClientInternals

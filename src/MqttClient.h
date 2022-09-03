@@ -21,6 +21,7 @@ the LICENSE file.
 #include "Outbox.h"
 #include "Packets/Packet.h"
 #include "Packets/Parser.h"
+#include "Transport/Transport.h"
 
 class MqttClient {
  public:
@@ -76,7 +77,7 @@ class MqttClient {
  protected:
   MqttClient();
   #endif
-  Client* _transport;
+  espMqttClientInternals::Transport* _transport;
 
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
   espMqttClientTypes::OnDisconnectCallback _onDisconnectCallback;
@@ -86,10 +87,6 @@ class MqttClient {
   espMqttClientTypes::OnPublishCallback _onPublishCallback;
   espMqttClientTypes::OnErrorCallback _onErrorCallback;
   typedef void(*mqttClientHook)(void*);
-  mqttClientHook _onConnectHook;
-  void* _onConnectHookArg;
-  mqttClientHook _onDisconnectHook;
-  void* _onDisconnectHookArg;
   const char* _clientId;
   IPAddress _ip;
   const char* _host;

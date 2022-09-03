@@ -8,23 +8,25 @@ the LICENSE file.
 
 #include "ClientAsync.h"
 
+namespace espMqttClientInternals {
+
 ClientAsync::ClientAsync()
-: tcpClient()
+: client()
 , availableData(0)
 , bufData(nullptr) {
-  tcpClient.setNoDelay(true);
+  client.setNoDelay(true);
 }
 
-int ClientAsync::connect(IPAddress ip, uint16_t port) {
-  return tcpClient.connect(ip, port) ? 1 : 0;
+bool ClientAsync::connect(IPAddress ip, uint16_t port) {
+  return client.connect(ip, port);
 }
 
-int ClientAsync::connect(const char* host, uint16_t port) {
-  return tcpClient.connect(host, port) ? 1 : 0;
+bool ClientAsync::connect(const char* host, uint16_t port) {
+  return client.connect(host, port);
 }
 
 size_t ClientAsync::write(const uint8_t* buf, size_t size) {
-  return tcpClient.write(reinterpret_cast<const char*>(buf), size);
+  return client.write(reinterpret_cast<const char*>(buf), size);
 }
 
 int ClientAsync::available() {
@@ -42,17 +44,15 @@ int ClientAsync::read(uint8_t* buf, size_t size) {
 }
 
 void ClientAsync::stop() {
-  tcpClient.stop();
+  client.close(false);
 }
 
-uint8_t ClientAsync::connected() {
-  return tcpClient.connected();
+bool ClientAsync::connected() {
+  return client.connected();
 }
 
-void ClientAsync::stop(bool force) {
-  if (force) {
-    tcpClient.stop();
-  } else {
-    tcpClient.close();
-  }
+bool ClientAsync::disconnected() {
+  return client.disconnected();
 }
+
+}  // end namespace espMqttClientInternals

@@ -28,10 +28,6 @@ MqttClient::MqttClient()
 , _onMessageCallback(nullptr)
 , _onPublishCallback(nullptr)
 , _onErrorCallback(nullptr)
-, _onConnectHook(nullptr)
-, _onConnectHookArg(nullptr)
-, _onDisconnectHook(nullptr)
-, _onDisconnectHookArg(nullptr)
 , _clientId(nullptr)
 , _ip()
 , _host(nullptr)
@@ -198,7 +194,6 @@ void MqttClient::loop() {
       #endif
       break;
     case State::connectingTcp1:
-      // connect returns 0 or 1 for WiFiClient and true or false for async
       if (_useIp ? _transport->connect(_ip, _port) : _transport->connect(_host, _port)) {
         _state = State::connectingTcp2;
       } else {
@@ -206,12 +201,10 @@ void MqttClient::loop() {
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
         break;
       }
-      // For async it doesn't make sense to fall through but it also doesn't hurt
-      // for WiFiclient, falling through enables advancing directly to MQTT connection
+      // Falling through to speed up connecting on blocking transport 'connect' implementations
       [[fallthrough]];
     case State::connectingTcp2:
       if (_transport->connected()) {
-        if (_onConnectHook) _onConnectHook(_onConnectHookArg);
         _lastClientActivity = _lastServerActivity = millis();
         _state = State::connectingMqtt;
       }
@@ -228,14 +221,14 @@ void MqttClient::loop() {
         }
       }
       EMC_SEMAPHORE_GIVE();
-      // fall through to CONNECTED to send out DISCONN packet
+      // fall through to 'connected' to send out DISCONN packet
       [[fallthrough]];
     case State::disconnectingMqtt2:
       [[fallthrough]];
     case State::connectingMqtt:
       // receipt of CONNACK packet will set state to CONNECTED
       // client however is allowed to send packets before CONNACK is received
-      // so we fall through to CONNECTED
+      // so we fall through to 'connected'
       [[fallthrough]];
     case State::connected:
       if (_transport->connected()) {
@@ -249,15 +242,15 @@ void MqttClient::loop() {
       }
       break;
     case State::disconnectingTcp1:
-      // async directs to here when the tcp client disconnects but it can handle double stopping
       _transport->stop();
-      if (_onDisconnectHook) _onDisconnectHook(_onDisconnectHookArg);
+      _state = State::disconnectingTcp2;
       break;
     case State::disconnectingTcp2:
-      // async directs to here when the tcp client disconnects but it can handle double stopping
-      _clearQueue(false);
-      _state = State::disconnected;
-      if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
+      if (_transport->disconnected()) {
+        _clearQueue(false);
+        _state = State::disconnected;
+        if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
+      }
       break;
     // all cases covered, no default case
   }

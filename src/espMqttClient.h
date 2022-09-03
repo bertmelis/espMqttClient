@@ -11,7 +11,8 @@ the LICENSE file.
 
 #pragma once
 
-#include <WiFiClientSecure.h>  // includes WiFiClient
+#include "Transport/ClientSync.h"
+#include "Transport/ClientSecureSync.h"
 
 #include "MqttClientSetup.h"
 
@@ -24,9 +25,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient> {
 #endif
 
  protected:
-  WiFiClient _client;
-  static void _setupClient(espMqttClient* c);
-  static void _disconnectClient(espMqttClient* c);
+  espMqttClientInternals::ClientSync _client;
 };
 
 class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
@@ -51,7 +50,5 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
   #endif
 
  protected:
-  WiFiClientSecure _client;
-  static void _setupClient(espMqttClientSecure* c);
-  static void _disconnectClient(espMqttClientSecure* c);
+   espMqttClientInternals::ClientSecureSync _client;
 };

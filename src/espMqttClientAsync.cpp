@@ -20,10 +20,10 @@ espMqttClientAsync::espMqttClientAsync()
   _transport = &_clientAsync;
   // _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
   // _onConnectHookArg = this;
-  _clientAsync.tcpClient.onConnect(onConnectCb, this);
-  _clientAsync.tcpClient.onDisconnect(onDisconnectCb, this);
-  _clientAsync.tcpClient.onData(onDataCb, this);
-  _clientAsync.tcpClient.onPoll(onPollCb, this);
+  _clientAsync.client.onConnect(onConnectCb, this);
+  _clientAsync.client.onDisconnect(onDisconnectCb, this);
+  _clientAsync.client.onData(onDataCb, this);
+  _clientAsync.client.onPoll(onPollCb, this);
 }
 
 bool espMqttClientAsync::connect() {

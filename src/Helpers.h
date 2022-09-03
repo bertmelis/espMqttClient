@@ -10,7 +10,6 @@ the LICENSE file.
 
 #ifdef ARDUINO
   #include <Arduino.h>  // millis()
-  #include <Client.h>
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
