@@ -48,7 +48,3 @@ the LICENSE file.
 #ifndef EMC_USE_WATCHDOG
 #define EMC_USE_WATCHDOG 0
 #endif
-
-#ifndef EMC_ASYNC_TCP
-#define EMC_ASYNC_TCP 1
-#endif
