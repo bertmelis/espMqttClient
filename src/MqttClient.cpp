@@ -33,7 +33,7 @@ MqttClient::MqttClient()
 , _host(nullptr)
 , _port(1183)
 , _useIp(false)
-, _keepAlive(15)
+, _keepAlive(15000)
 , _cleanSession(false)
 , _username(nullptr)
 , _password(nullptr)
@@ -106,7 +106,7 @@ bool MqttClient::connect() {
                         _willQos,
                         _willPayload,
                         _willPayloadLength,
-                        _keepAlive,
+                        (uint16_t)(_keepAlive / 1000),  // 32b to 16b doesn't overflow because it comes from 16b orignally
                         _clientId)) {
       #if defined(ARDUINO_ARCH_ESP32)
       if (_useTask) {
@@ -388,15 +388,18 @@ void MqttClient::_checkIncoming() {
 void MqttClient::_checkPing() {
   if (_keepAlive == 0) return;  // keepalive is disabled
 
+  uint32_t currentMillis = millis();
   // disconnect when server was inactive for twice the keepalive time
-  if (millis() - _lastServerActivity > 2000 * _keepAlive) {
+  if (currentMillis - _lastServerActivity > 2 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
     _state = State::disconnectingTcp1;
     return;
   }
 
-  // send ping when client was inactive for 0.7 times the keepalive time
-  if (millis() - _lastClientActivity > 700 * _keepAlive) {
+  // send ping when client was inactive during the keepalive time
+  // or when server hasn't responded within keepalive time (typically due to QOS 0)
+  if ((currentMillis - _lastClientActivity > _keepAlive) ||
+      (currentMillis - _lastServerActivity > _keepAlive)) {
     emc_log_i("Near keepalive, sending PING");
     if (!_addPacket(PacketType.PINGREQ)) {
       emc_log_e("Could not create PING packet");
