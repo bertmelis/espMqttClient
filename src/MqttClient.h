@@ -135,6 +135,7 @@ class MqttClient {
   espMqttClientInternals::Parser _parser;
   uint32_t _lastClientActivity;
   uint32_t _lastServerActivity;
+  bool _pingSent;
   espMqttClientTypes::DisconnectReason _disconnectReason;
 
   uint16_t _getNextPacketId();

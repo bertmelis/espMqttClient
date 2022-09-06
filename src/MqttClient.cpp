@@ -55,6 +55,7 @@ MqttClient::MqttClient()
 , _parser()
 , _lastClientActivity(0)
 , _lastServerActivity(0)
+, _pingSent(false)
 , _disconnectReason(DisconnectReason::TCP_DISCONNECTED)
 #if defined(ARDUINO_ARCH_ESP32)
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
@@ -369,7 +370,7 @@ void MqttClient::_checkIncoming() {
             _onUnsuback();
             break;
           case PacketType.PINGRESP:
-            // nothing to do
+            _pingSent = false;
             break;
         }
       } else if (result ==  espMqttClientInternals::ParserResult::protocolError) {
@@ -398,12 +399,15 @@ void MqttClient::_checkPing() {
 
   // send ping when client was inactive during the keepalive time
   // or when server hasn't responded within keepalive time (typically due to QOS 0)
-  if ((currentMillis - _lastClientActivity > _keepAlive) ||
-      (currentMillis - _lastServerActivity > _keepAlive)) {
+  if (((currentMillis - _lastClientActivity > _keepAlive) ||
+       (currentMillis - _lastServerActivity > _keepAlive)) &&
+       !_pingSent) {
     emc_log_i("Near keepalive, sending PING");
     if (!_addPacket(PacketType.PINGREQ)) {
       emc_log_e("Could not create PING packet");
+      return;
     }
+    _pingSent = true;
   }
 }
 
