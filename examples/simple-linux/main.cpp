@@ -1,12 +1,11 @@
 #include <iostream>
 #include <thread>
+#include <espMqttClient.h>
 
 #define MQTT_HOST IPAddress(192,168,1,10)
 #define MQTT_PORT 1883
 
-#include <espMqttClientPosix.h>
-
-espMqttClientPosix mqttClient;
+espMqttClient mqttClient;
 std::atomic_bool exitProgram(false);
 
 void connectToMqtt() {
