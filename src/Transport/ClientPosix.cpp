@@ -19,7 +19,7 @@ ClientPosix::ClientPosix()
 }
 
 ClientPosix::~ClientPosix() {
-  stop();
+  ClientPosix::stop();
 }
 
 bool ClientPosix::connect(IPAddress ip, uint16_t port) {

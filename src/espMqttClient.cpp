@@ -6,8 +6,6 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
-#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
-
 #include "espMqttClient.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -21,6 +19,7 @@ espMqttClient::espMqttClient()
   _transport = &_client;
 }
 
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
 : MqttClientSetup(priority, core)
