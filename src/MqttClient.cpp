@@ -63,15 +63,13 @@ MqttClient::MqttClient()
 #endif
 #endif
   {
+  EMC_GENERATE_CLIENTID(_generatedClientId);
 #if defined(ARDUINO_ARCH_ESP32)
-  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp32%06llx", ESP.getEfuseMac());
   _xSemaphore = xSemaphoreCreateMutex();
   EMC_SEMAPHORE_GIVE();  // release before first use
   if (useTask) {
     xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
   }
-#elif defined(ARDUINO_ARCH_ESP8266)
-  snprintf(_generatedClientId, EMC_CLIENTID_LENGTH, "esp8266%06x", ESP.getChipId());
 #endif
   _clientId = _generatedClientId;
 }
@@ -306,7 +304,7 @@ void MqttClient::_checkOutgoing() {
     }
     _lastClientActivity = millis();
     _bytesSent += written;
-    emc_log_i("tx %zu/%zu", _bytesSent, packet->size());
+    emc_log_i("tx %zu/%zu (%02x)", _bytesSent, packet->size(), packet->packetType());
     if (_bytesSent == packet->size()) {
       if ((packet->packetType()) == PacketType.DISCONNECT) _state = State::disconnectingTcp1;
       if (packet->removable()) {
@@ -390,6 +388,7 @@ void MqttClient::_checkPing() {
   if (_keepAlive == 0) return;  // keepalive is disabled
 
   uint32_t currentMillis = millis();
+
   // disconnect when server was inactive for twice the keepalive time
   if (currentMillis - _lastServerActivity > 2 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
@@ -399,10 +398,9 @@ void MqttClient::_checkPing() {
 
   // send ping when client was inactive during the keepalive time
   // or when server hasn't responded within keepalive time (typically due to QOS 0)
-  if (((currentMillis - _lastClientActivity > _keepAlive) ||
-       (currentMillis - _lastServerActivity > _keepAlive)) &&
-       !_pingSent) {
-    emc_log_i("Near keepalive, sending PING");
+  if (!_pingSent &&
+      ((currentMillis - _lastClientActivity > _keepAlive) ||
+       (currentMillis - _lastServerActivity > _keepAlive))) {
     if (!_addPacket(PacketType.PINGREQ)) {
       emc_log_e("Could not create PING packet");
       return;

@@ -11,6 +11,8 @@ the LICENSE file.
 
 #pragma once
 
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+
 #include "Transport/ClientSync.h"
 #include "Transport/ClientSecureSync.h"
 
@@ -52,3 +54,5 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
  protected:
   espMqttClientInternals::ClientSecureSync _client;
 };
+
+#endif

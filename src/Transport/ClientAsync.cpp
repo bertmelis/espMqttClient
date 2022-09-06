@@ -6,6 +6,8 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+
 #include "ClientAsync.h"
 
 namespace espMqttClientInternals {
@@ -56,3 +58,5 @@ bool ClientAsync::disconnected() {
 }
 
 }  // namespace espMqttClientInternals
+
+#endif

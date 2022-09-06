@@ -6,8 +6,9 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
-#include "espMqttClient.h"
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 
+#include "espMqttClient.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
@@ -81,4 +82,6 @@ espMqttClientSecure& espMqttClientSecure::setCertStore(CertStoreBase *certStore)
   _client.client.setCertStore(certStore);
   return *this;
 }
+#endif
+
 #endif

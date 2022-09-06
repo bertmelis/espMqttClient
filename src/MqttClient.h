@@ -125,8 +125,10 @@ class MqttClient {
   SemaphoreHandle_t _xSemaphore;
   TaskHandle_t _taskHandle;
   static void _loop(MqttClient* c);
-#elif defined(ESP8266) && EMC_ESP8266_MULTITHREADING
+#elif defined(ARDUINO_ARCH_ESP8266) && EMC_ESP8266_MULTITHREADING
   std::atomic<bool> _xSemaphore = false;
+#elif defined(__linux__)
+  std::mutex mtx;
 #endif
 
   uint8_t _rxBuffer[EMC_RX_BUFFER_SIZE];
