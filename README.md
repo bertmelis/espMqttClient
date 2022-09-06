@@ -16,6 +16,9 @@ Aims to be a non-blocking, fully compliant MQTT 3.1.1 client.
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
 - Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported)
+- Supported platforms:
+  - Espressif ESP8266 and ESP32 using the Arduino framework
+  - Linux! This includes WSL on Windows.
 
 # Documentation
 
