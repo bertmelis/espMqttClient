@@ -12,7 +12,7 @@ the LICENSE file.
 
 IPAddress::IPAddress()
 : _address(0) {
-  //empty
+  // empty
 }
 
 IPAddress::IPAddress(uint8_t p0, uint8_t p1, uint8_t p2, uint8_t p3)

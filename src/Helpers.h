@@ -35,16 +35,15 @@ the LICENSE file.
   #define EMC_YIELD()
   #define EMC_GENERATE_CLIENTID(x) snprintf(x, EMC_CLIENTID_LENGTH, "esp8266%06x", ESP.getChipId());
 #elif defined(__linux__)
-  #include <chrono>
-  #include <thread>  // yield()
+  #include <chrono>  // NOLINT [build/c++11]
+  #include <thread>  // NOLINT [build/c++11] for yield()
   #define millis() std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
   #define EMC_GET_FREE_MEMORY() 1000000000
   #define EMC_YIELD() std::this_thread::yield()
   #define EMC_GENERATE_CLIENTID(x) snprintf(x, EMC_CLIENTID_LENGTH, "Client%04d%04d%04d", rand()%10000, rand()%10000, rand()%10000)
-  #include <mutex>
+  #include <mutex>  // NOLINT [build/c++11]
     #define EMC_SEMAPHORE_TAKE() mtx.lock();
     #define EMC_SEMAPHORE_GIVE() mtx.unlock();
-  #include <thread>
 #else
   #error Target platform not supported
 #endif
