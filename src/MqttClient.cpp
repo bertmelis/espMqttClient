@@ -474,15 +474,10 @@ void MqttClient::_onPuback() {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   while (it) {
-    // PUBACKs come in the order PUBs are sent. So we only check the first PUB packet in outbox
-    // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBLISH) {
-      if (it.get()->packetId() == idToMatch) {
-        callback = true;
-        _outbox.remove(it);
-        break;
-      }
-      emc_log_w("Received out of order PUBACK");
+    // PUBACKs mostly come in the order PUBs are sent so simply iterate front to back over the list
+    if ((it.get()->packetType()) == PacketType.PUBLISH && it.get()->packetId() == idToMatch) {
+      callback = true;
+      _outbox.remove(it);
       break;
     }
     ++it;
@@ -501,18 +496,13 @@ void MqttClient::_onPubrec() {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   while (it) {
-    // PUBRECs come in the order PUBs are sent. So we only check the first PUB packet in outbox
-    // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBLISH) {
-      if (it.get()->packetId() == idToMatch) {
-        if (!_addPacket(PacketType.PUBREL, idToMatch)) {
-          emc_log_e("Could not create PUBREL packet");
-        }
-        _outbox.remove(it);
-        success = true;
-        break;
+    // PUBRECs mostly come in the order PUBs are sent so simply iterate front to back over the list
+    if ((it.get()->packetType()) == PacketType.PUBLISH && it.get()->packetId() == idToMatch) {
+      if (!_addPacket(PacketType.PUBREL, idToMatch)) {
+        emc_log_e("Could not create PUBREL packet");
       }
-      emc_log_w("Received out of order PUBREC");
+      _outbox.remove(it);
+      success = true;
       break;
     }
     ++it;
@@ -529,18 +519,13 @@ void MqttClient::_onPubrel() {
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   while (it) {
-    // PUBRELs come in the order PUBRECs are sent. So we only check the first PUBREC packet in outbox
-    // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBREC) {
-      if (it.get()->packetId() == idToMatch) {
-        if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
-          emc_log_e("Could not create PUBCOMP packet");
-        }
-        _outbox.remove(it);
-        success = true;
-        break;
+    // PUBRELs mostly come in the order PUBs are sent so simply iterate front to back over the list
+    if ((it.get()->packetType()) == PacketType.PUBREC && it.get()->packetId() == idToMatch) {
+      if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
+        emc_log_e("Could not create PUBCOMP packet");
       }
-      emc_log_w("Received out of order PUBREL");
+      _outbox.remove(it);
+      success = true;
       break;
     }
     ++it;
@@ -557,18 +542,13 @@ void MqttClient::_onPubcomp() {
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   while (it) {
-    // PUBCOMPs come in the order PUBRELs are sent. So we only check the first PUBREL packet in outbox
-    // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBREL) {
-      if (it.get()->packetId() == idToMatch) {
-        if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
-          emc_log_e("Could not create PUBCOMP packet");
-        }
-        callback = true;
-        _outbox.remove(it);
-        break;
+    // PUBCOMPs mostly come in the order PUBs are sent so simply iterate front to back over the list
+    if ((it.get()->packetType()) == PacketType.PUBREL && it.get()->packetId() == idToMatch) {
+      if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
+        emc_log_e("Could not create PUBCOMP packet");
       }
-      emc_log_w("Received out of order PUBCOMP");
+      callback = true;
+      _outbox.remove(it);
       break;
     }
     ++it;
