@@ -9,7 +9,7 @@ the LICENSE file.
 #pragma once
 
 #ifndef EMC_TX_TIMEOUT
-#define EMC_TX_TIMEOUT 5000
+#define EMC_TX_TIMEOUT 10000
 #endif
 
 #ifndef EMC_RX_BUFFER_SIZE
