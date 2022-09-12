@@ -164,6 +164,7 @@ class MqttClient {
   void _checkOutgoing();
   void _checkIncoming();
   void _checkPing();
+  void _checkRetries();
 
   void _onConnack();
   void _onPublish();
