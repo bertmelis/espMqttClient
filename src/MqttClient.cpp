@@ -237,6 +237,7 @@ void MqttClient::loop() {
         _checkOutgoing();
         _checkIncoming();
         _checkPing();
+        _checkRetries();
       } else {
         _state = State::disconnectingTcp1;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
@@ -312,8 +313,7 @@ void MqttClient::_checkOutgoing() {
       if (packet->removable()) {
         _outbox.removeCurrent();
       } else {
-        // handle with care! millis() returns unsigned 32 bit, token is void*
-        packet->token = reinterpret_cast<void*>(millis());
+        packet->token = millis();
         if ((packet->packetType()) == PacketType.PUBLISH) packet->setDup();
         _outbox.next();
       }
@@ -408,6 +408,18 @@ void MqttClient::_checkPing() {
       return;
     }
     _pingSent = true;
+  }
+}
+
+void MqttClient::_checkRetries() {
+  // only check if we're not in progress of sending a packet
+  if (_bytesSent != 0) return;
+
+  // Only check timeout of first packet, rest has to be sent in same order
+  uint32_t sentTime = _outbox.front().get()->token;
+  if (millis() - sentTime > EMC_TX_TIMEOUT) {
+    emc_log_w("Packet tx timeout, retrying");
+    _outbox.resetCurrent();
   }
 }
 
@@ -562,6 +574,7 @@ void MqttClient::_onPubcomp() {
 }
 
 void MqttClient::_onSuback() {
+  /*
   bool callback = false;
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
@@ -580,9 +593,14 @@ void MqttClient::_onSuback() {
   } else {
     emc_log_w("received SUBACK without SUB");
   }
+  */
+  if (_onSubscribeCallback) _onSubscribeCallback(_parser.getPacket().variableHeader.fixed.packetId,
+                                                 reinterpret_cast<const espMqttClientTypes::SubscribeReturncode*>(_parser.getPacket().payload.data),
+                                                 _parser.getPacket().payload.total);
 }
 
 void MqttClient::_onUnsuback() {
+  /*
   bool callback = false;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
@@ -601,6 +619,8 @@ void MqttClient::_onUnsuback() {
   } else {
     emc_log_w("received UNSUBACK without UNSUB");
   }
+  */
+  if (_onUnsubscribeCallback) _onUnsubscribeCallback(_parser.getPacket().variableHeader.fixed.packetId);
 }
 
 void MqttClient::_clearQueue(bool clearSession) {
