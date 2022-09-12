@@ -158,6 +158,10 @@ class Outbox {
     return false;
   }
 
+  void resetCurrent() {
+    _current = _first;
+  }
+
  private:
   Node* _first;
   Node* _last;
