@@ -31,14 +31,16 @@ class Packet {
   void setDup();
   uint16_t packetId() const;
   MQTTPacketType packetType() const;
+  void ack();
   bool removable() const;
 
-  void* token;  // native typeless variable to store any additional data
+  uint32_t token;  // 32 bit variable to store any additional information
 
  protected:
   uint16_t _packetId;  // save as separate variable: will be accessed frequently
   uint8_t* _data;
   size_t _size;
+  bool _removable;
 
   // variables for chunked payload handling
   size_t _payloadIndex;
@@ -96,6 +98,7 @@ class Packet {
   , _packetId(packetId)
   , _data(nullptr)
   , _size(0)
+  , _removable(true)
   , _payloadIndex(0)
   , _payloadStartIndex(0)
   , _payloadEndIndex(0)
@@ -119,6 +122,7 @@ class Packet {
   , _packetId(packetId)
   , _data(nullptr)
   , _size(0)
+  , _removable(true)
   , _payloadIndex(0)
   , _payloadStartIndex(0)
   , _payloadEndIndex(0)

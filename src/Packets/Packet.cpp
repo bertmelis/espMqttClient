@@ -49,10 +49,12 @@ MQTTPacketType Packet::packetType() const {
   return static_cast<MQTTPacketType>(0);
 }
 
+void Packet::ack() {
+  _removable = true;
+}
+
 bool Packet::removable() const {
-  if (_packetId == 0) return true;
-  if ((packetType() == PacketType.PUBACK) || (packetType() == PacketType.PUBCOMP)) return true;
-  return false;
+  return _removable;
 }
 
 Packet::Packet(espMqttClientTypes::Error& error,
@@ -70,6 +72,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
 , _packetId(0)
 , _data(nullptr)
 , _size(0)
+, _removable(true)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -166,6 +169,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
 , _packetId(packetId)
 , _data(nullptr)
 , _size(0)
+, _removable(false)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -178,6 +182,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
   if (qos == 0) {
     remainingLength -= 2;
     _packetId = 0;
+    _removable = true;
   }
 
   if (!_allocate(remainingLength)) {
@@ -204,6 +209,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
 , _packetId(packetId)
 , _data(nullptr)
 , _size(0)
+, _removable(false)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -216,6 +222,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
   if (qos == 0) {
     remainingLength -= 2;
     _packetId = 0;
+    _removable = true;
   }
 
   if (!_allocate(remainingLength - payloadLength + std::min(payloadLength, static_cast<size_t>(EMC_RX_BUFFER_SIZE)))) {
@@ -239,6 +246,7 @@ Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* 
 , _packetId(packetId)
 , _data(nullptr)
 , _size(0)
+, _removable(true)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -252,6 +260,7 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t p
 , _packetId(packetId)
 , _data(nullptr)
 , _size(0)
+, _removable(false)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -272,6 +281,8 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t p
   _data[pos++] = packetId >> 8;
   _data[pos] = packetId & 0xFF;
 
+  if ((packetType() == PacketType.PUBACK) || (packetType() == PacketType.PUBCOMP)) _removable = true;
+
   error = espMqttClientTypes::Error::SUCCESS;
 }
 
@@ -280,6 +291,7 @@ Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* 
 , _packetId(packetId)
 , _data(nullptr)
 , _size(0)
+, _removable(true)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
@@ -293,6 +305,7 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
 , _packetId(0)
 , _data(nullptr)
 , _size(0)
+, _removable(true)
 , _payloadIndex(0)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
