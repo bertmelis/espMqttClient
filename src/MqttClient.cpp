@@ -413,6 +413,7 @@ void MqttClient::_checkPing() {
 
 void MqttClient::_onConnack() {
   if (_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode == 0x00) {
+    _pingSent = false;  // reset after keepalive timeout disconnect
     _state = State::connected;
     if (_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent == 0) {
       _clearQueue(true);
