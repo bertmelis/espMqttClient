@@ -260,7 +260,7 @@ void MqttClient::loop() {
   size_t waterMark = uxTaskGetStackHighWaterMark(NULL);
   if (waterMark < _highWaterMark) {
     _highWaterMark = waterMark;
-    emc_log_i("Stack usage: %zu/%i", _highWaterMark, EMC_TASK_STACK_SIZE);
+    emc_log_i("Stack usage: %zu/%i", EMC_TASK_STACK_SIZE - _highWaterMark, EMC_TASK_STACK_SIZE);
   }
   #endif
 }
