@@ -36,7 +36,7 @@ int ClientSecureSync::available() {
 }
 
 int ClientSecureSync::read(uint8_t* buf, size_t size) {
-  return read(buf, size);
+  return client.read(buf, size);
 }
 
 void ClientSecureSync::stop() {
