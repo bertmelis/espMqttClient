@@ -94,7 +94,7 @@ class Packet {
          const char* topic2,
          uint8_t qos2,
          Args&& ... args)
-  : token(nullptr)
+  : token(0)
   , _packetId(packetId)
   , _data(nullptr)
   , _size(0)
@@ -118,7 +118,7 @@ class Packet {
          const char* topic1,
          const char* topic2,
          Args&& ... args)
-  : token(nullptr)
+  : token(0)
   , _packetId(packetId)
   , _data(nullptr)
   , _size(0)
