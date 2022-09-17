@@ -412,7 +412,7 @@ void test_encodeSubscribe() {
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8(PacketType.SUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
+  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -441,7 +441,7 @@ void test_encodeMultiSubscribe2() {
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8(PacketType.SUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
+  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -474,7 +474,7 @@ void test_encodeMultiSubscribe3() {
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8(PacketType.SUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
+  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -497,7 +497,7 @@ void test_encodeUnsubscribe() {
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8(PacketType.UNSUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
+  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -522,7 +522,7 @@ void test_encodeMultiUnsubscribe2() {
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8(PacketType.UNSUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
+  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
@@ -549,7 +549,7 @@ void test_encodeMultiUnsubscribe3() {
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::Error::SUCCESS, error);
   TEST_ASSERT_EQUAL_UINT32(length, packet.size());
   TEST_ASSERT_EQUAL_UINT8(PacketType.UNSUBSCRIBE, packet.packetType());
-  TEST_ASSERT_FALSE(packet.removable());
+  TEST_ASSERT_TRUE(packet.removable());
   TEST_ASSERT_EQUAL_UINT8_ARRAY(check, packet.data(0), length);
   TEST_ASSERT_EQUAL_UINT16(packetId, packet.packetId());
 }
