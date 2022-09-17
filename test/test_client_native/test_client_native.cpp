@@ -11,7 +11,7 @@ std::atomic_bool exitProgram(false);
 std::thread t;
 
 //const IPAddress broker(192,168,1,10);
-const char* broker = "mosquittomqtt";
+const char* broker = "localhost";
 const uint16_t broker_port = 1883;
 
 /*

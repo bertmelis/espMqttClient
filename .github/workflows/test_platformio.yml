@@ -19,9 +19,6 @@ jobs:
         uses: namoshek/mosquitto-github-action@v1
         with:
           version: '2.0'
-          ports: '1883:1883'
-          config: ${{ github.workspace }}/test/mosquitto.conf
-          container-name: 'mosquittomqtt'
       - name: Test
         run: |
           pio test -e native -v
