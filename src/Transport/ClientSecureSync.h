@@ -8,6 +8,8 @@ the LICENSE file.
 
 #pragma once
 
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+
 #include <WiFiClientSecure.h>  // includes IPAddress
 
 #include "Transport.h"
@@ -29,3 +31,5 @@ class ClientSecureSync : public Transport {
 };
 
 }  // namespace espMqttClientInternals
+
+#endif

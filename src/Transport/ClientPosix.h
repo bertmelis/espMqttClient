@@ -6,26 +6,32 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
-#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
-
 #pragma once
 
-#if defined(ARDUINO_ARCH_ESP32)
-  #include "freertos/FreeRTOS.h"
-  #include <AsyncTCP.h>
-#elif defined(ARDUINO_ARCH_ESP8266)
-  #include <ESPAsyncTCP.h>
-#endif
+#if defined(__linux__)
 
-#include "Transport.h"
-#include "../Config.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+#include "Transport.h"  // includes IPAddress
 #include "../Logging.h"
+
+#ifndef EMC_POSIX_PEEK_SIZE
+#define EMC_POSIX_PEEK_SIZE 1500
+#endif
 
 namespace espMqttClientInternals {
 
-class ClientAsync : public Transport {
+class ClientPosix : public Transport {
  public:
-  ClientAsync();
+  ClientPosix();
+  ~ClientPosix();
   bool connect(IPAddress ip, uint16_t port) override;
   bool connect(const char* host, uint16_t port) override;
   size_t write(const uint8_t* buf, size_t size) override;
@@ -35,9 +41,9 @@ class ClientAsync : public Transport {
   bool connected() override;
   bool disconnected() override;
 
-  AsyncClient client;
-  size_t availableData;
-  uint8_t* bufData;
+ protected:
+  int _sockfd;
+  struct sockaddr_in _host;
 };
 
 }  // namespace espMqttClientInternals

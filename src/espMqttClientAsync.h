@@ -11,6 +11,8 @@ the LICENSE file.
 
 #pragma once
 
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+
 #include "Transport/ClientAsync.h"
 
 #include "MqttClientSetup.h"
@@ -34,3 +36,5 @@ class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync> {
   static void onDisconnectCb(void* a, AsyncClient* c);
   static void onPollCb(void* a, AsyncClient* c);
 };
+
+#endif

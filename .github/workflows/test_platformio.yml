@@ -8,13 +8,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python
-      uses: actions/setup-python@v1
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install platformio
-    - name: Test
-      run: |
-        pio test -e native -v
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+      - name: Start Mosquitto
+        uses: namoshek/mosquitto-github-action@v1
+        with:
+          version: '2.0'
+          ports: '1883:1883'
+          config: ${{ github.workspace }}/.github/etc/mosquitto.conf
+      - name: Test
+        run: |
+          pio test -e native -v
