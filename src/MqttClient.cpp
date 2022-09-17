@@ -397,7 +397,7 @@ void MqttClient::_checkPing() {
   if (_keepAlive == 0) return;  // keepalive is disabled
 
   uint32_t currentMillis = millis();
-  
+
   // disconnect when server was inactive for twice the keepalive time
   if (currentMillis - _lastServerActivity > 2 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
