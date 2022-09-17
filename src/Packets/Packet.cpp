@@ -431,7 +431,7 @@ size_t Packet::_chunkedAvailable(size_t index) {
   // index points to header or first payload byte
   if (index < _payloadIndex) {
     if (_size > _payloadIndex && _payloadEndIndex != 0) {
-      size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_RX_BUFFER_SIZE), _size - _payloadStartIndex), index);
+      size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_TX_BUFFER_SIZE), _size - _payloadStartIndex), index);
       _payloadStartIndex = _payloadIndex;
       _payloadEndIndex = _payloadStartIndex + copied - 1;
     }
@@ -439,7 +439,7 @@ size_t Packet::_chunkedAvailable(size_t index) {
   // index points to payload unavailable
   } else if (index > _payloadEndIndex || _payloadStartIndex > index) {
     _payloadStartIndex = index;
-    size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_RX_BUFFER_SIZE), _size - _payloadStartIndex), index);
+    size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_TX_BUFFER_SIZE), _size - _payloadStartIndex), index);
     _payloadEndIndex = _payloadStartIndex + copied - 1;
   }
 

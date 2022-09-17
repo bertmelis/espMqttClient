@@ -16,12 +16,14 @@ the LICENSE file.
 namespace espMqttClientTypes {
 
 enum class DisconnectReason : uint8_t {
-  TCP_DISCONNECTED = 0,
+  USER_OK = 0,
   MQTT_UNACCEPTABLE_PROTOCOL_VERSION = 1,
   MQTT_IDENTIFIER_REJECTED = 2,
   MQTT_SERVER_UNAVAILABLE = 3,
   MQTT_MALFORMED_CREDENTIALS = 4,
-  MQTT_NOT_AUTHORIZED = 5
+  MQTT_NOT_AUTHORIZED = 5,
+  TLS_BAD_FINGERPRINT = 6,
+  TCP_DISCONNECTED = 7
 };
 
 enum class SubscribeReturncode : uint8_t {

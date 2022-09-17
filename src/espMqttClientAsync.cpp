@@ -6,8 +6,9 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
-#include "espMqttClientAsync.h"
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 
+#include "espMqttClientAsync.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClientAsync::espMqttClientAsync(uint8_t priority, uint8_t core)
@@ -63,3 +64,5 @@ void espMqttClientAsync::onPollCb(void* a, AsyncClient* c) {
   espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
   client->loop();
 }
+
+#endif

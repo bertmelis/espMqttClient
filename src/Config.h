@@ -16,6 +16,10 @@ the LICENSE file.
 #define EMC_RX_BUFFER_SIZE 1440
 #endif
 
+#ifndef EMC_TX_BUFFER_SIZE
+#define EMC_TX_BUFFER_SIZE 1440
+#endif
+
 #ifndef EMC_MAX_TOPIC_LENGTH
 #define EMC_MAX_TOPIC_LENGTH 128
 #endif
