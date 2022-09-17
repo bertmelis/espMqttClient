@@ -426,7 +426,7 @@ void MqttClient::_checkPing() {
 void MqttClient::_checkRetries() {
   // only check if we're not in progress of sending a packet
   // and queue is not empty
-  if (_bytesSent != 0 || outbox.empty()) return;
+  if (_bytesSent != 0 || _outbox.empty()) return;
 
   // Only check timeout of first packet, rest has to be sent in same order
   uint32_t sentTime = _outbox.front().get()->token;
