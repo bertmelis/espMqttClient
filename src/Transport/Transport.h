@@ -8,7 +8,9 @@ the LICENSE file.
 
 #pragma once
 
-#include <IPAddress.h>
+#include <stddef.h>  // size_t
+
+#include "IPAddress.h"
 
 namespace espMqttClientInternals {
 
