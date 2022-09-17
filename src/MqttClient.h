@@ -27,6 +27,7 @@ class MqttClient {
  public:
   virtual ~MqttClient();
   bool connected() const;
+  bool disconnected() const;
   bool connect();
   bool disconnect(bool force = false);
   template <typename... Args>

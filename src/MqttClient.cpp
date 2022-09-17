@@ -93,6 +93,11 @@ bool MqttClient::connected() const {
   return false;
 }
 
+bool MqttClient::disconnected() const {
+  if (_state == State::disconnected) return true;
+  return false;
+}
+
 bool MqttClient::connect() {
   bool result = true;
   if (_state == State::disconnected) {
@@ -306,7 +311,10 @@ void MqttClient::_checkOutgoing() {
     _bytesSent += written;
     emc_log_i("tx %zu/%zu (%02x)", _bytesSent, packet->size(), packet->packetType());
     if (_bytesSent == packet->size()) {
-      if ((packet->packetType()) == PacketType.DISCONNECT) _state = State::disconnectingTcp1;
+      if ((packet->packetType()) == PacketType.DISCONNECT) {
+        _state = State::disconnectingTcp1;
+        _disconnectReason = DisconnectReason::USER_OK;
+      }
       if (packet->removable()) {
         _outbox.removeCurrent();
       } else {
@@ -374,6 +382,7 @@ void MqttClient::_checkIncoming() {
       } else if (result ==  espMqttClientInternals::ParserResult::protocolError) {
         emc_log_w("Disconnecting, protocol error");
         _state = State::disconnectingTcp1;
+        _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
         return;
       }
       remainingBufferLength -= bytesParsed;
@@ -388,11 +397,12 @@ void MqttClient::_checkPing() {
   if (_keepAlive == 0) return;  // keepalive is disabled
 
   uint32_t currentMillis = millis();
-
+  
   // disconnect when server was inactive for twice the keepalive time
   if (currentMillis - _lastServerActivity > 2 * _keepAlive) {
     emc_log_w("Disconnecting, server exceeded keepalive");
     _state = State::disconnectingTcp1;
+    _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
     return;
   }
 
