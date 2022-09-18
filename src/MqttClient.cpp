@@ -34,7 +34,7 @@ MqttClient::MqttClient()
 , _port(1183)
 , _useIp(false)
 , _keepAlive(15000)
-, _cleanSession(false)
+, _cleanSession(true)
 , _username(nullptr)
 , _password(nullptr)
 , _willTopic(nullptr)
@@ -209,6 +209,7 @@ void MqttClient::loop() {
       [[fallthrough]];
     case State::connectingTcp2:
       if (_transport->connected()) {
+        _parser.reset();
         _lastClientActivity = _lastServerActivity = millis();
         _state = State::connectingMqtt;
       }
