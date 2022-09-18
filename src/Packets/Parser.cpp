@@ -61,6 +61,11 @@ const IncomingPacket& Parser::getPacket() const {
   return _packet;
 }
 
+void Parser::reset() {
+  _parse = _fixedHeader;
+  _packet.reset();
+}
+
 ParserResult Parser::_fixedHeader(Parser* p) {
   p->_packet.reset();
   p->_packet.fixedHeader.packetType = p->_data[p->_bytesRead];
