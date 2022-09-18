@@ -209,6 +209,7 @@ void MqttClient::loop() {
       [[fallthrough]];
     case State::connectingTcp2:
       if (_transport->connected()) {
+        _parser.reset();
         _lastClientActivity = _lastServerActivity = millis();
         _state = State::connectingMqtt;
       }

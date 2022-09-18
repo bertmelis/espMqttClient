@@ -65,6 +65,7 @@ class Parser {
   Parser();
   ParserResult parse(const uint8_t* data, size_t len, size_t* bytesRead);
   const IncomingPacket& getPacket() const;
+  void reset();
 
  private:
   // keep data variables in class to avoid copying on every iteration of the parser
