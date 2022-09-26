@@ -13,6 +13,7 @@ NC='\033[0m'
 
 lines=$(find ./examples/ -maxdepth 1 -mindepth 1 -type d)
 retval=0
+retvalpart=0
 while read line; do
   if [[ "$line" != *esp8266 && "$line" != *esp32 && "$line" != *linux ]]; then
     echo -e "========================== BUILDING $line =========================="
@@ -22,15 +23,18 @@ while read line; do
   echo -e "========================== BUILDING $line =========================="
   if [[ -e "$line/platformio.ini" ]]; then
     output=$(platformio ci --lib="." --project-conf="$line/platformio.ini" $line 2>&1)
+    retvalpart=$?
   else
     if [[ "$line" == *esp8266 ]]; then
       output=$(platformio ci --lib="." --project-conf="scripts/CI/platformio_esp8266.ini" $line 2>&1)
+      retvalpart=$?
     else
       output=$(platformio ci --lib="." --project-conf="scripts/CI/platformio_esp32.ini" $line 2>&1)
+      retvalpart=$?
     fi
     :
   fi
-  if [ $? -ne 0 ]; then
+  if [ $retvalpart -ne 0 ]; then
     echo "$output"
     echo -e "Building $line ${RED}FAILED${NC}"
     retval=1
