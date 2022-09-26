@@ -21,18 +21,24 @@ ClientSecureSync::ClientSecureSync()
 bool ClientSecureSync::connect(IPAddress ip, uint16_t port) {
   bool ret = client.connect(ip, port);  // implicit conversion of return code int --> bool
   // Set TCP option directly to bypass lack of working sztNoDelay for WiFiClientSecure
-  // client.setNoDelay(true);
-  int val = true;
-  client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, (const void*)&val, sizeof(int));
+  #if defined(ARDUINO_ARCH_ESP8266)
+    client.setNoDelay(true);
+  #elif defined(ARDUINO_ARCH_ESP32)
+    int val = true;
+    client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
+  #endif
   return ret;
 }
 
 bool ClientSecureSync::connect(const char* host, uint16_t port) {
   bool ret = client.connect(host, port);  // implicit conversion of return code int --> bool
   // Set TCP option directly to bypass lack of working setNoDelay for WiFiClientSecure
-  // client.setNoDelay(true);
-  int val = true;
-  client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, (const void*)&val, sizeof(int));
+  #if defined(ARDUINO_ARCH_ESP8266)
+    client.setNoDelay(true);
+  #elif defined(ARDUINO_ARCH_ESP32)
+    int val = true;
+    client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
+  #endif
   return ret;
 }
 
