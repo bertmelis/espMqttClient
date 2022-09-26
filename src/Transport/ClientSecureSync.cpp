@@ -19,13 +19,15 @@ ClientSecureSync::ClientSecureSync()
 
 bool ClientSecureSync::connect(IPAddress ip, uint16_t port) {
   bool ret = client.connect(ip, port);  // implicit conversion of return code int --> bool
-  client.setNoDelay(true);
+  //client.setNoDelay(true);
+  client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, (const void*)true, sizeof(int));
   return ret;
 }
 
 bool ClientSecureSync::connect(const char* host, uint16_t port) {
   bool ret = client.connect(host, port);  // implicit conversion of return code int --> bool
-  client.setNoDelay(true);
+  //client.setNoDelay(true);
+  client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, (const void*)true, sizeof(int));
   return ret;
 }
 
