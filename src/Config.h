@@ -46,7 +46,7 @@ the LICENSE file.
 #endif
 
 #ifndef EMC_TASK_STACK_SIZE
-#define EMC_TASK_STACK_SIZE 10000
+#define EMC_TASK_STACK_SIZE 5000
 #endif
 
 #ifndef EMC_USE_WATCHDOG
