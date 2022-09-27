@@ -63,6 +63,8 @@ const IncomingPacket& Parser::getPacket() const {
 
 void Parser::reset() {
   _parse = _fixedHeader;
+  _bytesRead = 0;
+  _bytePos = 0;
   _packet.reset();
 }
 
