@@ -11,6 +11,11 @@
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
 - Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported)
+- Supported platforms:
+  - Espressif ESP8266 and ESP32 using the Arduino framework
+- Basic Linux compatibility*. This includes WSL on Windows
+
+    > Linux compatibility is mainly for automatic testing. It relies on a quick and dirty Arduino-style `Client` with a POSIX TCP client underneath and Arduino-style `IPAddress` class. These are lacking many features needed for proper Linux support.
 
 # Contents
 
@@ -42,11 +47,11 @@ After setting up the client, you are ready to connect. A simple call to `connect
 
 ### Subscribing, publishing and receiving
 
-Once connected, you can subscribe, publish and receive. The methods to do this return the packetId of the generated packet or `1` for packets without packetId. In case of an error, the method returns `0`. When the client is not connected, you cannot subscribe, unsubscribe or publish.
+Once connected, you can subscribe, publish and receive. The methods to do this return the packetId of the generated packet or `1` for packets without packetId. In case of an error, the method returns `0`. When the client is not connected, you cannot subscribe, unsubscribe or publish (configurable, see [EMC_ALLOW_NOT_CONNECTED_PUBLISH](#EMC_ALLOW_NOT_CONNECTED_PUBLISH)).
 
 Receiving packets is done via the `onMessage`-callback. This callback gives you the topic, properties (qos, dup, retain, packetId) and payload. For the payload, you get a pointer to the data, the index, length and total length. On long payloads it is normal that you get multiple callbacks for the same packet. This way, you can receive payloads longer than what could fit in the microcontroller's memory.
 
-> Beware that MQTT payloads are binary. MQTT payloads are **not** c-strings unless explicitely constructed like that. You therefore can **not** print the payload to your Serial monitor without supporting code.
+    > Beware that MQTT payloads are binary. MQTT payloads are **not** c-strings unless explicitely constructed like that. You therefore can **not** print the payload to your Serial monitor without supporting code.
 
 ### Disconnecting
 
@@ -61,7 +66,7 @@ espMqttClientAsync()
 ```
 
 Instantiate a new espMqttClient or espMqttSecure object.
-On ESP32, two optional parameters are available: `espMqttClient(uint8_t priority = 1, uint8_t core = 1)`. This will change the priority of the MQTT client task and the core on which it runs.
+On ESP32, two optional parameters are available: `espMqttClient(uint8_t priority = 1, uint8_t core = 1)`. This will change the priority of the MQTT client task and the core on which it runs (higher priority = more cpu-time).
 
 For the asynchronous version, use `espMqttClientAsync`.
 
@@ -79,7 +84,7 @@ Set the keep alive. Defaults to 15 seconds.
 espMqttClient& setClientId(const char* clientId)
 ```
 
-Set the client ID. Defaults to `esp8266123456` where `123456` is the chip ID.
+Set the client ID. Defaults to `esp8266123456` or `esp32123456` where `123456` is the chip ID.
 The library only stores a pointer to the client ID. Make sure the variable pointed to stays available throughout the lifetime of espMqttClient.
 
 - **`clientId`**: Client ID, expects a null-terminated char array (c-string)
@@ -361,7 +366,7 @@ By default, you can publish when the client is not connected. If you don't want 
 
 The (maximum) length of the client ID. (Keep in mind that this is a c-string. You need to have 1 position available for the null-termination.)
 
-### EMC_TASK_STACK_SIZE 10000
+### EMC_TASK_STACK_SIZE 5000
 
 Only used on ESP32. Sets the stack size (in words) of the MQTT client worker task.
 
@@ -476,4 +481,7 @@ void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, cons
     }
   }
 }
+
+// attach callback to MQTT client
+mqttClient.onMessage(onMqttMessage);
 ```
