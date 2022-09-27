@@ -226,6 +226,7 @@ ParserResult Parser::_varHeaderPacketId2(Parser* p) {
     } else if ((p->_packet.fixedHeader.packetType & 0xF0) == PacketType.PUBLISH) {
       p->_packet.payload.total -= 2;  // substract packet id length from payload
       if (p->_packet.payload.total == 0) {
+        p->_parse = _fixedHeader;
         return ParserResult::packet;
       } else {
         p->_parse = _payloadPublish;
@@ -273,6 +274,7 @@ ParserResult Parser::_varHeaderTopic(Parser* p) {
     if (p->_packet.fixedHeader.packetType & (HeaderFlag.PUBLISH_QOS1 | HeaderFlag.PUBLISH_QOS2)) {
       p->_parse = _varHeaderPacketId1;
     } else if (p->_packet.payload.total == 0) {
+      p->_parse = _fixedHeader;
       return ParserResult::packet;
     } else {
       p->_parse = _payloadPublish;
