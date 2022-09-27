@@ -34,7 +34,7 @@ Outgoing messages and session data are not stored in non-volatile memory. Any ev
 
 ### Non-blocking
 
-This library aims to be fully non-blocking. It is however limited by the underlying `WiFiClient` library which is part of the Arduino framework and has a blocking `connect` method. On ESP32 it is not an issue since the call is offloaded to a separate task. On ESP8266 however, connecting will block until succesful or until the connection timeouts.
+This library aims to be fully non-blocking. It is however limited by the underlying `WiFiClient` library which is part of the Arduino framework and has a blocking `connect` method. This is not an issue on ESP32 because the call is offloaded to a separate task. On ESP8266 however, connecting will block until succesful or until the connection timeouts.
 
 If you need a fully asynchronous MQTT client, you can use `espMqttClientAsync` which uses AsyncTCP/ESPAsyncTCP under the hood. These underlying libraries do not support TLS (anymore). I will not provide support TLS for the async client.
 
@@ -44,9 +44,9 @@ Please use Github's facilities to get in touch.
 
 # About this library
 
-This client wouldn't exist without [Async-mqtt-client](https://github.com/marvinroger/async-mqtt-client). It has been my go-to MQTT client for many years. It was fast, reliable and had features that were non-existing in alternative libraries. However, the underlying async TCP libraries are lacking updates, especially updates related to secure connections. I eventually decided to write my own library, from scratch. 
+This client wouldn't exist without [Async-mqtt-client](https://github.com/marvinroger/async-mqtt-client). It has been my go-to MQTT client for many years. It was fast, reliable and had features that were non-existing in alternative libraries. However, the underlying async TCP libraries are lacking updates, especially updates related to secure connections. Adapting this library to use up-to-date TCP clients would not be trivial. I eventually decided to write my own MQTT library, from scratch. 
 
-The result is an almost non-blocking library with no external dependencies. Except for a few type differences, the library is a drop-in replacement for the async-mqtt-client except a few parameter type changes (eg. `uint8_t*` instead of `char*` for payloads)
+The result is an almost non-blocking library with no external dependencies. The library is almost a drop-in replacement for the async-mqtt-client except a few parameter type changes (eg. `uint8_t*` instead of `char*` for payloads).
 
 # License
 
