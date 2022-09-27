@@ -21,6 +21,7 @@ void test_Connack() {
   const size_t length = 4;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(4, bytesRead);
@@ -39,6 +40,7 @@ void test_Empty() {
   const size_t length = 0;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_UINT8(ParserResult::awaitData, result);
@@ -57,6 +59,7 @@ void test_Header() {
   const size_t length = 3;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::protocolError, result);
@@ -74,6 +77,7 @@ void test_Publish() {
   size_t length = 11;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -106,6 +110,53 @@ void test_Publish() {
   TEST_ASSERT_FALSE(parser.getPacket().dup());
 }
 
+void test_Publish_empty() {
+  uint8_t stream0[] = {
+    0b00110000,                 // header
+    0x05,                       // remaining length
+    0x00, 0x03, 'a', '/', 'b',  // topic
+  };
+  size_t length0 = 7;
+
+  size_t bytesRead0 = 0;
+  parser.reset();
+  ParserResult result0 = parser.parse(stream0, length0, &bytesRead0);
+
+  TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result0);
+  TEST_ASSERT_EQUAL_UINT32(length0, bytesRead0);
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientInternals::PacketType.PUBLISH, parser.getPacket().fixedHeader.packetType & 0xF0);
+  TEST_ASSERT_EQUAL_STRING("a/b", parser.getPacket().variableHeader.topic);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.index);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.length);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.total);
+  TEST_ASSERT_EQUAL_UINT8(0, parser.getPacket().qos());
+  TEST_ASSERT_FALSE(parser.getPacket().retain());
+  TEST_ASSERT_FALSE(parser.getPacket().dup());
+
+  uint8_t stream1[] = {
+    0b00110000,                 // header
+    0x05,                       // remaining length
+    0x00, 0x03, 'a', '/', 'b',  // topic
+  };
+  size_t length1 = 7;
+
+  size_t bytesRead1 = 0;
+  parser.reset();
+  ParserResult result1 = parser.parse(stream1, length1, &bytesRead1);
+
+  TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result1);
+  TEST_ASSERT_EQUAL_UINT32(length1, bytesRead1);
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientInternals::PacketType.PUBLISH, parser.getPacket().fixedHeader.packetType & 0xF0);
+  TEST_ASSERT_EQUAL_STRING("a/b", parser.getPacket().variableHeader.topic);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.index);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.length);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.total);
+  TEST_ASSERT_EQUAL_UINT8(0, parser.getPacket().qos());
+  TEST_ASSERT_FALSE(parser.getPacket().retain());
+  TEST_ASSERT_FALSE(parser.getPacket().dup());
+
+}
+
 void test_PubAck() {
   const uint8_t stream[] = {
     0b01000000,
@@ -116,6 +167,7 @@ void test_PubAck() {
   const size_t length = 4;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -137,6 +189,7 @@ void test_PubRec() {
   const size_t length = 4;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -158,6 +211,7 @@ void test_PubRel() {
   const size_t length = 4;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -179,6 +233,7 @@ void test_PubComp() {
   const size_t length = 4;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -202,6 +257,7 @@ void test_SubAck() {
   const size_t length = 6;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -224,6 +280,7 @@ void test_UnsubAck() {
   const size_t length = 4;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -244,6 +301,7 @@ void test_PingResp() {
   const size_t length = 2;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(stream, length, &bytesRead);
 
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
@@ -266,6 +324,7 @@ void test_longStream() {
   const size_t length = 94;
 
   size_t bytesRead = 0;
+  parser.reset();
   ParserResult result = parser.parse(&stream[bytesRead], length - bytesRead, &bytesRead);
   TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result);
   TEST_ASSERT_EQUAL_UINT8(espMqttClientInternals::PacketType.SUBACK, parser.getPacket().fixedHeader.packetType & 0xF0);
@@ -297,6 +356,7 @@ int main() {
   RUN_TEST(test_Empty);
   RUN_TEST(test_Header);
   RUN_TEST(test_Publish);
+  RUN_TEST(test_Publish_empty);
   RUN_TEST(test_PubAck);
   RUN_TEST(test_PubRec);
   RUN_TEST(test_PubRel);

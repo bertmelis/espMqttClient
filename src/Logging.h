@@ -28,7 +28,7 @@ the LICENSE file.
 #else
   // when building for PC, always show debug statements as part of testing suite
   #include <iostream>
-  #define emc_log_i(...) std::cout << "[I] "; printf(__VA_ARGS__); std::cout << std::endl
-  #define emc_log_e(...) std::cout << "[E] "; printf(__VA_ARGS__); std::cout << std::endl
-  #define emc_log_w(...) std::cout << "[W] "; printf(__VA_ARGS__); std::cout << std::endl
+  #define emc_log_i(...) std::cout << "[I] " << __FILE__ ":" << __LINE__ << ": "; printf(__VA_ARGS__); std::cout << std::endl
+  #define emc_log_e(...) std::cout << "[E] " << __FILE__ ":" << __LINE__ << ": "; printf(__VA_ARGS__); std::cout << std::endl
+  #define emc_log_w(...) std::cout << "[W] " << __FILE__ ":" << __LINE__ << ": "; printf(__VA_ARGS__); std::cout << std::endl
 #endif
