@@ -10,7 +10,7 @@ void tearDown() {}
 espMqttClient mqttClient;
 std::atomic_bool exitProgram(false);
 std::thread t;
-using namespace std::chrono_literals;
+using namespace std::literals::chrono_literals;
 
 const IPAddress broker(127,0,0,1);
 //const char* broker = "localhost";
