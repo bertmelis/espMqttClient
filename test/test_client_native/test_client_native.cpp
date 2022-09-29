@@ -237,6 +237,7 @@ int main() {
   RUN_TEST(test_ping);
   RUN_TEST(test_subscribe);
   RUN_TEST(test_publish);
+  RUN_TEST(test_publish_empty);
   RUN_TEST(test_unsubscribe);
   RUN_TEST(test_disconnect);
   exitProgram = true;
