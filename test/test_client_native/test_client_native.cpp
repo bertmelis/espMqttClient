@@ -1,5 +1,4 @@
 #include <unity.h>
-#include <chrono>
 #include <thread>
 #include <iostream>
 #include <espMqttClient.h>  // espMqttClient for Linux also defines millis()
@@ -10,7 +9,6 @@ void tearDown() {}
 espMqttClient mqttClient;
 std::atomic_bool exitProgram(false);
 std::thread t;
-using namespace std::literals::chrono_literals;
 
 const IPAddress broker(127,0,0,1);
 //const char* broker = "localhost";
@@ -124,7 +122,10 @@ void test_publish() {
   uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, "test0");
   uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, "test1");
   uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, "test2");
-  std::this_thread::sleep_for(6000ms);
+  uint32_t start = millis();
+  while (millis() - start < 6000) {
+    std::this_thread::yield();
+  }
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_EQUAL_UINT16(1, sendQos0Test);
@@ -153,7 +154,10 @@ void test_publish_empty() {
   uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, nullptr, 0);
   uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, nullptr, 0);
   uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, nullptr, 0);
-  std::this_thread::sleep_for(6000ms);
+  uint32_t start = millis();
+  while (millis() - start < 6000) {
+    std::this_thread::yield();
+  }
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_EQUAL_UINT16(1, sendQos0Test);
@@ -189,7 +193,10 @@ void test_receive1() {
     }
   });
   mqttClient.subscribe("test/test", 1);
-  std::this_thread::sleep_for(6000ms);
+  uint32_t start = millis();
+  while (millis() - start < 6000) {
+    std::this_thread::yield();
+  }
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_GREATER_THAN_INT(0, publishReceive1Test);
@@ -221,7 +228,10 @@ void test_receive2() {
     }
   });
   mqttClient.subscribe("test/test", 2);
-  std::this_thread::sleep_for(6000ms);
+  uint32_t start = millis();
+  while (millis() - start < 6000) {
+    std::this_thread::yield();
+  }
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_EQUAL_INT(1, publishReceive2Test);
