@@ -34,10 +34,14 @@ bool ClientSecureSync::connect(IPAddress ip, uint16_t port) {
 
 bool ClientSecureSync::connect(const char* host, uint16_t port) {
   bool ret = client.connect(host, port);  // implicit conversion of return code int --> bool
-  // Set TCP option directly to bypass lack of working setNoDelay for WiFiClientSecure
   if (ret) {
+    #if defined(ARDUINO_ARCH_ESP8266)
+    client.setNoDelay(true);
+    #elif defined(ARDUINO_ARCH_ESP32)
+    // Set TCP option directly to bypass lack of working setNoDelay for WiFiClientSecure
     int val = true;
     client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
+    #endif
   }
   return ret;
 }
