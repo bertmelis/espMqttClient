@@ -30,6 +30,11 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
     emc_log_e("Error %d opening socket", errno);
   }
 
+  int flag = 1;
+  if (setsockopt(_sockfd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int) < 0)) {
+    emc_log_e("Error %d disabling nagle", errno);
+  }
+
   memset(&_host, 0, sizeof(_host));
   _host.sin_family = AF_INET;
   _host.sin_addr.s_addr = htonl(uint32_t(ip));

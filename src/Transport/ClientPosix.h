@@ -17,6 +17,7 @@ the LICENSE file.
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 
 #include "Transport.h"  // includes IPAddress
