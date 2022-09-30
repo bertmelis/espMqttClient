@@ -104,19 +104,26 @@ void test_subscribe() {
 */
 
 void test_publish() {
-  std::atomic<int> publishReceiveTest(0);
+  std::atomic<int> publishSendTest(0);
   mqttClient.onPublish([&](uint16_t packetId) mutable {
     (void) packetId;
+    publishSendTest++;
+  });
+  std::atomic<int> publishReceiveTest(0);
+  mqttClient.onMessage([&](const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) mutable {
+    (void) properties;
+    (void) topic;
+    (void) payload;
+    (void) len;
+    (void) index;
+    (void) total;
     publishReceiveTest++;
   });
   uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, "test0");
   uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, "test1");
   uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, "test2");
   uint32_t start = millis();
-  while (millis() - start < 2000) {
-    if (publishReceiveTest == 3) {
-      break;
-    }
+  while (millis() - start < 6000) {
     std::this_thread::yield();
   }
 
@@ -124,8 +131,112 @@ void test_publish() {
   TEST_ASSERT_EQUAL_UINT16(1, sendQos0Test);
   TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos1Test);
   TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos2Test);
-  TEST_ASSERT_EQUAL_INT(2, publishReceiveTest);
+  TEST_ASSERT_EQUAL_INT(2, publishSendTest);
+  TEST_ASSERT_EQUAL_INT(3, publishReceiveTest);
 }
+
+void test_publish_empty() {
+  std::atomic<int> publishSendEmptyTest(0);
+  mqttClient.onPublish([&](uint16_t packetId) mutable {
+    (void) packetId;
+    publishSendEmptyTest++;
+  });
+  std::atomic<int> publishReceiveEmptyTest(0);
+  mqttClient.onMessage([&](const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) mutable {
+    (void) properties;
+    (void) topic;
+    (void) payload;
+    (void) len;
+    (void) index;
+    (void) total;
+    publishReceiveEmptyTest++;
+  });
+  uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, nullptr, 0);
+  uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, nullptr, 0);
+  uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, nullptr, 0);
+  uint32_t start = millis();
+  while (millis() - start < 6000) {
+    std::this_thread::yield();
+  }
+
+  TEST_ASSERT_TRUE(mqttClient.connected());
+  TEST_ASSERT_EQUAL_UINT16(1, sendQos0Test);
+  TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos1Test);
+  TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos2Test);
+  TEST_ASSERT_EQUAL_INT(2, publishSendEmptyTest);
+  TEST_ASSERT_EQUAL_INT(3, publishReceiveEmptyTest);
+}
+
+/*
+
+- subscribe to test/test, qos 1
+- send to test/test, qos 1
+- check if message is received at least once.
+
+*/
+
+void test_receive1() {
+  std::atomic<int> publishReceive1Test(0);
+  mqttClient.onMessage([&](const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) mutable {
+    (void) properties;
+    (void) topic;
+    (void) payload;
+    (void) len;
+    (void) index;
+    (void) total;
+    publishReceive1Test++;
+  });
+  mqttClient.onSubscribe([&](uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len) mutable {
+    (void) packetId;
+    if (len == 1 && returncodes[0] == espMqttClientTypes::SubscribeReturncode::QOS1) {
+      mqttClient.publish("test/test", 1, false, "");
+    }
+  });
+  mqttClient.subscribe("test/test", 1);
+  uint32_t start = millis();
+  while (millis() - start < 6000) {
+    std::this_thread::yield();
+  }
+
+  TEST_ASSERT_TRUE(mqttClient.connected());
+  TEST_ASSERT_GREATER_THAN_INT(0, publishReceive1Test);
+}
+
+/*
+
+- subscribe to test/test, qos 2
+- send to test/test, qos 2
+- check if message is received exactly once.
+
+*/
+
+void test_receive2() {
+  std::atomic<int> publishReceive2Test(0);
+  mqttClient.onMessage([&](const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) mutable {
+    (void) properties;
+    (void) topic;
+    (void) payload;
+    (void) len;
+    (void) index;
+    (void) total;
+    publishReceive2Test++;
+  });
+  mqttClient.onSubscribe([&](uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len) mutable {
+    (void) packetId;
+    if (len == 1 && returncodes[0] == espMqttClientTypes::SubscribeReturncode::QOS2) {
+      mqttClient.publish("test/test", 2, false, "");
+    }
+  });
+  mqttClient.subscribe("test/test", 2);
+  uint32_t start = millis();
+  while (millis() - start < 6000) {
+    std::this_thread::yield();
+  }
+
+  TEST_ASSERT_TRUE(mqttClient.connected());
+  TEST_ASSERT_EQUAL_INT(1, publishReceive2Test);
+}
+
 
 /*
 
@@ -191,6 +302,9 @@ int main() {
   RUN_TEST(test_ping);
   RUN_TEST(test_subscribe);
   RUN_TEST(test_publish);
+  RUN_TEST(test_publish_empty);
+  RUN_TEST(test_receive1);
+  RUN_TEST(test_receive2);
   RUN_TEST(test_unsubscribe);
   RUN_TEST(test_disconnect);
   exitProgram = true;

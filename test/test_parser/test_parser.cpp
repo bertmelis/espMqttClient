@@ -106,6 +106,51 @@ void test_Publish() {
   TEST_ASSERT_FALSE(parser.getPacket().dup());
 }
 
+void test_Publish_empty() {
+  uint8_t stream0[] = {
+    0b00110000,                 // header
+    0x05,                       // remaining length
+    0x00, 0x03, 'a', '/', 'b',  // topic
+  };
+  size_t length0 = 7;
+
+  size_t bytesRead0 = 0;
+  ParserResult result0 = parser.parse(stream0, length0, &bytesRead0);
+
+  TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result0);
+  TEST_ASSERT_EQUAL_UINT32(length0, bytesRead0);
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientInternals::PacketType.PUBLISH, parser.getPacket().fixedHeader.packetType & 0xF0);
+  TEST_ASSERT_EQUAL_STRING("a/b", parser.getPacket().variableHeader.topic);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.index);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.length);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.total);
+  TEST_ASSERT_EQUAL_UINT8(0, parser.getPacket().qos());
+  TEST_ASSERT_FALSE(parser.getPacket().retain());
+  TEST_ASSERT_FALSE(parser.getPacket().dup());
+
+  uint8_t stream1[] = {
+    0b00110000,                 // header
+    0x05,                       // remaining length
+    0x00, 0x03, 'a', '/', 'b',  // topic
+  };
+  size_t length1 = 7;
+
+  size_t bytesRead1 = 0;
+  ParserResult result1 = parser.parse(stream1, length1, &bytesRead1);
+
+  TEST_ASSERT_EQUAL_INT32(ParserResult::packet, result1);
+  TEST_ASSERT_EQUAL_UINT32(length1, bytesRead1);
+  TEST_ASSERT_EQUAL_UINT8(espMqttClientInternals::PacketType.PUBLISH, parser.getPacket().fixedHeader.packetType & 0xF0);
+  TEST_ASSERT_EQUAL_STRING("a/b", parser.getPacket().variableHeader.topic);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.index);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.length);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.total);
+  TEST_ASSERT_EQUAL_UINT8(0, parser.getPacket().qos());
+  TEST_ASSERT_FALSE(parser.getPacket().retain());
+  TEST_ASSERT_FALSE(parser.getPacket().dup());
+
+}
+
 void test_PubAck() {
   const uint8_t stream[] = {
     0b01000000,
@@ -297,6 +342,7 @@ int main() {
   RUN_TEST(test_Empty);
   RUN_TEST(test_Header);
   RUN_TEST(test_Publish);
+  RUN_TEST(test_Publish_empty);
   RUN_TEST(test_PubAck);
   RUN_TEST(test_PubRec);
   RUN_TEST(test_PubRel);

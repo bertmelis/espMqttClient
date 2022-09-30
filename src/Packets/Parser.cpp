@@ -63,6 +63,8 @@ const IncomingPacket& Parser::getPacket() const {
 
 void Parser::reset() {
   _parse = _fixedHeader;
+  _bytesRead = 0;
+  _bytePos = 0;
   _packet.reset();
 }
 
@@ -217,17 +219,20 @@ ParserResult Parser::_varHeaderPacketId2(Parser* p) {
   p->_packet.variableHeader.fixed.packetId |= p->_data[p->_bytesRead];
   p->_parse = _fixedHeader;
   if (p->_packet.variableHeader.fixed.packetId != 0) {
+    emc_log_i("Packet variable header complete");
     if ((p->_packet.fixedHeader.packetType & 0xF0) == PacketType.SUBACK) {
       p->_parse = _payloadSuback;
-      emc_log_i("Packet variable header complete");
       return ParserResult::awaitData;
     } else if ((p->_packet.fixedHeader.packetType & 0xF0) == PacketType.PUBLISH) {
       p->_packet.payload.total -= 2;  // substract packet id length from payload
-      p->_parse = _payloadPublish;
-      emc_log_i("Packet variable header complete");
+      if (p->_packet.payload.total == 0) {
+        p->_parse = _fixedHeader;
+        return ParserResult::packet;
+      } else {
+        p->_parse = _payloadPublish;
+      }
       return ParserResult::awaitData;
     } else {
-      emc_log_i("Packet complete");
       return ParserResult::packet;
     }
   } else {
@@ -265,8 +270,15 @@ ParserResult Parser::_varHeaderTopic(Parser* p) {
   p->_bytePos++;
   if (p->_bytePos == p->_packet.variableHeader.topicLength || p->_bytePos == EMC_MAX_TOPIC_LENGTH) {
     p->_packet.variableHeader.topic[p->_bytePos] = 0x00;  // add c-string delimiter
-    p->_parse = ((p->_packet.fixedHeader.packetType & (HeaderFlag.PUBLISH_QOS1 | HeaderFlag.PUBLISH_QOS2)) ? _varHeaderPacketId1 : _payloadPublish);
     emc_log_i("Packet variable header topic complete");
+    if (p->_packet.fixedHeader.packetType & (HeaderFlag.PUBLISH_QOS1 | HeaderFlag.PUBLISH_QOS2)) {
+      p->_parse = _varHeaderPacketId1;
+    } else if (p->_packet.payload.total == 0) {
+      p->_parse = _fixedHeader;
+      return ParserResult::packet;
+    } else {
+      p->_parse = _payloadPublish;
+    }
   }
   return ParserResult::awaitData;
 }

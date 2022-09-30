@@ -16,7 +16,7 @@ ClientAsync::ClientAsync()
 : client()
 , availableData(0)
 , bufData(nullptr) {
-  client.setNoDelay(true);
+  // empty
 }
 
 bool ClientAsync::connect(IPAddress ip, uint16_t port) {

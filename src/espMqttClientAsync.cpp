@@ -38,7 +38,7 @@ void espMqttClientAsync::_setupClient(espMqttClientAsync* c) {
 }
 
 void espMqttClientAsync::onConnectCb(void* a, AsyncClient* c) {
-  (void)c;
+  c->setNoDelay(true);
   espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
   client->_state = MqttClient::State::connectingTcp2;
   client->loop();
