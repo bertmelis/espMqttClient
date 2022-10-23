@@ -31,7 +31,7 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
   }
 
   int flag = 1;
-  if (setsockopt(_sockfd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int) < 0)) {
+  if (setsockopt(_sockfd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
     emc_log_e("Error %d disabling nagle", errno);
   }
 
