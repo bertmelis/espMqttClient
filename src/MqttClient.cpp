@@ -412,10 +412,13 @@ void MqttClient::_checkPing() {
   if (!_pingSent &&
       ((currentMillis - _lastClientActivity > _keepAlive) ||
        (currentMillis - _lastServerActivity > _keepAlive))) {
+    EMC_SEMAPHORE_TAKE();
     if (!_addPacket(PacketType.PINGREQ)) {
+      EMC_SEMAPHORE_GIVE();
       emc_log_e("Could not create PING packet");
       return;
     }
+    EMC_SEMAPHORE_GIVE();
     _pingSent = true;
   }
 }
