@@ -24,7 +24,7 @@ Aims to be a non-blocking, fully compliant MQTT 3.1.1 client.
 
 # Documentation
 
-See [documentation](https://bert.emelis.net/espMqttClient/) and the [examples](examples/).
+See [documentation](https://www.emelis.net/espMqttClient/) and the [examples](examples/).
 
 ## Limitations
 
