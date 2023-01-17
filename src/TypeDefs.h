@@ -12,6 +12,7 @@ the LICENSE file.
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 #include <functional>
 
 namespace espMqttClientTypes {
