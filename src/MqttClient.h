@@ -161,7 +161,9 @@ class MqttClient {
     return false;
   }
 
-  void _checkOutgoing();
+  void _checkOutbox();
+  int _sendPacket();
+  bool _advanceOutbox();
   void _checkIncoming();
   void _checkPing();
 
