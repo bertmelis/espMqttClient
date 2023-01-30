@@ -214,22 +214,6 @@ void MqttClient::loop() {
         _state = State::connectingMqtt;
       }
       break;
-    case State::disconnectingMqtt1:
-      EMC_SEMAPHORE_TAKE();
-      if (_outbox.empty()) {
-        if (!_addPacket(PacketType.DISCONNECT)) {
-          EMC_SEMAPHORE_GIVE();
-          emc_log_e("Could not create DISCONNECT packet");
-          _onError(0, Error::OUT_OF_MEMORY);
-        } else {
-          _state = State::disconnectingMqtt2;
-        }
-      }
-      EMC_SEMAPHORE_GIVE();
-      // fall through to 'connected' to send out DISCONN packet
-      [[fallthrough]];
-    case State::disconnectingMqtt2:
-      [[fallthrough]];
     case State::connectingMqtt:
       #if EMC_WAIT_FOR_CONNACK
       _sendPacket();
@@ -243,6 +227,8 @@ void MqttClient::loop() {
       [[fallthrough]];
       #endif
     case State::connected:
+      [[fallthrough]];
+    case State::disconnectingMqtt2:
       if (_transport->connected()) {
         // CONNECT packet is first in the queue
         _checkOutbox();
@@ -252,6 +238,19 @@ void MqttClient::loop() {
         _state = State::disconnectingTcp1;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
+      break;
+    case State::disconnectingMqtt1:
+      EMC_SEMAPHORE_TAKE();
+      if (_outbox.empty()) {
+        if (!_addPacket(PacketType.DISCONNECT)) {
+          EMC_SEMAPHORE_GIVE();
+          emc_log_e("Could not create DISCONNECT packet");
+          _onError(0, Error::OUT_OF_MEMORY);
+        } else {
+          _state = State::disconnectingMqtt2;
+        }
+      }
+      EMC_SEMAPHORE_GIVE();
       break;
     case State::disconnectingTcp1:
       _transport->stop();
