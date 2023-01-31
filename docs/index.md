@@ -373,7 +373,7 @@ don't allow this (AWS for example doesn't).
 
 The (maximum) length of the client ID. (Keep in mind that this is a c-string. You need to have 1 position available for the null-termination.)
 
-### EMC_TASK_STACK_SIZE 5000
+### EMC_TASK_STACK_SIZE 5120
 
 Only used on ESP32. Sets the stack size (in words) of the MQTT client worker task.
 
