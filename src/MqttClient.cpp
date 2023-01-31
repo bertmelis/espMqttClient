@@ -251,6 +251,9 @@ void MqttClient::loop() {
         }
       }
       EMC_SEMAPHORE_GIVE();
+      _checkOutbox();
+      _checkIncoming();
+      _checkPing();
       break;
     case State::disconnectingTcp1:
       _transport->stop();
