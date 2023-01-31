@@ -144,9 +144,11 @@ bool MqttClient::disconnect(bool force) {
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
   #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
   if (_state != State::connected) {
+  #else
+  if (_state > State::connected) {
+  #endif
     return 0;
   }
-  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
   EMC_SEMAPHORE_TAKE();
   if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
@@ -166,9 +168,11 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
   #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
   if (_state != State::connected) {
+  #else
+  if (_state > State::connected) {
+  #endif
     return 0;
   }
-  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
   EMC_SEMAPHORE_TAKE();
   if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
