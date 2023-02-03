@@ -107,7 +107,7 @@ void setup() {
   Serial.println();
 
   WiFi.setAutoConnect(false);
-  wiFi.setAutoReconnect(true);
+  WiFi.setAutoReconnect(true);
   WiFi.onEvent(WiFiEvent);
 
   mqttClient.onConnect(onMqttConnect);

@@ -72,7 +72,7 @@ void setup() {
   Serial.println();
 
   WiFi.setAutoConnect(false);
-  wiFi.setAutoReconnect(true);
+  WiFi.setAutoReconnect(true);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWiFiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWiFiDisconnect);
 
