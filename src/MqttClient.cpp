@@ -144,9 +144,11 @@ bool MqttClient::disconnect(bool force) {
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
   #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
   if (_state != State::connected) {
+  #else
+  if (_state > State::connected) {
+  #endif
     return 0;
   }
-  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
   EMC_SEMAPHORE_TAKE();
   if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
@@ -166,9 +168,11 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, const 
 uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
   #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
   if (_state != State::connected) {
+  #else
+  if (_state > State::connected) {
+  #endif
     return 0;
   }
-  #endif
   uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
   EMC_SEMAPHORE_TAKE();
   if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
@@ -214,6 +218,31 @@ void MqttClient::loop() {
         _state = State::connectingMqtt;
       }
       break;
+    case State::connectingMqtt:
+      #if EMC_WAIT_FOR_CONNACK
+      _sendPacket();
+      _checkIncoming();
+      _checkPing();
+      break;
+      #else
+      // receipt of CONNACK packet will set state to CONNECTED
+      // client however is allowed to send packets before CONNACK is received
+      // so we fall through to 'connected'
+      [[fallthrough]];
+      #endif
+    case State::connected:
+      [[fallthrough]];
+    case State::disconnectingMqtt2:
+      if (_transport->connected()) {
+        // CONNECT packet is first in the queue
+        _checkOutbox();
+        _checkIncoming();
+        _checkPing();
+      } else {
+        _state = State::disconnectingTcp1;
+        _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
+      }
+      break;
     case State::disconnectingMqtt1:
       EMC_SEMAPHORE_TAKE();
       if (_outbox.empty()) {
@@ -226,25 +255,9 @@ void MqttClient::loop() {
         }
       }
       EMC_SEMAPHORE_GIVE();
-      // fall through to 'connected' to send out DISCONN packet
-      [[fallthrough]];
-    case State::disconnectingMqtt2:
-      [[fallthrough]];
-    case State::connectingMqtt:
-      // receipt of CONNACK packet will set state to CONNECTED
-      // client however is allowed to send packets before CONNACK is received
-      // so we fall through to 'connected'
-      [[fallthrough]];
-    case State::connected:
-      if (_transport->connected()) {
-        // CONNECT packet is first in the queue
-        _checkOutgoing();
-        _checkIncoming();
-        _checkPing();
-      } else {
-        _state = State::disconnectingTcp1;
-        _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
-      }
+      _checkOutbox();
+      _checkIncoming();
+      _checkPing();
       break;
     case State::disconnectingTcp1:
       _transport->stop();
@@ -294,6 +307,15 @@ uint16_t MqttClient::_getNextPacketId() {
   return packetId;
 }
 
+void MqttClient::_checkOutbox() {
+  while (_sendPacket() > 0) {
+    if (!_advanceOutbox()) {
+      break;
+    }
+  }
+}
+
+/*
 void MqttClient::_checkOutgoing() {
   EMC_SEMAPHORE_TAKE();
   Packet* packet = _outbox.getCurrent();
@@ -329,6 +351,57 @@ void MqttClient::_checkOutgoing() {
     }
   }
   EMC_SEMAPHORE_GIVE();
+}
+*/
+
+int MqttClient::_sendPacket() {
+  EMC_SEMAPHORE_TAKE();
+  Packet* packet = _outbox.getCurrent();
+
+  int32_t wantToWrite = 0;
+  int32_t written = 0;
+  if (packet && (wantToWrite == written)) {
+    // mixing signed with unsigned here but safe because of MQTT packet size limits
+    wantToWrite = packet->available(_bytesSent);
+    if (wantToWrite == 0) {
+      EMC_SEMAPHORE_GIVE();
+      return 0;
+    }
+    written = _transport->write(packet->data(_bytesSent), wantToWrite);
+    if (written < 0) {
+      emc_log_w("Write error, check connection");
+      EMC_SEMAPHORE_GIVE();
+      return -1;
+    }
+    _lastClientActivity = millis();
+    _bytesSent += written;
+    emc_log_i("tx %zu/%zu (%02x)", _bytesSent, packet->size(), packet->packetType());
+  }
+  EMC_SEMAPHORE_GIVE();
+  return written;
+}
+
+bool MqttClient::_advanceOutbox() {
+  EMC_SEMAPHORE_TAKE();
+  Packet* packet = _outbox.getCurrent();
+  if (packet && _bytesSent == packet->size()) {
+    if ((packet->packetType()) == PacketType.DISCONNECT) {
+      _state = State::disconnectingTcp1;
+      _disconnectReason = DisconnectReason::USER_OK;
+    }
+    if (packet->removable()) {
+      _outbox.removeCurrent();
+    } else {
+      // handle with care! millis() returns unsigned 32 bit, token is void*
+      packet->token = reinterpret_cast<void*>(millis());
+      if ((packet->packetType()) == PacketType.PUBLISH) packet->setDup();
+      _outbox.next();
+    }
+    packet = _outbox.getCurrent();
+    _bytesSent = 0;
+  }
+  EMC_SEMAPHORE_GIVE();
+  return packet;
 }
 
 void MqttClient::_checkIncoming() {
@@ -427,6 +500,7 @@ void MqttClient::_onConnack() {
   if (_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode == 0x00) {
     _pingSent = false;  // reset after keepalive timeout disconnect
     _state = State::connected;
+    _advanceOutbox();
     if (_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent == 0) {
       _clearQueue(true);
     }

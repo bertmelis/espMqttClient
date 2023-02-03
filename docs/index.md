@@ -361,12 +361,19 @@ Set this to 1 if you use the async version on ESP8266. For the regular client th
 ### EMC_ALLOW_NOT_CONNECTED_PUBLISH 1
 
 By default, you can publish when the client is not connected. If you don't want this, set this to 0.
+Regardless of this setting, after you called `disconnect()`, no messages can be published until fully disconnected.
+
+### EMC_WAIT_FOR_CONNACK 1
+
+espMqttClient waits for the CONNACK (connection acknowledge) packet before starting to send other packets.
+The MQTT specification allows to start sending before the broker acknowledges the connection but some brokers
+don't allow this (AWS for example doesn't).
 
 ### EMC_CLIENTID_LENGTH 18 + 1
 
 The (maximum) length of the client ID. (Keep in mind that this is a c-string. You need to have 1 position available for the null-termination.)
 
-### EMC_TASK_STACK_SIZE 5000
+### EMC_TASK_STACK_SIZE 5120
 
 Only used on ESP32. Sets the stack size (in words) of the MQTT client worker task.
 

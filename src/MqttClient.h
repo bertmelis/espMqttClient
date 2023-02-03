@@ -106,15 +106,15 @@ class MqttClient {
   // state is protected to allow state changes by the transport system, defined in child classes
   // eg. to allow AsyncTCP
   enum class State {
-    disconnected,
-    connectingTcp1,
-    connectingTcp2,
-    connectingMqtt,
-    connected,
-    disconnectingMqtt1,
-    disconnectingMqtt2,
-    disconnectingTcp1,
-    disconnectingTcp2
+    disconnected =       0,
+    connectingTcp1 =     1,
+    connectingTcp2 =     2,
+    connectingMqtt =     3,
+    connected =          4,
+    disconnectingMqtt1 = 5,
+    disconnectingMqtt2 = 6,
+    disconnectingTcp1 =  7,
+    disconnectingTcp2 =  8
   };
   std::atomic<State> _state;
 
@@ -161,7 +161,9 @@ class MqttClient {
     return false;
   }
 
-  void _checkOutgoing();
+  void _checkOutbox();
+  int _sendPacket();
+  bool _advanceOutbox();
   void _checkIncoming();
   void _checkPing();
 
