@@ -315,7 +315,7 @@ The callback has the following signature: `size_t callback(uint8_t* data, size_t
 void clearQueue(bool deleteSessionData = false)
 ```
 
-When disconnected, clears all queued messages.
+Clears all queued messages.
 Keep in mind that this may also delete any session data and therefore is not MQTT compliant.
 
 - **`deleteSessionData`**: When true, delete all outgoing messages. Not MQTT compliant!

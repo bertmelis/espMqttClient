@@ -729,12 +729,13 @@ void MqttClient::_clearQueue(int clearData) {
       }
     }
   } else if (clearData == 1) {
-    // keep PUB (qos > 0, aka packetID != 0)
+    // keep PUB
     while (it) {
-      if ((it.get()->packetType() == PacketType.PUBLISH && it.get()->packetId() != 0)) {
+      if (it.get()->packetType() == PacketType.PUBLISH) {
         ++it;
+      } else {
+        _outbox.remove(it);
       }
-      _outbox.remove(it);
     }
   } else {  // clearData == 2
     while (it) {
