@@ -711,7 +711,7 @@ void MqttClient::_onUnsuback() {
 }
 
 void MqttClient::_clearQueue(int clearData) {
-  emc_log_i("clearing queue (clear session: %s)", clearSession ? "true" : "false");
+  emc_log_i("clearing queue (clear session: %d)", clearData);
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   if (clearData == 0) {
@@ -728,7 +728,7 @@ void MqttClient::_clearQueue(int clearData) {
         _outbox.remove(it);
       }
     }
-  } else if (clearSession == 1) {
+  } else if (clearData == 1) {
     // keep PUB (qos > 0, aka packetID != 0)
     while (it) {
       if ((it.get()->packetType() == PacketType.PUBLISH && it.get()->packetId() != 0)) {
