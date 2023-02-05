@@ -63,7 +63,7 @@ class MqttClient {
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
-  void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
+  void clearQueue(bool deleteSessionData = false);  // Not MQTT compliant and may cause unpredictable results when `deleteSessionData` = true!
   const char* getClientId() const;
   #if defined(ARDUINO_ARCH_ESP32)
 
@@ -176,7 +176,9 @@ class MqttClient {
   void _onSuback();
   void _onUnsuback();
 
-  void _clearQueue(bool clearSession);
+  void _clearQueue(int clearData);  // 0: keep session,
+                                    // 1: keep only PUBLISH qos > 0
+                                    // 2: delete all
   void _onError(uint16_t packetId, espMqttClientTypes::Error error);
 
   #if defined(ARDUINO_ARCH_ESP32)

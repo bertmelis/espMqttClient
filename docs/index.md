@@ -312,11 +312,13 @@ Publish a packet with a callback for payload handling. Return the packet ID (or 
 The callback has the following signature: `size_t callback(uint8_t* data, size_t maxSize, size_t index)`. When the library needs payload data, the callback will be invoked. It is the callback's job to write data indo `data` with a maximum of `maxSize` bytes, according the `index` and return the amount of bytes written.
 
 ```cpp
-void clearQueue()
+void clearQueue(bool deleteSessionData = false)
 ```
 
-When disconnected, clears all queued messages.
-Keep in mind that this also deletes any session data and therefore is no MQTT compliant.
+Clears all queued messages.
+Keep in mind that this may also delete any session data and therefore is not MQTT compliant.
+
+- **`deleteSessionData`**: When true, delete all outgoing messages. Not MQTT compliant!
 
 ```cpp
 void loop()

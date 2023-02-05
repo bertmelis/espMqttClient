@@ -76,7 +76,7 @@ MqttClient::MqttClient()
 
 MqttClient::~MqttClient() {
   disconnect(true);
-  _clearQueue(true);
+  _clearQueue(2);
 #if defined(ARDUINO_ARCH_ESP32)
   vSemaphoreDelete(_xSemaphore);
   if (_useTask) {
@@ -184,8 +184,8 @@ uint16_t MqttClient::publish(const char* topic, uint8_t qos, bool retain, espMqt
   return packetId;
 }
 
-void MqttClient::clearQueue(bool all) {
-  _clearQueue(all);
+void MqttClient::clearQueue(bool deleteSessionData) {
+  _clearQueue(deleteSessionData ? 2 : 0);
 }
 
 const char* MqttClient::getClientId() const {
@@ -265,7 +265,7 @@ void MqttClient::loop() {
       break;
     case State::disconnectingTcp2:
       if (_transport->disconnected()) {
-        _clearQueue(false);
+        _clearQueue(0);
         _state = State::disconnected;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
       }
@@ -428,7 +428,7 @@ void MqttClient::_checkIncoming() {
             }
             break;
           case PacketType.PUBLISH:
-            if (_state == State::disconnectingMqtt1 || _state == State::disconnectingMqtt2) break;  // stop processing incoming once user has called disconnect
+            if (_state >= State::disconnectingMqtt1) break;  // stop processing incoming once user has called disconnect
             _onPublish();
             break;
           case PacketType.PUBACK:
@@ -502,7 +502,7 @@ void MqttClient::_onConnack() {
     _state = State::connected;
     _advanceOutbox();
     if (_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent == 0) {
-      _clearQueue(true);
+      _clearQueue(1);
     }
     if (_onConnectCallback) {
       _onConnectCallback(_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent);
@@ -710,15 +710,11 @@ void MqttClient::_onUnsuback() {
   }
 }
 
-void MqttClient::_clearQueue(bool clearSession) {
-  emc_log_i("clearing queue (clear session: %s)", clearSession ? "true" : "false");
+void MqttClient::_clearQueue(int clearData) {
+  emc_log_i("clearing queue (clear session: %d)", clearData);
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
-  if (clearSession) {
-    while (it) {
-      _outbox.remove(it);
-    }
-  } else {
+  if (clearData == 0) {
     // keep PUB (qos > 0, aka packetID != 0), PUBREC and PUBREL
     // Spec only mentions PUB and PUBREL but this lib implements method B from point 4.3.3 (Fig. 4.3)
     // and stores the packet id in the PUBREC packet. So we also must keep PUBREC.
@@ -726,11 +722,24 @@ void MqttClient::_clearQueue(bool clearSession) {
       espMqttClientInternals::MQTTPacketType type = it.get()->packetType();
       if (type == PacketType.PUBREC ||
           type == PacketType.PUBREL ||
-          (type == PacketType.PUBLISH && it.get()->packetId() != 0)) {
+         (type == PacketType.PUBLISH && it.get()->packetId() != 0)) {
         ++it;
       } else {
         _outbox.remove(it);
       }
+    }
+  } else if (clearData == 1) {
+    // keep PUB
+    while (it) {
+      if (it.get()->packetType() == PacketType.PUBLISH) {
+        ++it;
+      } else {
+        _outbox.remove(it);
+      }
+    }
+  } else {  // clearData == 2
+    while (it) {
+      _outbox.remove(it);
     }
   }
   EMC_SEMAPHORE_GIVE();
