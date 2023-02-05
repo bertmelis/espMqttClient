@@ -428,7 +428,7 @@ void MqttClient::_checkIncoming() {
             }
             break;
           case PacketType.PUBLISH:
-            if (_state == State::disconnectingMqtt1 || _state == State::disconnectingMqtt2) break;  // stop processing incoming once user has called disconnect
+            if (_state >= State::disconnectingMqtt1) break;  // stop processing incoming once user has called disconnect
             _onPublish();
             break;
           case PacketType.PUBACK:
