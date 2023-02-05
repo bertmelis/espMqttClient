@@ -368,6 +368,9 @@ void final_disconnect() {
     }
     std::this_thread::yield();
   }
+  if (mqttClient.connected()) {
+    mqttClient.disconnect(true);
+  }
   mqttClient.onDisconnect(nullptr);
 }
 
