@@ -10,8 +10,7 @@ espMqttClient mqttClient;
 std::atomic_bool exitProgram(false);
 std::thread t;
 
-const IPAddress broker(192,168,130,10);
-//const IPAddress broker(127,0,0,1);
+const IPAddress broker(127,0,0,1);
 //const char* broker = "localhost";
 const uint16_t broker_port = 1883;
 
