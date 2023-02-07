@@ -2,3 +2,4 @@
 .vscode
 cov
 *cov.info
+.idea
