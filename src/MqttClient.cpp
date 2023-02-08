@@ -502,7 +502,8 @@ void MqttClient::_checkPing() {
 void MqttClient::_checkTimeout() {
   espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
   if (it && _bytesSent == 0) {  // check that we're not busy sending
-    if (millis() - *((uint32_t*)&(it.get()->token)) > _timeout) {  // TODO(bertmelis): fix ugly casting hack
+    if (millis() - *((uint32_t*)&(it.get()->token)) > _timeout) {  // NOLINT(readability/casting)
+                                                                   // TODO(bertmelis): fix ugly casting hack
       emc_log_w("Packet ack timeout, retrying");
       _outbox.resetCurrent();
     }
