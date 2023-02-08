@@ -150,6 +150,15 @@ Set the server.
 - **`host`**: Host of the server, expects a null-terminated char array (c-string)
 - **`port`**: Port of the server
 
+```cpp
+espMqttClient& setTimeout(uint16_t timeout)
+```
+
+Set the timeout for packets that need acknowledgement. Defaults to 10 seconds.
+When no acknowledgement has been received from the broker after sending a packet, the client will retransmit **all** the packets in the queue.
+
+* **`timeout`**: Timeout in seconds
+
 #### Options for TLS connections
 
 All common options from WiFiClientSecure to setup an encrypted connection are made available. These include:
