@@ -69,7 +69,7 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& setTimeout(uint16_t timeout) {
-    _timeout = keepAlive * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
+    _timeout = timeout * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
     return static_cast<T&>(*this);
   }
 
