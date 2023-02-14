@@ -143,7 +143,6 @@ void setup() {
 void loop() {
   static uint32_t currentMillis = millis();
 
-  mqttClient.loop();
   if (reconnectMqtt && currentMillis - lastReconnect > 5000) {
     connectToMqtt();
   }
