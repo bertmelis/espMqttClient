@@ -102,6 +102,7 @@ class MqttClient {
   uint16_t _willPayloadLength;
   uint8_t _willQos;
   bool _willRetain;
+  uint32_t _timeout;
 
   // state is protected to allow state changes by the transport system, defined in child classes
   // eg. to allow AsyncTCP
@@ -166,6 +167,7 @@ class MqttClient {
   bool _advanceOutbox();
   void _checkIncoming();
   void _checkPing();
+  void _checkTimeout();
 
   void _onConnack();
   void _onPublish();
