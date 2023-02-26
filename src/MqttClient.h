@@ -65,17 +65,13 @@ class MqttClient {
   uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
   void clearQueue(bool deleteSessionData = false);  // Not MQTT compliant and may cause unpredictable results when `deleteSessionData` = true!
   const char* getClientId() const;
-  #if defined(ARDUINO_ARCH_ESP32)
-
- protected:
-  #endif
   void loop();
+  
+ protected:
   #if defined(ARDUINO_ARCH_ESP32)
   explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
   bool _useTask;
   #else
-
- protected:
   MqttClient();
   #endif
   espMqttClientInternals::Transport* _transport;

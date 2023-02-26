@@ -66,7 +66,7 @@ espMqttClientAsync()
 ```
 
 Instantiate a new espMqttClient or espMqttSecure object.
-On ESP32, two optional parameters are available: `espMqttClient(uint8_t priority = 1, uint8_t core = 1)`. This will change the priority of the MQTT client task and the core on which it runs (higher priority = more cpu-time).
+On ESP32, three optional parameters are available: `espMqttClient(bool internalTask = true, uint8_t priority = 1, uint8_t core = 1)`. By default, espMqttclient creates its own task to manage TCP. By setting `internalTask` to false, no task will be created and you will be responsible yourself to call `espMqttClient.loop()`. `priority` changes the priority of the MQTT client task and the core on which it runs (higher priority = more cpu-time).
 
 For the asynchronous version, use `espMqttClientAsync`.
 
@@ -333,7 +333,7 @@ Keep in mind that this may also delete any session data and therefore is not MQT
 void loop()
 ```
 
-This is the worker function of the MQTT client. For ESP8266 you must call this function in the Arduino loop. For ESP32 this function is only used internally and is not available in the API.
+This is the worker function of the MQTT client. For ESP8266 you must call this function in the Arduino loop. For ESP32 you only have to call this function yourself if you have disabled the internal task (see the constructors).
 
 ```cpp
 const char* getClientId() const
