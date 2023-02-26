@@ -333,7 +333,7 @@ Keep in mind that this may also delete any session data and therefore is not MQT
 void loop()
 ```
 
-This is the worker function of the MQTT client. For ESP8266 you must call this function in the Arduino loop. For ESP32 you only have to call this function yourself if you have disabled the internal task (see the constructors).
+This is the worker function of the MQTT client. For ESP8266 you must call this function in the Arduino loop. For ESP32 you have to call this function yourself **only if you have disabled the internal task** (see the constructors).
 
 ```cpp
 const char* getClientId() const
