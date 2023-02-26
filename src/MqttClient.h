@@ -66,7 +66,7 @@ class MqttClient {
   void clearQueue(bool deleteSessionData = false);  // Not MQTT compliant and may cause unpredictable results when `deleteSessionData` = true!
   const char* getClientId() const;
   void loop();
-  
+
  protected:
   #if defined(ARDUINO_ARCH_ESP32)
   explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
