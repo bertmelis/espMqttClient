@@ -19,6 +19,14 @@ espMqttClient::espMqttClient()
   _transport = &_client;
 }
 
+#if defined(ARDUINO_ARCH_ESP32)
+espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
+: MqttClientSetup(true, priority, core)
+, _client() {
+  _transport = &_client;
+}
+#endif
+
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClientSecure::espMqttClientSecure(bool internalTask, uint8_t priority, uint8_t core)
@@ -30,6 +38,14 @@ espMqttClientSecure::espMqttClientSecure()
 #endif
   _transport = &_client;
 }
+
+#if defined(ARDUINO_ARCH_ESP32)
+espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
+: MqttClientSetup(true, priority, core)
+, _client() {
+  _transport = &_client;
+}
+#endif
 
 espMqttClientSecure& espMqttClientSecure::setInsecure() {
   _client.client.setInsecure();
