@@ -13,12 +13,11 @@ using espMqttClientInternals::PacketType;
 using espMqttClientTypes::DisconnectReason;
 using espMqttClientTypes::Error;
 
-#if defined(ARDUINO_ARCH_ESP32)
 MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority, uint8_t core)
+#if defined(ARDUINO_ARCH_ESP32)
 : _useInternalTask(useInternalTask)
 , _transport(nullptr)
 #else
-MqttClient::MqttClient()
 : _transport(nullptr)
 #endif
 , _onConnectCallback(nullptr)
@@ -58,10 +57,8 @@ MqttClient::MqttClient()
 , _lastServerActivity(0)
 , _pingSent(false)
 , _disconnectReason(DisconnectReason::TCP_DISCONNECTED)
-#if defined(ARDUINO_ARCH_ESP32)
-#if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
+#if defined(ARDUINO_ARCH_ESP32) && ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
 , _highWaterMark(4294967295)
-#endif
 #endif
   {
   EMC_GENERATE_CLIENTID(_generatedClientId);
@@ -71,6 +68,8 @@ MqttClient::MqttClient()
   if (_useInternalTask == espMqttClientTypes::UseInternalTask::YES) {
     xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
   }
+#else
+  (void) useInternalTask;
 #endif
   _clientId = _generatedClientId;
 }
