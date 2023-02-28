@@ -23,7 +23,7 @@ the LICENSE file.
 class espMqttClient : public MqttClientSetup<espMqttClient> {
  public:
 #if defined(ARDUINO_ARCH_ESP32)
-  explicit espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1);
+  explicit espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask);
   explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1);
 #else
   espMqttClient();
@@ -41,7 +41,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient> {
 class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
  public:
   #if defined(ARDUINO_ARCH_ESP32)
-  explicit espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1);
+  explicit espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask);
   explicit espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1);
   #else
   espMqttClientSecure();

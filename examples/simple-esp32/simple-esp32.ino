@@ -1,5 +1,4 @@
 #include <WiFi.h>
-#include <Ticker.h>
 
 #include <espMqttClient.h>
 
