@@ -9,8 +9,8 @@ the LICENSE file.
 #include "espMqttClient.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
-espMqttClient::espMqttClient(bool internalTask, uint8_t priority, uint8_t core)
-: MqttClientSetup(internalTask, priority, core)
+espMqttClient::espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority, uint8_t core)
+: MqttClientSetup(useInternalTask, priority, core)
 , _client() {
 #else
 espMqttClient::espMqttClient()
@@ -21,7 +21,7 @@ espMqttClient::espMqttClient()
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
-: MqttClientSetup(true, priority, core)
+: MqttClientSetup(espMqttClientTypes::UseInternalTask::YES, priority, core)
 , _client() {
   _transport = &_client;
 }
@@ -29,8 +29,8 @@ espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
 
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 #if defined(ARDUINO_ARCH_ESP32)
-espMqttClientSecure::espMqttClientSecure(bool internalTask, uint8_t priority, uint8_t core)
-: MqttClientSetup(internalTask, priority, core)
+espMqttClientSecure::espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority, uint8_t core)
+: MqttClientSetup(useInternalTask, priority, core)
 , _client() {
 #else
 espMqttClientSecure::espMqttClientSecure()
@@ -41,7 +41,7 @@ espMqttClientSecure::espMqttClientSecure()
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
-: MqttClientSetup(true, priority, core)
+: MqttClientSetup(espMqttClientTypes::UseInternalTask::YES, priority, core)
 , _client() {
   _transport = &_client;
 }

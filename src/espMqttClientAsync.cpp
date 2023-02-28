@@ -12,7 +12,7 @@ the LICENSE file.
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClientAsync::espMqttClientAsync(uint8_t priority, uint8_t core)
-: MqttClientSetup(false, priority, core)
+: MqttClientSetup(espMqttClientTypes::UseInternalTask::NO, priority, core)
 , _clientAsync() {
 #else
 espMqttClientAsync::espMqttClientAsync()

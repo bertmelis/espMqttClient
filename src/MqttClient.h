@@ -69,8 +69,8 @@ class MqttClient {
 
  protected:
   #if defined(ARDUINO_ARCH_ESP32)
-  explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
-  bool _useTask;
+  explicit MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1);
+  espMqttClientTypes::UseInternalTask _useInternalTask;
   #else
   MqttClient();
   #endif
