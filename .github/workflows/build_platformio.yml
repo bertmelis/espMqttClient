@@ -18,7 +18,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
         pio pkg install --global --library me-no-dev/AsyncTCP
-        pio pkg install --global --library EspAsyncTCP
+        pio pkg install --global --library me-no-dev/EspAsyncTCP
         chmod +x ./scripts/CI/build_examples_pio.sh
     - name: Build examples
       run: |
