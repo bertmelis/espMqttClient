@@ -240,6 +240,7 @@ void MqttClient::loop() {
         _checkOutbox();
         _checkIncoming();
         _checkPing();
+        _checkTimeout();
       } else {
         _state = State::disconnectingTcp1;
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
@@ -260,6 +261,7 @@ void MqttClient::loop() {
       _checkOutbox();
       _checkIncoming();
       _checkPing();
+      _checkTimeout();
       break;
     case State::disconnectingTcp1:
       _transport->stop();
