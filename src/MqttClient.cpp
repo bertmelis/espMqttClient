@@ -70,6 +70,8 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
   }
 #else
   (void) useInternalTask;
+  (void) priority;
+  (void) core;
 #endif
   _clientId = _generatedClientId;
 }
