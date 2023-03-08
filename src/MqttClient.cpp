@@ -319,18 +319,18 @@ void MqttClient::_checkOutbox() {
 
 int MqttClient::_sendPacket() {
   EMC_SEMAPHORE_TAKE();
-  Packet* packet = _outbox.getCurrent();
+  OutgoingPacket* packet = _outbox.getCurrent();
 
   int32_t wantToWrite = 0;
   int32_t written = 0;
   if (packet && (wantToWrite == written)) {
     // mixing signed with unsigned here but safe because of MQTT packet size limits
-    wantToWrite = packet->available(_bytesSent);
+    wantToWrite = packet->packet.available(_bytesSent);
     if (wantToWrite == 0) {
       EMC_SEMAPHORE_GIVE();
       return 0;
     }
-    written = _transport->write(packet->data(_bytesSent), wantToWrite);
+    written = _transport->write(packet->packet.data(_bytesSent), wantToWrite);
     if (written < 0) {
       emc_log_w("Write error, check connection");
       EMC_SEMAPHORE_GIVE();
@@ -338,10 +338,10 @@ int MqttClient::_sendPacket() {
     }
     // handle with care! millis() returns unsigned 32 bit, token is void*
     static_assert(sizeof(uint32_t) <= sizeof(void*), "the size of uint32_t must be smaller than or equal to the size of a pointer");
-    packet->token = reinterpret_cast<void*>(millis());
+    packet->timeSent = millis();
     _lastClientActivity = millis();
     _bytesSent += written;
-    emc_log_i("tx %zu/%zu (%02x)", _bytesSent, packet->size(), packet->packetType());
+    emc_log_i("tx %zu/%zu (%02x)", _bytesSent, packet->packet.size(), packet->packet.packetType());
   }
   EMC_SEMAPHORE_GIVE();
   return written;
@@ -349,17 +349,17 @@ int MqttClient::_sendPacket() {
 
 bool MqttClient::_advanceOutbox() {
   EMC_SEMAPHORE_TAKE();
-  Packet* packet = _outbox.getCurrent();
-  if (packet && _bytesSent == packet->size()) {
-    if ((packet->packetType()) == PacketType.DISCONNECT) {
+  OutgoingPacket* packet = _outbox.getCurrent();
+  if (packet && _bytesSent == packet->packet.size()) {
+    if ((packet->packet.packetType()) == PacketType.DISCONNECT) {
       _state = State::disconnectingTcp1;
       _disconnectReason = DisconnectReason::USER_OK;
     }
-    if (packet->removable()) {
+    if (packet->packet.removable()) {
       _outbox.removeCurrent();
     } else {
       // we already set 'dup' here, in case we have to retry
-      if ((packet->packetType()) == PacketType.PUBLISH) packet->setDup();
+      if ((packet->packet.packetType()) == PacketType.PUBLISH) packet->packet.setDup();
       _outbox.next();
     }
     packet = _outbox.getCurrent();
@@ -462,10 +462,9 @@ void MqttClient::_checkPing() {
 }
 
 void MqttClient::_checkTimeout() {
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   if (it && _bytesSent == 0) {  // check that we're not busy sending
-    if (millis() - *((uint32_t*)&(it.get()->token)) > _timeout) {  // NOLINT(readability/casting)
-                                                                   // TODO(bertmelis): fix ugly casting hack
+    if (millis() - it.get()->timeSent > _timeout) {
       emc_log_w("Packet ack timeout, retrying");
       _outbox.resetCurrent();
     }
@@ -507,9 +506,9 @@ void MqttClient::_onPublish() {
     }
   } else if (qos == 2) {
     EMC_SEMAPHORE_TAKE();
-    espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+    espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
     while (it) {
-      if ((it.get()->packetType()) == PacketType.PUBREC && it.get()->packetId() == packetId) {
+      if ((it.get()->packet.packetType()) == PacketType.PUBREC && it.get()->packet.packetId() == packetId) {
         callback = false;
         emc_log_e("QoS2 packet previously delivered");
         break;
@@ -535,12 +534,12 @@ void MqttClient::_onPuback() {
   bool callback = false;
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
     // PUBACKs come in the order PUBs are sent. So we only check the first PUB packet in outbox
     // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBLISH) {
-      if (it.get()->packetId() == idToMatch) {
+    if ((it.get()->packet.packetType()) == PacketType.PUBLISH) {
+      if (it.get()->packet.packetId() == idToMatch) {
         callback = true;
         _outbox.remove(it);
         break;
@@ -562,12 +561,12 @@ void MqttClient::_onPubrec() {
   bool success = false;
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
     // PUBRECs come in the order PUBs are sent. So we only check the first PUB packet in outbox
     // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBLISH) {
-      if (it.get()->packetId() == idToMatch) {
+    if ((it.get()->packet.packetType()) == PacketType.PUBLISH) {
+      if (it.get()->packet.packetId() == idToMatch) {
         if (!_addPacket(PacketType.PUBREL, idToMatch)) {
           emc_log_e("Could not create PUBREL packet");
         }
@@ -590,12 +589,12 @@ void MqttClient::_onPubrel() {
   bool success = false;
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
     // PUBRELs come in the order PUBRECs are sent. So we only check the first PUBREC packet in outbox
     // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBREC) {
-      if (it.get()->packetId() == idToMatch) {
+    if ((it.get()->packet.packetType()) == PacketType.PUBREC) {
+      if (it.get()->packet.packetId() == idToMatch) {
         if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
           emc_log_e("Could not create PUBCOMP packet");
         }
@@ -617,13 +616,13 @@ void MqttClient::_onPubrel() {
 void MqttClient::_onPubcomp() {
   bool callback = false;
   EMC_SEMAPHORE_TAKE();
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   while (it) {
     // PUBCOMPs come in the order PUBRELs are sent. So we only check the first PUBREL packet in outbox
     // if it doesn't match the ID, return
-    if ((it.get()->packetType()) == PacketType.PUBREL) {
-      if (it.get()->packetId() == idToMatch) {
+    if ((it.get()->packet.packetType()) == PacketType.PUBREL) {
+      if (it.get()->packet.packetId() == idToMatch) {
         if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
           emc_log_e("Could not create PUBCOMP packet");
         }
@@ -648,9 +647,9 @@ void MqttClient::_onSuback() {
   bool callback = false;
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
-    if (((it.get()->packetType()) == PacketType.SUBSCRIBE) && it.get()->packetId() == idToMatch) {
+    if (((it.get()->packet.packetType()) == PacketType.SUBSCRIBE) && it.get()->packet.packetId() == idToMatch) {
       callback = true;
       _outbox.remove(it);
       break;
@@ -668,10 +667,10 @@ void MqttClient::_onSuback() {
 void MqttClient::_onUnsuback() {
   bool callback = false;
   EMC_SEMAPHORE_TAKE();
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
   while (it) {
-    if (it.get()->packetId() == idToMatch) {
+    if (it.get()->packet.packetId() == idToMatch) {
       callback = true;
       _outbox.remove(it);
       break;
@@ -689,16 +688,16 @@ void MqttClient::_onUnsuback() {
 void MqttClient::_clearQueue(int clearData) {
   emc_log_i("clearing queue (clear session: %d)", clearData);
   EMC_SEMAPHORE_TAKE();
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   if (clearData == 0) {
     // keep PUB (qos > 0, aka packetID != 0), PUBREC and PUBREL
     // Spec only mentions PUB and PUBREL but this lib implements method B from point 4.3.3 (Fig. 4.3)
     // and stores the packet id in the PUBREC packet. So we also must keep PUBREC.
     while (it) {
-      espMqttClientInternals::MQTTPacketType type = it.get()->packetType();
+      espMqttClientInternals::MQTTPacketType type = it.get()->packet.packetType();
       if (type == PacketType.PUBREC ||
           type == PacketType.PUBREL ||
-         (type == PacketType.PUBLISH && it.get()->packetId() != 0)) {
+         (type == PacketType.PUBLISH && it.get()->packet.packetId() != 0)) {
         ++it;
       } else {
         _outbox.remove(it);
@@ -707,7 +706,7 @@ void MqttClient::_clearQueue(int clearData) {
   } else if (clearData == 1) {
     // keep PUB
     while (it) {
-      if (it.get()->packetType() == PacketType.PUBLISH) {
+      if (it.get()->packet.packetType() == PacketType.PUBLISH) {
         ++it;
       } else {
         _outbox.remove(it);
