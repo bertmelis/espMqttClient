@@ -30,7 +30,7 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
 , _clientId(nullptr)
 , _ip()
 , _host(nullptr)
-, _port(1183)
+, _port(1883)
 , _useIp(false)
 , _keepAlive(15000)
 , _cleanSession(true)
@@ -338,8 +338,6 @@ int MqttClient::_sendPacket() {
       EMC_SEMAPHORE_GIVE();
       return -1;
     }
-    // handle with care! millis() returns unsigned 32 bit, token is void*
-    static_assert(sizeof(uint32_t) <= sizeof(void*), "the size of uint32_t must be smaller than or equal to the size of a pointer");
     packet->timeSent = millis();
     _lastClientActivity = millis();
     _bytesSent += written;
@@ -464,6 +462,7 @@ void MqttClient::_checkPing() {
 }
 
 void MqttClient::_checkTimeout() {
+  EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   // check that we're not busy sending
   // don't check when first item hasn't been sent yet
@@ -473,6 +472,7 @@ void MqttClient::_checkTimeout() {
       _outbox.resetCurrent();
     }
   }
+  EMC_SEMAPHORE_GIVE();
 }
 
 void MqttClient::_onConnack() {
