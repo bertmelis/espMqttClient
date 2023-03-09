@@ -465,7 +465,9 @@ void MqttClient::_checkPing() {
 
 void MqttClient::_checkTimeout() {
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
-  if (it && _bytesSent == 0) {  // check that we're not busy sending
+  // check that we're not busy sending
+  // don't check when first item hasn't been sent yet
+  if (it && _bytesSent == 0 && it.get() != _outbox.getCurrent()) {
     if (millis() - it.get()->timeSent > _timeout) {
       emc_log_w("Packet ack timeout, retrying");
       _outbox.resetCurrent();
