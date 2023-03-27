@@ -222,9 +222,14 @@ void MqttClient::loop() {
       break;
     case State::connectingMqtt:
       #if EMC_WAIT_FOR_CONNACK
-      _sendPacket();
-      _checkIncoming();
-      _checkPing();
+      if (_transport->connected()) {
+        _sendPacket();
+        _checkIncoming();
+        _checkPing();
+      } else {
+        _state = State::disconnectingTcp1;
+        _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
+      }
       break;
       #else
       // receipt of CONNACK packet will set state to CONNECTED
@@ -266,7 +271,7 @@ void MqttClient::loop() {
     case State::disconnectingTcp1:
       _transport->stop();
       _state = State::disconnectingTcp2;
-      break;
+      break;  // keep break to accomodate async clients
     case State::disconnectingTcp2:
       if (_transport->disconnected()) {
         _clearQueue(0);
