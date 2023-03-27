@@ -275,6 +275,7 @@ void MqttClient::loop() {
     case State::disconnectingTcp2:
       if (_transport->disconnected()) {
         _clearQueue(0);
+        _bytesSent = 0;
         _state = State::disconnected;
         if (_onDisconnectCallback) _onDisconnectCallback(_disconnectReason);
       }
