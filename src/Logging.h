@@ -14,9 +14,9 @@ the LICENSE file.
   #include "freertos/task.h"
   #if defined(DEBUG_ESP_MQTT_CLIENT)
   // Logging is en/disabled by Arduino framework macros
-    #define emc_log_i(...) vPortEnterCritical();log_i(__VA_ARGS__);vPortExitCritical()
-    #define emc_log_e(...) vPortEnterCritical();log_e(__VA_ARGS__);vPortExitCritical()
-    #define emc_log_w(...) vPortEnterCritical();log_w(__VA_ARGS__);vPortExitCritical()
+    #define emc_log_i(...) vPortEnterCritical(); log_i(__VA_ARGS__); vPortExitCritical()
+    #define emc_log_e(...) vPortEnterCritical(); log_e(__VA_ARGS__); vPortExitCritical()
+    #define emc_log_w(...) vPortEnterCritical(); log_w(__VA_ARGS__); vPortExitCritical()
   #else
   // Logging is disabled
     #define emc_log_i(...)
