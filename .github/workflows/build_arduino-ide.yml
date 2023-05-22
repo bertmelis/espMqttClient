@@ -1,4 +1,4 @@
-name: Compile Examples
+name: Build with Arduino IDE
 on:
   - push
   - pull_request
@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         fqbn:
-          - esp8266:esp8266:esp8266
+          - esp8266:esp8266:generic
 
     steps:
       - uses: actions/checkout@v3
