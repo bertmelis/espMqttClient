@@ -27,6 +27,8 @@ jobs:
             - examples/simpleAsync-esp8266
             - examples/tls-esp8266
           libraries: |
+            - name: espMqttClient
+              source-path: ./
             - name: ESPAsyncTCP
               source-url: https://github.com/me-no-dev/ESPAsyncTCP.git
           cli-compile-flags: |
@@ -54,6 +56,8 @@ jobs:
             - examples/simpleAsync-esp32
             - examples/tls-esp32
           libraries: |
+            - name: espMqttClient
+              source-path: ./
             - name: ESPAsyncTCP
               source-url: https://github.com/me-no-dev/AsyncTCP.git
           cli-compile-flags: |
