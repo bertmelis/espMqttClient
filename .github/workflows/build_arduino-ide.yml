@@ -27,7 +27,8 @@ jobs:
             - examples/simpleAsync-esp8266
             - examples/tls-esp8266
           libraries: |
-            - https://github.com/me-no-dev/ESPAsyncTCP/archive/refs/heads/master.zip
+            - name: ESPAsyncTCP
+              source-url: https://github.com/me-no-dev/ESPAsyncTCP.git
           cli-compile-flags: |
             - --warnings="none"
 
@@ -53,6 +54,7 @@ jobs:
             - examples/simpleAsync-esp32
             - examples/tls-esp32
           libraries: |
-            - https://github.com/me-no-dev/AsyncTCP/archive/refs/heads/master.zip
+            - name: ESPAsyncTCP
+              source-url: https://github.com/me-no-dev/AsyncTCP.git
           cli-compile-flags: |
             - --warnings="none"
