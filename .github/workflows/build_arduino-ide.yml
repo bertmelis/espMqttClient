@@ -26,6 +26,8 @@ jobs:
             - examples/simple-esp8266
             - examples/simpleAsync-esp8266
             - examples/tls-esp8266
+          libraries: |
+            - https://github.com/me-no-dev/ESPAsyncTCP.git
           cli-compile-flags: |
             - --warnings="none"
 
@@ -50,5 +52,7 @@ jobs:
             - examples/simple-esp32
             - examples/simpleAsync-esp32
             - examples/tls-esp32
+          libraries: |
+            - https://github.com/me-no-dev/AsyncTCP.git
           cli-compile-flags: |
             - --warnings="none"
