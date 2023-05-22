@@ -12,7 +12,7 @@ the LICENSE file.
 #include <stddef.h>
 
 #include "Constants.h"
-#include "Config.h"
+#include "../Config.h"
 #include "../TypeDefs.h"
 #include "../Helpers.h"
 #include "../Logging.h"
