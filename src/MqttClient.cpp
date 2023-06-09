@@ -329,21 +329,15 @@ int MqttClient::_sendPacket() {
   EMC_SEMAPHORE_TAKE();
   OutgoingPacket* packet = _outbox.getCurrent();
 
-  int32_t wantToWrite = 0;
-  int32_t written = 0;
+  size_t wantToWrite = 0;
+  size_t written = 0;
   if (packet && (wantToWrite == written)) {
-    // mixing signed with unsigned here but safe because of MQTT packet size limits
     wantToWrite = packet->packet.available(_bytesSent);
     if (wantToWrite == 0) {
       EMC_SEMAPHORE_GIVE();
       return 0;
     }
     written = _transport->write(packet->packet.data(_bytesSent), wantToWrite);
-    if (written < 0) {
-      emc_log_w("Write error, check connection");
-      EMC_SEMAPHORE_GIVE();
-      return -1;
-    }
     packet->timeSent = millis();
     _lastClientActivity = millis();
     _bytesSent += written;
