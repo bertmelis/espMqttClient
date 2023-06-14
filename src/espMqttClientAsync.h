@@ -15,9 +15,9 @@ the LICENSE file.
 
 #include "Transport/ClientAsync.h"
 
-#include "MqttClientSetup.h"
+#include "MqttClientInterface.h"
 
-class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync> {
+class espMqttClientAsync : public MqttClientInterface<espMqttClientAsync> {
  public:
   espMqttClientAsync();
   bool connect();

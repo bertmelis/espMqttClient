@@ -18,10 +18,10 @@ the LICENSE file.
 #include "Transport/ClientPosix.h"
 #endif
 
-#include "MqttClientSetup.h"
+#include "MqttClientInterface.h"
 
 #if defined(ARDUINO_ARCH_ESP8266)
-class espMqttClient : public MqttClientSetup<espMqttClient> {
+class espMqttClient : public MqttClientInterface<espMqttClient> {
  public:
   espMqttClient();
 
@@ -29,7 +29,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient> {
   espMqttClientInternals::ClientSync _client;
 };
 
-class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
+class espMqttClientSecure : public MqttClientInterface<espMqttClientSecure> {
  public:
   espMqttClientSecure();
   espMqttClientSecure& setInsecure();
@@ -45,7 +45,7 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
-class espMqttClient : public MqttClientSetup<espMqttClient> {
+class espMqttClient : public MqttClientInterface<espMqttClient> {
  public:
   explicit espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask);
   explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1);
@@ -54,7 +54,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient> {
   espMqttClientInternals::ClientSync _client;
 };
 
-class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
+class espMqttClientSecure : public MqttClientInterface<espMqttClientSecure> {
  public:
   explicit espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask);
   explicit espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1);
@@ -70,7 +70,7 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
 #endif
 
 #if defined(__linux__)
-class espMqttClient : public MqttClientSetup<espMqttClient> {
+class espMqttClient : public MqttClientInterface<espMqttClient> {
  public:
   espMqttClient();
 

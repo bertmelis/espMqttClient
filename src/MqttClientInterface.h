@@ -14,7 +14,7 @@ the LICENSE file.
 #include "MqttClient.h"
 
 template <typename T>
-class MqttClientSetup : public MqttClient {
+class MqttClientInterface : public MqttClient {
  public:
   T& setKeepAlive(uint16_t keepAlive) {
     _keepAlive = keepAlive * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
@@ -109,6 +109,81 @@ class MqttClientSetup : public MqttClient {
     return static_cast<T&>(*this);
   }
   */
+
+  template <typename... Args>
+  uint16_t subscribe(const char* topic, uint8_t qos, Args&&... args) {
+    uint16_t packetId = _getNextPacketId();
+    if (_state != State::connected) {
+      packetId = 0;
+    } else {
+      EMC_SEMAPHORE_TAKE();
+      if (!_addPacket(packetId, topic, qos, std::forward<Args>(args) ...)) {
+        emc_log_e("Could not create SUBSCRIBE packet");
+        packetId = 0;
+      }
+      EMC_SEMAPHORE_GIVE();
+    }
+    return packetId;
+  }
+
+  template <typename... Args>
+  uint16_t unsubscribe(const char* topic, Args&&... args) {
+    uint16_t packetId = _getNextPacketId();
+    if (_state != State::connected) {
+      packetId = 0;
+    } else {
+      EMC_SEMAPHORE_TAKE();
+      if (!_addPacket(packetId, topic, std::forward<Args>(args) ...)) {
+        emc_log_e("Could not create UNSUBSCRIBE packet");
+        packetId = 0;
+      }
+      EMC_SEMAPHORE_GIVE();
+    }
+    return packetId;
+  }
+
+  uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
+    #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
+    if (_state != State::connected) {
+    #else
+    if (_state > State::connected) {
+    #endif
+      return 0;
+    }
+    uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(packetId, topic, payload, length, qos, retain)) {
+      emc_log_e("Could not create PUBLISH packet");
+      _onError(packetId, espMqttClientTypes::Error::OUT_OF_MEMORY);
+      packetId = 0;
+    }
+    EMC_SEMAPHORE_GIVE();
+    return packetId;
+  }
+
+  uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload) {
+    size_t len = strlen(payload);
+    return publish(topic, qos, retain, reinterpret_cast<const uint8_t*>(payload), len);
+  }
+
+  uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length) {
+      #if !EMC_ALLOW_NOT_CONNECTED_PUBLISH
+    if (_state != State::connected) {
+    #else
+    if (_state > State::connected) {
+    #endif
+      return 0;
+    }
+    uint16_t packetId = (qos > 0) ? _getNextPacketId() : 1;
+    EMC_SEMAPHORE_TAKE();
+    if (!_addPacket(packetId, topic, callback, length, qos, retain)) {
+      emc_log_e("Could not create PUBLISH packet");
+      _onError(packetId, espMqttClientTypes::Error::OUT_OF_MEMORY);
+      packetId = 0;
+    }
+    EMC_SEMAPHORE_GIVE();
+    return packetId;
+  }
 
  protected:
   explicit MqttClientSetup(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1)
