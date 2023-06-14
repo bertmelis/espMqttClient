@@ -187,5 +187,10 @@ class MqttClientInterface : public MqttClient {
 
  protected:
   explicit MqttClientInterface(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1)
-  : MqttClient(useInternalTask, priority, core) {}
+  : MqttClient(useInternalTask, priority, core) {
+    _parser = &_parser311;
+  }
+
+ private:
+  espMqttClientInternals::Parser _parser311;
 };

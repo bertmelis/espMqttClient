@@ -20,6 +20,7 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
 #else
 : _transport(nullptr)
 #endif
+, _parser(nullptr)
 , _onConnectCallback(nullptr)
 , _onDisconnectCallback(nullptr)
 , _onSubscribeCallback(nullptr)
@@ -52,7 +53,6 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
 , _rxBuffer{0}
 , _outbox()
 , _bytesSent(0)
-, _parser()
 , _lastClientActivity(0)
 , _lastServerActivity(0)
 , _pingSent(false)
@@ -172,7 +172,7 @@ void MqttClient::loop() {
       [[fallthrough]];
     case State::connectingTcp2:
       if (_transport->connected()) {
-        _parser.reset();
+        _parser->reset();
         _lastClientActivity = _lastServerActivity = millis();
         _state = State::connectingMqtt;
       }
@@ -334,9 +334,9 @@ void MqttClient::_checkIncoming() {
     size_t bytesParsed = 0;
     size_t index = 0;
     while (remainingBufferLength > 0) {
-      espMqttClientInternals::ParserResult result = _parser.parse(&_rxBuffer[index], remainingBufferLength, &bytesParsed);
+      espMqttClientInternals::ParserResult result = _parser->parse(&_rxBuffer[index], remainingBufferLength, &bytesParsed);
       if (result == espMqttClientInternals::ParserResult::packet) {
-        espMqttClientInternals::MQTTPacketType packetType = _parser.getPacket().fixedHeader.packetType & 0xF0;
+        espMqttClientInternals::MQTTPacketType packetType = _parser->getPacket().fixedHeader.packetType & 0xF0;
         if (_state == State::connectingMqtt && packetType != PacketType.CONNACK) {
           emc_log_w("Disconnecting, expected CONNACK - protocol error");
           _state = State::disconnectingTcp1;
@@ -433,25 +433,25 @@ void MqttClient::_checkTimeout() {
 }
 
 void MqttClient::_onConnack() {
-  if (_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode == 0x00) {
+  if (_parser->getPacket().variableHeader.fixed.connackVarHeader.returnCode == 0x00) {
     _pingSent = false;  // reset after keepalive timeout disconnect
     _state = State::connected;
     _advanceOutbox();
-    if (_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent == 0) {
+    if (_parser->getPacket().variableHeader.fixed.connackVarHeader.sessionPresent == 0) {
       _clearQueue(1);
     }
     if (_onConnectCallback) {
-      _onConnectCallback(_parser.getPacket().variableHeader.fixed.connackVarHeader.sessionPresent);
+      _onConnectCallback(_parser->getPacket().variableHeader.fixed.connackVarHeader.sessionPresent);
     }
   } else {
     _state = State::disconnectingTcp1;
     // cast is safe because the parser already checked for a valid return code
-    _disconnectReason = static_cast<DisconnectReason>(_parser.getPacket().variableHeader.fixed.connackVarHeader.returnCode);
+    _disconnectReason = static_cast<DisconnectReason>(_parser->getPacket().variableHeader.fixed.connackVarHeader.returnCode);
   }
 }
 
 void MqttClient::_onPublish() {
-  espMqttClientInternals::IncomingPacket p = _parser.getPacket();
+  espMqttClientInternals::IncomingPacket p = _parser->getPacket();
   uint8_t qos = p.qos();
   bool retain = p.retain();
   bool dup = p.dup();
@@ -493,7 +493,7 @@ void MqttClient::_onPublish() {
 
 void MqttClient::_onPuback() {
   bool callback = false;
-  uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
+  uint16_t idToMatch = _parser->getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
@@ -520,7 +520,7 @@ void MqttClient::_onPuback() {
 
 void MqttClient::_onPubrec() {
   bool success = false;
-  uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
+  uint16_t idToMatch = _parser->getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
@@ -548,7 +548,7 @@ void MqttClient::_onPubrec() {
 
 void MqttClient::_onPubrel() {
   bool success = false;
-  uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
+  uint16_t idToMatch = _parser->getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
@@ -578,7 +578,7 @@ void MqttClient::_onPubcomp() {
   bool callback = false;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
-  uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
+  uint16_t idToMatch = _parser->getPacket().variableHeader.fixed.packetId;
   while (it) {
     // PUBCOMPs come in the order PUBRELs are sent. So we only check the first PUBREL packet in outbox
     // if it doesn't match the ID, return
@@ -606,7 +606,7 @@ void MqttClient::_onPubcomp() {
 
 void MqttClient::_onSuback() {
   bool callback = false;
-  uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
+  uint16_t idToMatch = _parser->getPacket().variableHeader.fixed.packetId;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
   while (it) {
@@ -619,7 +619,7 @@ void MqttClient::_onSuback() {
   }
   EMC_SEMAPHORE_GIVE();
   if (callback) {
-    if (_onSubscribeCallback) _onSubscribeCallback(idToMatch, reinterpret_cast<const espMqttClientTypes::SubscribeReturncode*>(_parser.getPacket().payload.data), _parser.getPacket().payload.total);
+    if (_onSubscribeCallback) _onSubscribeCallback(idToMatch, reinterpret_cast<const espMqttClientTypes::SubscribeReturncode*>(_parser->getPacket().payload.data), _parser->getPacket().payload.total);
   } else {
     emc_log_w("received SUBACK without SUB");
   }
@@ -629,7 +629,7 @@ void MqttClient::_onUnsuback() {
   bool callback = false;
   EMC_SEMAPHORE_TAKE();
   espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.front();
-  uint16_t idToMatch = _parser.getPacket().variableHeader.fixed.packetId;
+  uint16_t idToMatch = _parser->getPacket().variableHeader.fixed.packetId;
   while (it) {
     if (it.get()->packet.packetId() == idToMatch) {
       callback = true;

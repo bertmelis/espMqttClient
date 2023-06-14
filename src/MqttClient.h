@@ -38,6 +38,7 @@ class MqttClient {
   explicit MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1);
   espMqttClientTypes::UseInternalTask _useInternalTask;
   espMqttClientInternals::Transport* _transport;
+  espMqttClientInternals::Parser* _parser;
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
   espMqttClientTypes::OnDisconnectCallback _onDisconnectCallback;
   espMqttClientTypes::OnSubscribeCallback _onSubscribeCallback;
@@ -115,7 +116,6 @@ class MqttClient {
   };
   espMqttClientInternals::Outbox<OutgoingPacket> _outbox;
   size_t _bytesSent;
-  espMqttClientInternals::Parser _parser;
   uint32_t _lastClientActivity;
   uint32_t _lastServerActivity;
   bool _pingSent;
