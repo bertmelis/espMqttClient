@@ -103,12 +103,10 @@ class MqttClientInterface : public MqttClient {
     return static_cast<T&>(*this);
   }
 
-  /*
   T& onError(espMqttClientTypes::OnErrorCallback callback) {
     _onErrorCallback = callback;
     return static_cast<T&>(*this);
   }
-  */
 
   template <typename... Args>
   uint16_t subscribe(const char* topic, uint8_t qos, Args&&... args) {
