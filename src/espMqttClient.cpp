@@ -10,13 +10,13 @@ the LICENSE file.
 
 #if defined(ARDUINO_ARCH_ESP8266)
 espMqttClient::espMqttClient()
-: MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
+: MqttClientInterface(espMqttClientTypes::UseInternalTask::NO)
 , _client() {
   _transport = &_client;
 }
 
 espMqttClientSecure::espMqttClientSecure()
-: MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
+: MqttClientInterface(espMqttClientTypes::UseInternalTask::NO)
 , _client() {
   _transport = &_client;
 }
@@ -54,25 +54,25 @@ espMqttClientSecure& espMqttClientSecure::setCertStore(CertStoreBase *certStore)
 
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClient::espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask)
-: MqttClientSetup(useInternalTask)
+: MqttClientInterface(useInternalTask)
 , _client() {
   _transport = &_client;
 }
 
 espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
-: MqttClientSetup(espMqttClientTypes::UseInternalTask::YES, priority, core)
+: MqttClientInterface(espMqttClientTypes::UseInternalTask::YES, priority, core)
 , _client() {
   _transport = &_client;
 }
 
 espMqttClientSecure::espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask)
-: MqttClientSetup(useInternalTask)
+: MqttClientInterface(useInternalTask)
 , _client() {
   _transport = &_client;
 }
 
 espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
-: MqttClientSetup(espMqttClientTypes::UseInternalTask::YES, priority, core)
+: MqttClientInterface(espMqttClientTypes::UseInternalTask::YES, priority, core)
 , _client() {
   _transport = &_client;
 }
@@ -106,7 +106,7 @@ espMqttClientSecure& espMqttClientSecure::setPreSharedKey(const char* pskIdent, 
 
 #if defined(__linux__)
 espMqttClient::espMqttClient()
-: MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
+: MqttClientInterface(espMqttClientTypes::UseInternalTask::NO)
 , _client() {
   _transport = &_client;
 }

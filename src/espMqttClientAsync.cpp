@@ -11,7 +11,7 @@ the LICENSE file.
 #include "espMqttClientAsync.h"
 
 espMqttClientAsync::espMqttClientAsync()
-: MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
+: MqttClientInterface(espMqttClientTypes::UseInternalTask::NO)
 , _clientAsync() {
   _transport = &_clientAsync;
   _clientAsync.client.onConnect(onConnectCb, this);
