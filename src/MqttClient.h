@@ -30,39 +30,6 @@ class MqttClient {
   bool disconnected() const;
   bool connect();
   bool disconnect(bool force = false);
-  template <typename... Args>
-  uint16_t subscribe(const char* topic, uint8_t qos, Args&&... args) {
-    uint16_t packetId = _getNextPacketId();
-    if (_state != State::connected) {
-      packetId = 0;
-    } else {
-      EMC_SEMAPHORE_TAKE();
-      if (!_addPacket(packetId, topic, qos, std::forward<Args>(args) ...)) {
-        emc_log_e("Could not create SUBSCRIBE packet");
-        packetId = 0;
-      }
-      EMC_SEMAPHORE_GIVE();
-    }
-    return packetId;
-  }
-  template <typename... Args>
-  uint16_t unsubscribe(const char* topic, Args&&... args) {
-    uint16_t packetId = _getNextPacketId();
-    if (_state != State::connected) {
-      packetId = 0;
-    } else {
-      EMC_SEMAPHORE_TAKE();
-      if (!_addPacket(packetId, topic, std::forward<Args>(args) ...)) {
-        emc_log_e("Could not create UNSUBSCRIBE packet");
-        packetId = 0;
-      }
-      EMC_SEMAPHORE_GIVE();
-    }
-    return packetId;
-  }
-  uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
-  uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload);
-  uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
   void clearQueue(bool deleteSessionData = false);  // Not MQTT compliant and may cause unpredictable results when `deleteSessionData` = true!
   const char* getClientId() const;
   void loop();
@@ -71,7 +38,6 @@ class MqttClient {
   explicit MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1);
   espMqttClientTypes::UseInternalTask _useInternalTask;
   espMqttClientInternals::Transport* _transport;
-
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
   espMqttClientTypes::OnDisconnectCallback _onDisconnectCallback;
   espMqttClientTypes::OnSubscribeCallback _onSubscribeCallback;
@@ -95,9 +61,6 @@ class MqttClient {
   uint8_t _willQos;
   bool _willRetain;
   uint32_t _timeout;
-
-  // state is protected to allow state changes by the transport system, defined in child classes
-  // eg. to allow AsyncTCP
   enum class State {
     disconnected =       0,
     connectingTcp1 =     1,
@@ -110,21 +73,37 @@ class MqttClient {
     disconnectingTcp2 =  8
   };
   std::atomic<State> _state;
-
- private:
   char _generatedClientId[EMC_CLIENTID_LENGTH];
   uint16_t _packetId;
-
+  uint16_t _getNextPacketId();
 #if defined(ARDUINO_ARCH_ESP32)
   SemaphoreHandle_t _xSemaphore;
-  TaskHandle_t _taskHandle;
-  static void _loop(MqttClient* c);
 #elif defined(ARDUINO_ARCH_ESP8266) && EMC_ESP8266_MULTITHREADING
   std::atomic<bool> _xSemaphore = false;
 #elif defined(__linux__)
   std::mutex mtx;
 #endif
+  template <typename... Args>
+  bool _addPacket(Args&&... args) {
+    espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
+    espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplace(0, error, std::forward<Args>(args) ...);
+    if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
+    return false;
+  }
+  template <typename... Args>
+  bool _addPacketFront(Args&&... args) {
+    espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
+    espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplaceFront(0, error, std::forward<Args>(args) ...);
+    if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
+    return false;
+  }
+  void _onError(uint16_t packetId, espMqttClientTypes::Error error);
 
+ private:
+  #if defined(ARDUINO_ARCH_ESP32)
+  TaskHandle_t _taskHandle;
+  static void _loop(MqttClient* c);
+  #endif
   uint8_t _rxBuffer[EMC_RX_BUFFER_SIZE];
   struct OutgoingPacket {
     uint32_t timeSent;
@@ -141,32 +120,12 @@ class MqttClient {
   uint32_t _lastServerActivity;
   bool _pingSent;
   espMqttClientTypes::DisconnectReason _disconnectReason;
-
-  uint16_t _getNextPacketId();
-
-  template <typename... Args>
-  bool _addPacket(Args&&... args) {
-    espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
-    espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplace(0, error, std::forward<Args>(args) ...);
-    if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
-    return false;
-  }
-
-  template <typename... Args>
-  bool _addPacketFront(Args&&... args) {
-    espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
-    espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplaceFront(0, error, std::forward<Args>(args) ...);
-    if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
-    return false;
-  }
-
   void _checkOutbox();
   int _sendPacket();
   bool _advanceOutbox();
   void _checkIncoming();
   void _checkPing();
   void _checkTimeout();
-
   void _onConnack();
   void _onPublish();
   void _onPuback();
@@ -175,12 +134,9 @@ class MqttClient {
   void _onPubcomp();
   void _onSuback();
   void _onUnsuback();
-
   void _clearQueue(int clearData);  // 0: keep session,
                                     // 1: keep only PUBLISH qos > 0
                                     // 2: delete all
-  void _onError(uint16_t packetId, espMqttClientTypes::Error error);
-
   #if defined(ARDUINO_ARCH_ESP32)
   #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
   size_t _highWaterMark;
