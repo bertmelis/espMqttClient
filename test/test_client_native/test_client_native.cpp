@@ -10,9 +10,8 @@ espMqttClient mqttClient;
 std::atomic_bool exitProgram(false);
 std::thread t;
 
-const IPAddress broker(127,0,0,1);
-//const char* broker = "localhost";
-const uint16_t broker_port = 1883;
+IPAddress broker(127,0,0,1);
+uint16_t broker_port = 1883;
 
 /*
 
@@ -373,7 +372,35 @@ void final_disconnect() {
   mqttClient.onDisconnect(nullptr);
 }
 
-int main() {
+bool checkArguments(int argc, char* argv[]) {
+  if (argc > 5) {
+    return false;
+  }
+  if (argc % 2 != 1) {
+    return false;
+  }
+
+  for (int i = 1; i < argc; i += 2) {
+    if (strcmp(argv[i], "--ip") == 0) {
+      int p = std::stol(argv[i + 1]);
+      broker = IPAddress(p);
+    } else if (strcmp(argv[i], "--port") == 0) {
+      broker_port = std::stol(argv[i + 1]);
+    }
+  }
+  return true;
+}
+
+int main(int argc, char *argv[]) {
+
+  if (!checkArguments(argc, argv)) {
+    return EXIT_FAILURE;
+  }
+
+  std::cout << "Testing client with following broker: " << std::endl
+            << "ip:   " << broker << std::endl
+            << "port: " << broker_port << std::endl;
+
   UNITY_BEGIN();
   t = std::thread([] {
     while (1) {
