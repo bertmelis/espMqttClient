@@ -56,6 +56,37 @@ struct MessageProperties {
   uint16_t packetId;
 };
 
+constexpr struct {
+  const uint8_t Invalid                         = 0x00;
+  const uint8_t PayloadFormatIndicator          = 0x01;
+  const uint8_t MessageExpiryInterval           = 0x02;
+  const uint8_t ContentType                     = 0x03;
+  const uint8_t ResponseTopic                   = 0x08;
+  const uint8_t CorrelationData                 = 0x09;
+  const uint8_t SubscriptionIdentifier          = 0x0B;
+  const uint8_t SessionExpiryInterval           = 0x11;
+  const uint8_t AssignedClientId                = 0x12;
+  const uint8_t ServerKeepAlive                 = 0x13;
+  const uint8_t AuthenticationMethod            = 0x15;
+  const uint8_t AuthenticationData              = 0x16;
+  const uint8_t RequestProblemInformation       = 0x17;
+  const uint8_t WillDelay                       = 0x18;
+  const uint8_t RequestResponse                 = 0x19;
+  const uint8_t ResponseInformation             = 0x1A;
+  const uint8_t ServerReference                 = 0x1C;
+  const uint8_t ReasonString                    = 0x1F;
+  const uint8_t ReceiveMaximum                  = 0x21;
+  const uint8_t TopicAliasMaximum               = 0x22;
+  const uint8_t TopicAlias                      = 0x23;
+  const uint8_t MaximumQoS                      = 0x24;
+  const uint8_t RetainAvailable                 = 0x25;
+  const uint8_t UserProperty                    = 0x26;
+  const uint8_t MaximumPacketSize               = 0x27;
+  const uint8_t WildcardSubcriptionAvailable    = 0x28;
+  const uint8_t SubscriptionIdentifierAvailable = 0x29;
+  const uint8_t SharedSubscriptionAvailable     = 0x2A;
+} PropertyId;
+
 typedef std::function<void(bool sessionPresent)> OnConnectCallback;
 typedef std::function<void(DisconnectReason reason)> OnDisconnectCallback;
 typedef std::function<void(uint16_t packetId, const SubscribeReturncode* returncodes, size_t len)> OnSubscribeCallback;

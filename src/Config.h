@@ -56,3 +56,7 @@ the LICENSE file.
 #ifndef EMC_USE_WATCHDOG
 #define EMC_USE_WATCHDOG 0
 #endif
+
+#ifndef NUMBER_PROPERTIES
+#define NUMBER_PROPERTIES 10
+#endif
