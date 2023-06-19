@@ -10,51 +10,6 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
-Packet::~Packet() {
-  free(_data);
-}
-
-size_t Packet::available(size_t index) {
-  if (index >= _size) return 0;
-  if (!_getPayload) return _size - index;
-  return _chunkedAvailable(index);
-}
-
-const uint8_t* Packet::data(size_t index) const {
-  if (!_getPayload) {
-    if (!_data) return nullptr;
-    if (index >= _size) return nullptr;
-    return &_data[index];
-  }
-  return _chunkedData(index);
-}
-
-size_t Packet::size() const {
-  return _size;
-}
-
-void Packet::setDup() {
-  if (!_data) return;
-  if (packetType() != PacketType.PUBLISH) return;
-  if (_packetId == 0) return;
-  _data[0] |= 0x08;
-}
-
-uint16_t Packet::packetId() const {
-  return _packetId;
-}
-
-MQTTPacketType Packet::packetType() const {
-  if (_data) return static_cast<MQTTPacketType>(_data[0] & 0xF0);
-  return static_cast<MQTTPacketType>(0);
-}
-
-bool Packet::removable() const {
-  if (_packetId == 0) return true;
-  if ((packetType() == PacketType.PUBACK) || (packetType() == PacketType.PUBCOMP)) return true;
-  return false;
-}
-
 Packet::Packet(espMqttClientTypes::Error& error,
                bool cleanSession,
                const char* username,
@@ -66,13 +21,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
                uint16_t willPayloadLength,
                uint16_t keepAlive,
                const char* clientId)
-: _packetId(0)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
+: PacketBase(0) {
   if (willPayload && willPayloadLength == 0) {
     size_t length = strlen(reinterpret_cast<const char*>(willPayload));
     if (length > UINT16_MAX) {
@@ -161,13 +110,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
                size_t payloadLength,
                uint8_t qos,
                bool retain)
-: _packetId(packetId)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
+: PacketBase(packetId) {
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
     2 +                  // packet ID
@@ -198,13 +141,8 @@ Packet::Packet(espMqttClientTypes::Error& error,
                size_t payloadLength,
                uint8_t qos,
                bool retain)
-: _packetId(packetId)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(payloadCallback) {
+: PacketBase(packetId) {
+  _getPayload = payloadCallback;
   size_t remainingLength =
     2 + strlen(topic) +  // topic length + topic
     2 +                  // packet ID
@@ -232,25 +170,13 @@ Packet::Packet(espMqttClientTypes::Error& error,
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* topic, uint8_t qos)
-: _packetId(packetId)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
+: PacketBase(packetId) {
   SubscribeItem list[1] = {topic, qos};
   _createSubscribe(error, list, 1);
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t packetId)
-: _packetId(packetId)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
+: PacketBase(packetId) {
   if (!_allocate(2)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
@@ -271,25 +197,13 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t p
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* topic)
-: _packetId(packetId)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
+: PacketBase(packetId) {
   const char* list[1] = {topic};
   _createUnsubscribe(error, list, 1);
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
-: _packetId(0)
-, _data(nullptr)
-, _size(0)
-, _payloadIndex(0)
-, _payloadStartIndex(0)
-, _payloadEndIndex(0)
-, _getPayload(nullptr) {
+: PacketBase(0) {
   if (!_allocate(0)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
@@ -297,24 +211,6 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
   _data[0] |= type;
 
   error = espMqttClientTypes::Error::SUCCESS;
-}
-
-
-bool Packet::_allocate(size_t remainingLength) {
-  if (EMC_GET_FREE_MEMORY() < EMC_MIN_FREE_MEMORY) {
-    emc_log_w("Packet buffer not allocated: low memory");
-    return false;
-  }
-  _size = 1 + remainingLengthLength(remainingLength) + remainingLength;
-  _data = reinterpret_cast<uint8_t*>(malloc(_size));
-  if (!_data) {
-    _size = 0;
-    emc_log_w("Alloc failed (l:%zu)", _size);
-    return false;
-  }
-  emc_log_i("Alloc (l:%zu)", _size);
-  memset(_data, 0, _size);
-  return true;
 }
 
 size_t Packet::_fillPublishHeader(uint16_t packetId,
@@ -403,36 +299,6 @@ void Packet::_createUnsubscribe(espMqttClientTypes::Error& error,
   }
 
   error = espMqttClientTypes::Error::SUCCESS;
-}
-
-size_t Packet::_chunkedAvailable(size_t index) {
-  // index vs size check done in 'available(index)'
-
-  // index points to header or first payload byte
-  if (index < _payloadIndex) {
-    if (_size > _payloadIndex && _payloadEndIndex != 0) {
-      size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_TX_BUFFER_SIZE), _size - _payloadStartIndex), index);
-      _payloadStartIndex = _payloadIndex;
-      _payloadEndIndex = _payloadStartIndex + copied - 1;
-    }
-
-  // index points to payload unavailable
-  } else if (index > _payloadEndIndex || _payloadStartIndex > index) {
-    _payloadStartIndex = index;
-    size_t copied = _getPayload(&_data[_payloadIndex], std::min(static_cast<size_t>(EMC_TX_BUFFER_SIZE), _size - _payloadStartIndex), index);
-    _payloadEndIndex = _payloadStartIndex + copied - 1;
-  }
-
-  // now index points to header or payload available
-  return _payloadEndIndex - index + 1;
-}
-
-const uint8_t* Packet::_chunkedData(size_t index) const {
-  // CAUTION!! available(index) has to be called first to check available data and possibly fill payloadbuffer
-  if (index < _payloadIndex) {
-    return &_data[index];
-  }
-  return &_data[index - _payloadStartIndex + _payloadIndex];
 }
 
 }  // end namespace espMqttClientInternals
