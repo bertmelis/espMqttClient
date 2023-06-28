@@ -64,7 +64,7 @@ class Parser {
  public:
   Parser();
   ParserResult parse(const uint8_t* data, size_t len, size_t* bytesRead);
-  const IncomingPacket& getPacket() const;
+  const IncomingPacket* getPacket();
   void reset();
 
  private:

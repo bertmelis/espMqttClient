@@ -57,8 +57,8 @@ ParserResult Parser::parse(const uint8_t* data, size_t len, size_t* bytesRead) {
   return result;
 }
 
-const IncomingPacket& Parser::getPacket() const {
-  return _packet;
+const IncomingPacket* Parser::getPacket() {
+  return &_packet;
 }
 
 void Parser::reset() {
