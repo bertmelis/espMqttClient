@@ -46,7 +46,6 @@ class MqttClient {
   espMqttClientTypes::OnMessageCallback _onMessageCallback;
   espMqttClientTypes::OnPublishCallback _onPublishCallback;
   espMqttClientTypes::OnErrorCallback _onErrorCallback;
-  typedef void(*mqttClientHook)(void*);
   const char* _clientId;
   IPAddress _ip;
   const char* _host;
