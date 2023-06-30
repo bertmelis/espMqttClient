@@ -15,6 +15,8 @@ the LICENSE file.
 #include <stddef.h>
 #include <functional>
 
+#include "Packets/Property.h"
+
 namespace espMqttClientTypes {
 
 enum class DisconnectReason : uint8_t {
@@ -93,6 +95,14 @@ typedef std::function<void(uint16_t packetId, const SubscribeReturncode* returnc
 typedef std::function<void(uint16_t packetId)> OnUnsubscribeCallback;
 typedef std::function<void(const MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)> OnMessageCallback;
 typedef std::function<void(uint16_t packetId)> OnPublishCallback;
+
+typedef std::function<void(bool sessionPresent, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnConnect5Callback;
+typedef std::function<void(DisconnectReason reason, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnDisconnect5Callback;
+typedef std::function<void(uint16_t packetId, const SubscribeReturncode* returncodes, size_t len, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnSubscribe5Callback;
+typedef std::function<void(uint16_t packetId, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnUnsubscribe5Callback;
+typedef std::function<void(const MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnMessage5Callback;
+typedef std::function<void(uint16_t packetId, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnPublish5Callback;
+
 typedef std::function<size_t(uint8_t* data, size_t maxSize, size_t index)> PayloadCallback;
 typedef std::function<void(uint16_t packetId, Error error)> OnErrorCallback;
 
