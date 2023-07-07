@@ -101,7 +101,7 @@ bool MqttClient::disconnected() const {
 }
 
 bool MqttClient::connect() {
-  bool result = true;
+  bool result = false;
   if (_state == State::disconnected) {
     EMC_SEMAPHORE_TAKE();
     if (_addPacketFront(_cleanSession,
@@ -114,6 +114,7 @@ bool MqttClient::connect() {
                         _willPayloadLength,
                         (uint16_t)(_keepAlive / 1000),  // 32b to 16b doesn't overflow because it comes from 16b orignally
                         _clientId)) {
+      result = true;
       #if defined(ARDUINO_ARCH_ESP32)
       if (_useInternalTask == espMqttClientTypes::UseInternalTask::YES) {
         vTaskResume(_taskHandle);
@@ -124,7 +125,6 @@ bool MqttClient::connect() {
       EMC_SEMAPHORE_GIVE();
       emc_log_e("Could not create CONNECT packet");
       _onError(0, Error::OUT_OF_MEMORY);
-      result = false;
     }
     EMC_SEMAPHORE_GIVE();
   }
