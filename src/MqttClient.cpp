@@ -114,12 +114,12 @@ bool MqttClient::connect() {
                         _willPayloadLength,
                         (uint16_t)(_keepAlive / 1000),  // 32b to 16b doesn't overflow because it comes from 16b orignally
                         _clientId)) {
+      _state = State::connectingTcp1;
       #if defined(ARDUINO_ARCH_ESP32)
       if (_useInternalTask == espMqttClientTypes::UseInternalTask::YES) {
         vTaskResume(_taskHandle);
       }
       #endif
-      _state = State::connectingTcp1;
     } else {
       EMC_SEMAPHORE_GIVE();
       emc_log_e("Could not create CONNECT packet");
