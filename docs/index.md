@@ -232,25 +232,25 @@ Add a publish acknowledged event handler. Function signature: `void(uint16_t pac
 bool connected()
 ```
 
-Returns if the client is currently fully connected to the broker or not. During connecting or disconnecting, it will return false.
+Returns `true` if the client is currently fully connected to the broker. During connecting or disconnecting, it will return `false`.
 
 ```cpp
 bool disconnected()
 ```
 
-Returns if the client is currently disconnected to the broker or not. During disconnecting or connecting, it will return false.
+Returns `true` if the client is currently disconnected from the broker. During disconnecting or connecting, it will return `false`.
 
 ```cpp
-void connect()
+bool connect()
 ```
 
-Connect to the server.
+Start the connect procedure. Returns `true` if successful. A positive return value doesn not mean the client is already connected.
 
 ```cpp
-void disconnect(bool force = false)
+bool disconnect(bool force = false)
 ```
 
-Disconnect from the server.
+Start the disconnect procedure, return `true` if successful. A positive return value doesn not mean the client is already disconnected.
 When disconnecting with `force` false, the client first tries to handle all the outgoing messages in the queue and disconnect cleanly afterwards. During this time, no incoming PUBLISH messages are handled.
 
 - **`force`**: Whether to force the disconnection. Defaults to `false` (clean disconnection).
