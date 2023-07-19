@@ -89,6 +89,9 @@ constexpr struct {
   const uint8_t SharedSubscriptionAvailable     = 0x2A;
 } PropertyId;
 
+class PropertyCollection;  // forward declare see Packets/Property.h
+
+// MQTT 3.1.1
 typedef std::function<void(bool sessionPresent)> OnConnectCallback;
 typedef std::function<void(DisconnectReason reason)> OnDisconnectCallback;
 typedef std::function<void(uint16_t packetId, const SubscribeReturncode* returncodes, size_t len)> OnSubscribeCallback;
@@ -96,6 +99,7 @@ typedef std::function<void(uint16_t packetId)> OnUnsubscribeCallback;
 typedef std::function<void(const MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)> OnMessageCallback;
 typedef std::function<void(uint16_t packetId)> OnPublishCallback;
 
+// MQTT 5.0
 typedef std::function<void(bool sessionPresent, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnConnect5Callback;
 typedef std::function<void(DisconnectReason reason, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnDisconnect5Callback;
 typedef std::function<void(uint16_t packetId, const SubscribeReturncode* returncodes, size_t len, const espMqttClientTypes::PropertyCollection& propertyCollection)> OnSubscribe5Callback;
