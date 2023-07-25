@@ -271,7 +271,7 @@ void MqttClient::loop() {
     case State::disconnectingTcp1:
       _transport->stop();
       _state = State::disconnectingTcp2;
-      break;  // keep break to accomodate async clients
+      //break;  // keep break to accomodate async clients
     case State::disconnectingTcp2:
       if (_transport->disconnected()) {
         _clearQueue(0);
