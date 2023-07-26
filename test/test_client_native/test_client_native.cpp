@@ -10,8 +10,11 @@ espMqttClient mqttClient;
 std::atomic_bool exitProgram(false);
 std::thread t;
 
-IPAddress broker(127,0,0,1);
+const char* default_host = "test.mosquitto.org";
+char* broker_host = nullptr;
+IPAddress broker_ip(127,0,0,1);
 uint16_t broker_port = 1883;
+bool useIp = false;
 
 /*
 
@@ -23,13 +26,16 @@ uint16_t broker_port = 1883;
 void test_connect() {
   std::atomic<bool> onConnectCalledTest(false);
   bool sessionPresentTest = true;
-  mqttClient.setServer(broker, broker_port)
+  mqttClient.setServer(broker_host, broker_port)
             .setCleanSession(true)
             .setKeepAlive(5)
             .onConnect([&](bool sessionPresent) mutable {
               sessionPresentTest = sessionPresent;
               onConnectCalledTest = true;
             });
+  if (useIp) {
+    mqttClient.setServer(broker_ip, broker_port);
+  }
   mqttClient.connect();
   uint32_t start = millis();
   while (millis() - start < 2000) {
@@ -313,7 +319,7 @@ void test_pub_before_connect() {
   std::atomic<bool> onConnectCalledTest(false);
   std::atomic<int> publishSendTest(0);
   bool sessionPresentTest = true;
-  mqttClient.setServer(broker, broker_port)
+  mqttClient.setServer(broker_host, broker_port)
             .setCleanSession(true)
             .setKeepAlive(5)
             .onConnect([&](bool sessionPresent) mutable {
@@ -324,6 +330,9 @@ void test_pub_before_connect() {
               (void) packetId;
               publishSendTest++;
             });
+  if (useIp) {
+    mqttClient.setServer(broker_ip, broker_port);
+  }
   uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, "test0");
   uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, "test1");
   uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, "test2");
@@ -383,7 +392,13 @@ bool checkArguments(int argc, char* argv[]) {
   for (int i = 1; i < argc; i += 2) {
     if (strcmp(argv[i], "--ip") == 0) {
       int p = std::stol(argv[i + 1]);
-      broker = IPAddress(p);
+      broker_ip = IPAddress(p);
+      useIp = true;
+    } else if (strcmp(argv[i], "--host") == 0) {
+      size_t len = strlen(argv[i + 1]);
+      delete[] broker_host;
+      broker_host = new char[len + 1];
+      strncpy(broker_host, argv[i + 1], len);
     } else if (strcmp(argv[i], "--port") == 0) {
       broker_port = std::stol(argv[i + 1]);
     }
@@ -392,14 +407,13 @@ bool checkArguments(int argc, char* argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  size_t len = strlen(default_host);
+  broker_host = new char[len + 1];
+  memcpy(broker_host, default_host, len + 1);
 
   if (!checkArguments(argc, argv)) {
     return EXIT_FAILURE;
   }
-
-  std::cout << "Testing client with following broker: " << std::endl
-            << "ip:   " << broker << std::endl
-            << "port: " << broker_port << std::endl;
 
   UNITY_BEGIN();
   t = std::thread([] {
@@ -421,5 +435,7 @@ int main(int argc, char *argv[]) {
   final_disconnect();
   exitProgram = true;
   t.join();
+
+  delete[] broker_host;
   return UNITY_END();
 }

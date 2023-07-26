@@ -42,6 +42,8 @@ class ClientPosix : public Transport {
   bool disconnected() override;
 
  protected:
+  IPAddress getIpFromHostname(const char* hostname);
+
   int _sockfd;
   struct sockaddr_in _host;
 };

@@ -52,9 +52,10 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
 }
 
 bool ClientPosix::connect(const char* host, uint16_t port) {
-  // tbi
-  (void) host;
-  (void) port;
+  IPAddress ip = getIpFromHostname(host);
+  if (ip > 0) {
+    return connect(ip, port);
+  }
   return false;
 }
 
@@ -85,6 +86,28 @@ bool ClientPosix::connected() {
 
 bool ClientPosix::disconnected() {
   return _sockfd < 0;
+}
+
+IPAddress ClientPosix::getIpFromHostname(const char* hostname) {
+  IPAddress retVal(0);
+  struct addrinfo hints;
+  struct addrinfo* servinfo;
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if (getaddrinfo(hostname, NULL, &hints, &servinfo) != 0) {
+    return retVal;
+  }
+
+  for (struct addrinfo* p = servinfo; p != NULL; p = p->ai_next) {
+    struct sockaddr_in* h = (struct sockaddr_in*)p->ai_addr;
+    retVal = IPAddress(htonl(h->sin_addr.s_addr));
+    if ((uint32_t)retVal != 0) break;
+  }
+  freeaddrinfo(servinfo);
+  return retVal;
 }
 
 }  // namespace espMqttClientInternals
