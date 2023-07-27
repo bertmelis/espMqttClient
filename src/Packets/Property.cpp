@@ -149,7 +149,7 @@ size_t PropertyCollection::serialize(uint8_t* buff) const {
   while (i < _capacity && _properties[i].propertyId > 0x00) {
     uint8_t id = buff[index++] = _properties[i].propertyId;
     PropertyType type = getTypefromPropertyId(id);
-    switch(type) {
+    switch (type) {
       case BINARY:
         buff[index++] = _properties[i].data.binaryData.length >> 8;
         buff[index++] = _properties[i].data.binaryData.length & 0xFF;

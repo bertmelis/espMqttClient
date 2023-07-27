@@ -19,8 +19,6 @@ the LICENSE file.
 #include "TypeDefs.h"
 #include "Logging.h"
 #include "Outbox.h"
-//#include "Packets/Packet.h"
-//#include "Packets/Parser.h"
 #include "Packets/Constants.h"
 #include "Transport/Transport.h"
 
@@ -265,7 +263,6 @@ class MqttClient {
   }
   espMqttClientTypes::UseInternalTask _useInternalTask;
   espMqttClientInternals::Transport* _transport;
-  //espMqttClientInternals::Parser* _parser;
   TParser _parser;
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
   espMqttClientTypes::OnDisconnectCallback _onDisconnectCallback;
@@ -361,7 +358,6 @@ class MqttClient {
   uint8_t _rxBuffer[EMC_RX_BUFFER_SIZE];
   struct OutgoingPacket {
     uint32_t timeSent;
-    //espMqttClientInternals::Packet packet;
     TPacket packet;
     template <typename... Args>
     OutgoingPacket(uint32_t t, espMqttClientTypes::Error error, Args&&... args) :

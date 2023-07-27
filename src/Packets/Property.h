@@ -44,7 +44,7 @@ class PropertyCollection {
   explicit PropertyCollection(size_t capacity);
 
   template<typename ... Args>
-  PropertyCollection(const Args... args)
+  PropertyCollection(const Args... args)  // NOLINT [runtime/explicit]
   : _properties(nullptr)
   , _capacity(NUMBER_PROPERTIES)
   , _length(0) {

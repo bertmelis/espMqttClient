@@ -190,4 +190,4 @@ class MqttClientInterface : public MqttClient<espMqttClientInternals::Packet, es
   : MqttClient(useInternalTask, priority, core) {
     // empty
   }
-};
+};  // NOLINT [readability/braces]
