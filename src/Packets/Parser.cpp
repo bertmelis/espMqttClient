@@ -10,22 +10,22 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
-uint8_t IncomingPacket::qos() const {
+uint8_t Parser::IncomingPacket::qos() const {
   if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
   return (fixedHeader.packetType & 0x06) >> 1;  // mask 0x00000110
 }
 
-bool IncomingPacket::retain() const {
+bool Parser::IncomingPacket::retain() const {
   if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
   return fixedHeader.packetType & 0x01;  // mask 0x00000001
 }
 
-bool IncomingPacket::dup() const {
+bool Parser::IncomingPacket::dup() const {
   if ((fixedHeader.packetType & 0xF0) != PacketType.PUBLISH) return 0;
   return fixedHeader.packetType & 0x08;  // mask 0x00001000
 }
 
-void IncomingPacket::reset() {
+void Parser::IncomingPacket::reset() {
   fixedHeader.packetType = 0;
   variableHeader.topicLength = 0;
   variableHeader.fixed.packetId = 0;
@@ -57,7 +57,7 @@ ParserResult Parser::parse(const uint8_t* data, size_t len, size_t* bytesRead) {
   return result;
 }
 
-const IncomingPacket& Parser::getPacket() const {
+const Parser::IncomingPacket& Parser::getPacket() const {
   return _packet;
 }
 

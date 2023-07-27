@@ -12,9 +12,11 @@ the LICENSE file.
 #pragma once
 
 #include "MqttClient.h"
+#include "Packets/Packet.h"
+#include "Packets/Parser.h"
 
 template <typename T>
-class MqttClientInterface : public MqttClient {
+class MqttClientInterface : public MqttClient<espMqttClientInternals::Packet, espMqttClientInternals::Parser> {
  public:
   T& setKeepAlive(uint16_t keepAlive) {
     _keepAlive = keepAlive * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
@@ -186,9 +188,6 @@ class MqttClientInterface : public MqttClient {
  protected:
   explicit MqttClientInterface(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1)
   : MqttClient(useInternalTask, priority, core) {
-    _parser = &_parser311;
+    // empty
   }
-
- private:
-  espMqttClientInternals::Parser _parser311;
 };

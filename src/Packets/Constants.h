@@ -74,4 +74,10 @@ constexpr struct {
   const uint8_t RESERVED      = 0x00;
 } ConnectFlag;
 
+enum class ParserResult : uint8_t {
+  awaitData,
+  packet,
+  protocolError
+};
+
 }  // end namespace espMqttClientInternals

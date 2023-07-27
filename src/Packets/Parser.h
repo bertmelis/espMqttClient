@@ -19,49 +19,43 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
-struct IncomingPacket {
-  struct __attribute__((__packed__)) {
-    MQTTPacketType packetType;
-    union {
-      size_t remainingLength;
-      uint8_t remainingLengthRaw[4];
-    } remainingLength;
-  } fixedHeader;
-  struct __attribute__((__packed__)) {
-    uint16_t topicLength;
-    char topic[EMC_MAX_TOPIC_LENGTH + 1];  // + 1 for c-string delimiter
-    union {
-      struct {
-        uint8_t sessionPresent;
-        uint8_t returnCode;
-      } connackVarHeader;
-      uint16_t packetId;
-    } fixed;
-  } variableHeader;
-  struct {
-    const uint8_t* data;
-    size_t length;
-    size_t index;
-    size_t total;
-  } payload;
-
-  uint8_t qos() const;
-  bool retain() const;
-  bool dup() const;
-  void reset();
-};
-
-enum class ParserResult : uint8_t {
-  awaitData,
-  packet,
-  protocolError
-};
-
 class Parser;
 typedef ParserResult(*ParserFunc)(Parser*);
 
 class Parser {
  public:
+  struct IncomingPacket {
+    struct __attribute__((__packed__)) {
+      MQTTPacketType packetType;
+      union {
+        size_t remainingLength;
+        uint8_t remainingLengthRaw[4];
+      } remainingLength;
+    } fixedHeader;
+    struct __attribute__((__packed__)) {
+      uint16_t topicLength;
+      char topic[EMC_MAX_TOPIC_LENGTH + 1];  // + 1 for c-string delimiter
+      union {
+        struct {
+          uint8_t sessionPresent;
+          uint8_t returnCode;
+        } connackVarHeader;
+        uint16_t packetId;
+      } fixed;
+    } variableHeader;
+    struct {
+      const uint8_t* data;
+      size_t length;
+      size_t index;
+      size_t total;
+    } payload;
+
+    uint8_t qos() const;
+    bool retain() const;
+    bool dup() const;
+    void reset();
+  };
+
   Parser();
   ParserResult parse(const uint8_t* data, size_t len, size_t* bytesRead);
   const IncomingPacket& getPacket() const;
