@@ -4,7 +4,6 @@
 
 using espMqttClientInternals::Parser;
 using espMqttClientInternals::ParserResult;
-using espMqttClientInternals::IncomingPacket;
 
 void setUp() {}
 void tearDown() {}
