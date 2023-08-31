@@ -351,6 +351,10 @@ Returns the amount of elements, regardless of type, in the queue.
 
 A number of constants which influence the behaviour of the client can be set at compile time. You can set these options in the `Config.h` file or pass the values as compiler flags. Because these options are compile-time constants, they are used for all instances of `espMqttClient` you create in your program.
 
+### EMC_TX_TIMEOUT 10000
+
+Timeout in milliseconds before a (qos > 0) message will be retransmitted.
+
 ### EMC_RX_BUFFER_SIZE 1440
 
 The client copies incoming data into a buffer before parsing. This sets the buffer size.

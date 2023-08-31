@@ -41,7 +41,7 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
 , _willPayloadLength(0)
 , _willQos(0)
 , _willRetain(false)
-, _timeout(10000)
+, _timeout(EMC_TX_TIMEOUT)
 , _state(State::disconnected)
 , _generatedClientId{0}
 , _packetId(0)
