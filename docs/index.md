@@ -341,6 +341,12 @@ const char* getClientId() const
 
 Retuns the client ID.
 
+```cpp
+size_t queueSize() const;
+```
+
+Returns the amount of elements, regardless of type, in the queue.
+
 # Compile time configuration
 
 A number of constants which influence the behaviour of the client can be set at compile time. You can set these options in the `Config.h` file or pass the values as compiler flags. Because these options are compile-time constants, they are used for all instances of `espMqttClient` you create in your program.
