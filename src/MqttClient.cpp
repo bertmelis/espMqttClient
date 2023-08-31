@@ -635,9 +635,6 @@ void MqttClient::_onPubcomp() {
     // if it doesn't match the ID, return
     if ((it.get()->packet.packetType()) == PacketType.PUBREL) {
       if (it.get()->packet.packetId() == idToMatch) {
-        if (!_addPacket(PacketType.PUBCOMP, idToMatch)) {
-          emc_log_e("Could not create PUBCOMP packet");
-        }
         callback = true;
         _outbox.remove(it);
         break;
