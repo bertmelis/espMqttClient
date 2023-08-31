@@ -194,6 +194,14 @@ const char* MqttClient::getClientId() const {
   return _clientId;
 }
 
+size_t MqttClient::queueSize() const {
+  size_t ret = 0;
+  EMC_SEMAPHORE_TAKE();
+  ret = _outbox.size();
+  EMC_SEMAPHORE_GIVE();
+  return ret;
+}
+
 void MqttClient::loop() {
   switch (_state) {
     case State::disconnected:
