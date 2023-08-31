@@ -194,7 +194,7 @@ const char* MqttClient::getClientId() const {
   return _clientId;
 }
 
-size_t MqttClient::queueSize() const {
+size_t MqttClient::queueSize() {
   size_t ret = 0;
   EMC_SEMAPHORE_TAKE();
   ret = _outbox.size();

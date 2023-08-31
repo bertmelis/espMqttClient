@@ -342,7 +342,7 @@ const char* getClientId() const
 Retuns the client ID.
 
 ```cpp
-size_t queueSize() const;
+size_t queueSize();
 ```
 
 Returns the amount of elements, regardless of type, in the queue.
