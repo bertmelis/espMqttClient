@@ -74,32 +74,56 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& onConnect(espMqttClientTypes::OnConnectCallback callback) {
+    #ifndef EMC_SINGLE_CALLBACKS
+    _onConnectCallbacks.push_back(callback);
+    #else
     _onConnectCallback = callback;
+    #endif
     return static_cast<T&>(*this);
   }
 
   T& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback) {
+    #ifndef EMC_SINGLE_CALLBACKS
+    _ondisconnectCallbacks.push_back(callback);
+    #else
     _onDisconnectCallback = callback;
+    #endif
     return static_cast<T&>(*this);
   }
 
   T& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback) {
+    #ifndef EMC_SINGLE_CALLBACKS
+    _onSubscribeCallbacks.push_back(callback);
+    #else
     _onSubscribeCallback = callback;
+    #endif
     return static_cast<T&>(*this);
   }
 
   T& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback) {
+    #ifndef EMC_SINGLE_CALLBACKS
+    _onUnsubscribeCallbacks.push_back(callback);
+    #else
     _onUnsubscribeCallback = callback;
+    #endif
     return static_cast<T&>(*this);
   }
 
   T& onMessage(espMqttClientTypes::OnMessageCallback callback) {
+    #ifndef EMC_SINGLE_CALLBACKS
+    _onMessageCallbacks.push_back(callback);
+    #else
     _onMessageCallback = callback;
+    #endif
     return static_cast<T&>(*this);
   }
 
   T& onPublish(espMqttClientTypes::OnPublishCallback callback) {
+    #ifndef EMC_SINGLE_CALLBACKS
+    _onPublishCallbacks.push_back(callback);
+    #else
     _onPublishCallback = callback;
+    #endif
     return static_cast<T&>(*this);
   }
 
@@ -112,5 +136,49 @@ class MqttClientSetup : public MqttClient {
 
  protected:
   explicit MqttClientSetup(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1)
-  : MqttClient(useInternalTask, priority, core) {}
+  : MqttClient(useInternalTask, priority, core) {
+    #ifndef EMC_SINGLE_CALLBACKS
+    _onConnectCallback = std::bind(&MqttClientSetup::_onConnect, this, std::placeholders::_1);
+    _ondisconnectCallback = std::bind(&MqttClientSetup::_onDisconnect, this, std::placeholders::_1);
+    _onSubscribeCallback = std::bind(&MqttClientSetup::_onSubscribe, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    _onUnsubscribeCallback = std::bind(&MqttClientSetup::_onUnsubscribe, this, std::placeholders::_1);
+    _onMessageCallback = std::bind(&MqttClientSetup::_onMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+    _onPublishCallback = std::bind(&MqttClientSetup::_onPublish, this, std::placeholders::_1);
+    #else
+    //empty
+    #endif
+  }
+
+  #ifndef EMC_SINGLE_CALLBACKS
+  std::vector<espMqttClientTypes::OnConnectCallback> _onConnectCallbacks;
+  std::vector<espMqttClientTypes::OnDisconnectCallback> _onDisconnectCallbacks;
+  std::vector<espMqttClientTypes::OnSubscribeCallback> _onSubscribeCallbacks;
+  std::vector<espMqttClientTypes::OnUnsubscribeCallback> _onUnsubscribeCallback;
+  std::vector<espMqttClientTypes::OnMessageCallback> _onMessageCallback;
+  std::vector<espMqttClientTypes::OnPublishCallback> _onPublishCallback;
+
+  void _onConnect(bool sessionPresent) {
+    for (auto callback : _onConnectCallbacks) callback(sessionPresent);
+  }
+
+  void _onDisconnect(DisconnectReason reason) {
+    for (auto callback : _onDisconnectCallbacks) callback(reason);
+  }
+
+  void _onSubscribe(uint16_t packetId, const SubscribeReturncode* returncodes, size_t len) {
+    for (auto callback : _onSubscribeCallbacks) callback(packetId, returncodes, len);
+  }
+
+  void _onUnsubscribe(int16_t packetId) {
+    for (auto callback : _onUnsubscribeCallback) callback(packetId);
+  }
+
+  void _onMessage(const MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
+    for (auto callback : _onMessageCallback) callback(properties, topic, payload, len, index, total);
+  }
+
+  void _onPublish(uint16_t packetId) {
+    for (auto callback : _onPublishCallback) callback(packetId);
+  }
+  #endif
 };

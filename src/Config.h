@@ -53,6 +53,9 @@ the LICENSE file.
 #define EMC_TASK_STACK_SIZE 5120
 #endif
 
+// uncomment to disable multiple callbacks
+// #define EMC_SINGLE_CALLBACKS
+
 #ifndef EMC_USE_WATCHDOG
 #define EMC_USE_WATCHDOG 0
 #endif
