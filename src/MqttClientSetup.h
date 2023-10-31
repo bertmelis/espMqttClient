@@ -160,27 +160,27 @@ class MqttClientSetup : public MqttClient {
   std::vector<espMqttClientTypes::OnPublishCallback> _onPublishCallbacks;
 
   void _onConnectCb(bool sessionPresent) {
-    for (auto callback : _onConnectCallbacks) callback(sessionPresent);
+    for (auto callback : _onConnectCallbacks) if (callback) callback(sessionPresent);
   }
 
   void _onDisconnectCb(espMqttClientTypes::DisconnectReason reason) {
-    for (auto callback : _onDisconnectCallbacks) callback(reason);
+    for (auto callback : _onDisconnectCallbacks) if (callback) callback(reason);
   }
 
   void _onSubscribeCb(uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len) {
-    for (auto callback : _onSubscribeCallbacks) callback(packetId, returncodes, len);
+    for (auto callback : _onSubscribeCallbacks) if (callback) callback(packetId, returncodes, len);
   }
 
   void _onUnsubscribeCb(int16_t packetId) {
-    for (auto callback : _onUnsubscribeCallbacks) callback(packetId);
+    for (auto callback : _onUnsubscribeCallbacks) if (callback) callback(packetId);
   }
 
   void _onMessageCb(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
-    for (auto callback : _onMessageCallbacks) callback(properties, topic, payload, len, index, total);
+    for (auto callback : _onMessageCallbacks) if (callback) callback(properties, topic, payload, len, index, total);
   }
 
   void _onPublishCb(uint16_t packetId) {
-    for (auto callback : _onPublishCallbacks) callback(packetId);
+    for (auto callback : _onPublishCallbacks) if (callback) callback(packetId);
   }
   #endif
 };
