@@ -141,7 +141,7 @@ class MqttClientSetup : public MqttClient {
   : MqttClient(useInternalTask, priority, core) {
     #ifndef EMC_SINGLE_CALLBACKS
     _onConnectCallback = std::bind(&MqttClientSetup::_onConnectCb, this, std::placeholders::_1);
-    _ondisconnectCallback = std::bind(&MqttClientSetup::_onDisconnectCb, this, std::placeholders::_1);
+    _onDisconnectCallback = std::bind(&MqttClientSetup::_onDisconnectCb, this, std::placeholders::_1);
     _onSubscribeCallback = std::bind(&MqttClientSetup::_onSubscribeCb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     _onUnsubscribeCallback = std::bind(&MqttClientSetup::_onUnsubscribeCb, this, std::placeholders::_1);
     _onMessageCallback = std::bind(&MqttClientSetup::_onMessageCb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
