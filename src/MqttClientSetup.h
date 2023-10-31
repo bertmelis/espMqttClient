@@ -11,6 +11,8 @@ the LICENSE file.
 
 #pragma once
 
+#include <vector>
+
 #include "MqttClient.h"
 
 template <typename T>
@@ -84,7 +86,7 @@ class MqttClientSetup : public MqttClient {
 
   T& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback) {
     #ifndef EMC_SINGLE_CALLBACKS
-    _ondisconnectCallbacks.push_back(callback);
+    _onDisconnectCallbacks.push_back(callback);
     #else
     _onDisconnectCallback = callback;
     #endif
@@ -145,7 +147,7 @@ class MqttClientSetup : public MqttClient {
     _onMessageCallback = std::bind(&MqttClientSetup::_onMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
     _onPublishCallback = std::bind(&MqttClientSetup::_onPublish, this, std::placeholders::_1);
     #else
-    //empty
+    // empty
     #endif
   }
 
