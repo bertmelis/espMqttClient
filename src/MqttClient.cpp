@@ -14,12 +14,8 @@ using espMqttClientTypes::DisconnectReason;
 using espMqttClientTypes::Error;
 
 MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority, uint8_t core)
-#if defined(ARDUINO_ARCH_ESP32)
 : _useInternalTask(useInternalTask)
 , _transport(nullptr)
-#else
-: _transport(nullptr)
-#endif
 , _onConnectCallback(nullptr)
 , _onDisconnectCallback(nullptr)
 , _onSubscribeCallback(nullptr)
@@ -319,8 +315,8 @@ void MqttClient::_loop(MqttClient* c) {
 uint16_t MqttClient::_getNextPacketId() {
   uint16_t packetId = 0;
   EMC_SEMAPHORE_TAKE();
-  // cppcheck-suppress knownConditionTrueFalse
-  packetId = (++_packetId == 0) ? ++_packetId : _packetId;
+  ++_packetId;
+  packetId = (_packetId == 0) ? ++_packetId : _packetId;
   EMC_SEMAPHORE_GIVE();
   return packetId;
 }
@@ -339,7 +335,7 @@ int MqttClient::_sendPacket() {
 
   size_t wantToWrite = 0;
   size_t written = 0;
-  if (packet && (wantToWrite == written)) {
+  if (packet) {
     wantToWrite = packet->packet.available(_bytesSent);
     if (wantToWrite == 0) {
       EMC_SEMAPHORE_GIVE();
