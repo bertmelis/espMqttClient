@@ -11,7 +11,10 @@ the LICENSE file.
 
 #pragma once
 
-#include <vector>
+#ifndef EMC_SINGLE_CALLBACKS
+#include <list>
+#include <utility>
+#endif
 
 #include "MqttClient.h"
 
@@ -75,59 +78,121 @@ class MqttClientSetup : public MqttClient {
     return static_cast<T&>(*this);
   }
 
-  T& onConnect(espMqttClientTypes::OnConnectCallback callback) {
+  T& onConnect(espMqttClientTypes::OnConnectCallback callback, uint32_t id = 0) {
     #ifndef EMC_SINGLE_CALLBACKS
-    _onConnectCallbacks.push_back(callback);
+    _onConnectCallbacks.emplace_back(callback, id);
     #else
     _onConnectCallback = callback;
     #endif
     return static_cast<T&>(*this);
   }
 
-  T& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback) {
+  T& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback, uint32_t id = 0) {
     #ifndef EMC_SINGLE_CALLBACKS
-    _onDisconnectCallbacks.push_back(callback);
+    _onDisconnectCallbacks.emplace_back(callback, id);
     #else
     _onDisconnectCallback = callback;
     #endif
     return static_cast<T&>(*this);
   }
 
-  T& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback) {
+  T& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback, uint32_t id = 0) {
     #ifndef EMC_SINGLE_CALLBACKS
-    _onSubscribeCallbacks.push_back(callback);
+    _onSubscribeCallbacks.emplace_back(callback, id);
     #else
     _onSubscribeCallback = callback;
     #endif
     return static_cast<T&>(*this);
   }
 
-  T& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback) {
+  T& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback, uint32_t id = 0) {
     #ifndef EMC_SINGLE_CALLBACKS
-    _onUnsubscribeCallbacks.push_back(callback);
+    _onUnsubscribeCallbacks.emplace_back(callback, id);
     #else
     _onUnsubscribeCallback = callback;
     #endif
     return static_cast<T&>(*this);
   }
 
-  T& onMessage(espMqttClientTypes::OnMessageCallback callback) {
+  T& onMessage(espMqttClientTypes::OnMessageCallback callback, uint32_t id = 0) {
     #ifndef EMC_SINGLE_CALLBACKS
-    _onMessageCallbacks.push_back(callback);
+    _onMessageCallbacks.emplace_back(callback, id);
     #else
     _onMessageCallback = callback;
     #endif
     return static_cast<T&>(*this);
   }
 
-  T& onPublish(espMqttClientTypes::OnPublishCallback callback) {
+  T& onPublish(espMqttClientTypes::OnPublishCallback callback, uint32_t id = 0) {
     #ifndef EMC_SINGLE_CALLBACKS
-    _onPublishCallbacks.push_back(callback);
+    _onPublishCallbacks.emplace_back(callback, id);
     #else
     _onPublishCallback = callback;
     #endif
     return static_cast<T&>(*this);
   }
+
+  #ifndef EMC_SINGLE_CALLBACKS
+  T& removeOnConnect(uint32_t id) {
+    for (auto it = _onConnectCallbacks.begin(); it != _onConnectCallbacks.end(); ++it) {
+      if (it->second == id) {
+        _onConnectCallbacks.erase(it);
+        break;
+      }
+    }
+    return static_cast<T&>(*this);
+  }
+
+  T& removeOnDisconnect(uint32_t id) {
+    for (auto it = _onDisconnectCallbacks.begin(); it != _onDisconnectCallbacks.end(); ++it) {
+      if (it->second == id) {
+        _onDisconnectCallbacks.erase(it);
+        break;
+      }
+    }
+    return static_cast<T&>(*this);
+  }
+
+  T& removeOnSubscribe(uint32_t id) {
+    for (auto it = _onSubscribeCallbacks.begin(); it != _onSubscribeCallbacks.end(); ++it) {
+      if (it->second == id) {
+        _onSubscribeCallbacks.erase(it);
+        break;
+      }
+    }
+    return static_cast<T&>(*this);
+  }
+
+  T& removeOnUnsubscribe(uint32_t id) {
+    for (auto it = _onUnsubscribeCallbacks.begin(); it != _onUnsubscribeCallbacks.end(); ++it) {
+      if (it->second == id) {
+        _onUnsubscribeCallbacks.erase(it);
+        break;
+      }
+    }
+    return static_cast<T&>(*this);
+  }
+
+  T& removeOnMessage(uint32_t id) {
+    for (auto it = _onMessageCallbacks.begin(); it != _onMessageCallbacks.end(); ++it) {
+      if (it->second == id) {
+        _onMessageCallbacks.erase(it);
+        break;
+      }
+    }
+    return static_cast<T&>(*this);
+  }
+
+  T& removeOnPublish(uint32_t id) {
+    for (auto it = _onPublishCallbacks.begin(); it != _onPublishCallbacks.end(); ++it) {
+      if (it->second == id) {
+        _onPublishCallbacks.erase(it);
+        break;
+      }
+    }
+    return static_cast<T&>(*this);
+  }
+  #endif
 
   /*
   T& onError(espMqttClientTypes::OnErrorCallback callback) {
@@ -141,22 +206,22 @@ class MqttClientSetup : public MqttClient {
   : MqttClient(useInternalTask, priority, core) {
     #ifndef EMC_SINGLE_CALLBACKS
     _onConnectCallback = [this](bool sessionPresent) {
-      for (auto callback : _onConnectCallbacks) if (callback) callback(sessionPresent);
+      for (auto callback : _onConnectCallbacks) if (callback.first) callback.first(sessionPresent);
     };
     _onDisconnectCallback = [this](espMqttClientTypes::DisconnectReason reason) {
-      for (auto callback : _onDisconnectCallbacks) if (callback) callback(reason);
+      for (auto callback : _onDisconnectCallbacks) if (callback.first) callback.first(reason);
     };
     _onSubscribeCallback = [this](uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len) {
-      for (auto callback : _onSubscribeCallbacks) if (callback) callback(packetId, returncodes, len);
+      for (auto callback : _onSubscribeCallbacks) if (callback.first) callback.first(packetId, returncodes, len);
     };
     _onUnsubscribeCallback = [this](int16_t packetId) {
-      for (auto callback : _onUnsubscribeCallbacks) if (callback) callback(packetId);
+      for (auto callback : _onUnsubscribeCallbacks) if (callback.first) callback.first(packetId);
     };
     _onMessageCallback = [this](const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
-      for (auto callback : _onMessageCallbacks) if (callback) callback(properties, topic, payload, len, index, total);
+      for (auto callback : _onMessageCallbacks) if (callback.first) callback.first(properties, topic, payload, len, index, total);
     };
     _onPublishCallback = [this](uint16_t packetId) {
-      for (auto callback : _onPublishCallbacks) if (callback) callback(packetId);
+      for (auto callback : _onPublishCallbacks) if (callback.first) callback.first(packetId);
     };
     #else
     // empty
@@ -164,11 +229,11 @@ class MqttClientSetup : public MqttClient {
   }
 
   #ifndef EMC_SINGLE_CALLBACKS
-  std::vector<espMqttClientTypes::OnConnectCallback> _onConnectCallbacks;
-  std::vector<espMqttClientTypes::OnDisconnectCallback> _onDisconnectCallbacks;
-  std::vector<espMqttClientTypes::OnSubscribeCallback> _onSubscribeCallbacks;
-  std::vector<espMqttClientTypes::OnUnsubscribeCallback> _onUnsubscribeCallbacks;
-  std::vector<espMqttClientTypes::OnMessageCallback> _onMessageCallbacks;
-  std::vector<espMqttClientTypes::OnPublishCallback> _onPublishCallbacks;
+  std::list<std::pair<espMqttClientTypes::OnConnectCallback, uint32_t>> _onConnectCallbacks;
+  std::list<std::pair<espMqttClientTypes::OnDisconnectCallback, uint32_t>> _onDisconnectCallbacks;
+  std::list<std::pair<espMqttClientTypes::OnSubscribeCallback, uint32_t>> _onSubscribeCallbacks;
+  std::list<std::pair<espMqttClientTypes::OnUnsubscribeCallback, uint32_t>> _onUnsubscribeCallbacks;
+  std::list<std::pair<espMqttClientTypes::OnMessageCallback, uint32_t>> _onMessageCallbacks;
+  std::list<std::pair<espMqttClientTypes::OnPublishCallback, uint32_t>> _onPublishCallbacks;
   #endif
 };
