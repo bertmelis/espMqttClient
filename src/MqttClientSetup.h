@@ -82,6 +82,7 @@ class MqttClientSetup : public MqttClient {
     #ifndef EMC_SINGLE_CALLBACKS
     _onConnectCallbacks.emplace_back(callback, id);
     #else
+    (void) id;
     _onConnectCallback = callback;
     #endif
     return static_cast<T&>(*this);
@@ -91,6 +92,7 @@ class MqttClientSetup : public MqttClient {
     #ifndef EMC_SINGLE_CALLBACKS
     _onDisconnectCallbacks.emplace_back(callback, id);
     #else
+    (void) id;
     _onDisconnectCallback = callback;
     #endif
     return static_cast<T&>(*this);
@@ -100,6 +102,7 @@ class MqttClientSetup : public MqttClient {
     #ifndef EMC_SINGLE_CALLBACKS
     _onSubscribeCallbacks.emplace_back(callback, id);
     #else
+    (void) id;
     _onSubscribeCallback = callback;
     #endif
     return static_cast<T&>(*this);
@@ -109,6 +112,7 @@ class MqttClientSetup : public MqttClient {
     #ifndef EMC_SINGLE_CALLBACKS
     _onUnsubscribeCallbacks.emplace_back(callback, id);
     #else
+    (void) id;
     _onUnsubscribeCallback = callback;
     #endif
     return static_cast<T&>(*this);
@@ -118,6 +122,7 @@ class MqttClientSetup : public MqttClient {
     #ifndef EMC_SINGLE_CALLBACKS
     _onMessageCallbacks.emplace_back(callback, id);
     #else
+    (void) id;
     _onMessageCallback = callback;
     #endif
     return static_cast<T&>(*this);
@@ -127,6 +132,7 @@ class MqttClientSetup : public MqttClient {
     #ifndef EMC_SINGLE_CALLBACKS
     _onPublishCallbacks.emplace_back(callback, id);
     #else
+    (void) id;
     _onPublishCallback = callback;
     #endif
     return static_cast<T&>(*this);
