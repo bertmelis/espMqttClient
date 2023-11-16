@@ -11,7 +11,7 @@ the LICENSE file.
 
 #pragma once
 
-#ifndef EMC_SINGLE_CALLBACKS
+#if EMC_MULTIPLE_CALLBACKS
 #include <list>
 #include <utility>
 #endif
@@ -79,7 +79,7 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& onConnect(espMqttClientTypes::OnConnectCallback callback, uint32_t id = 0) {
-    #ifndef EMC_SINGLE_CALLBACKS
+    #if EMC_MULTIPLE_CALLBACKS
     _onConnectCallbacks.emplace_back(callback, id);
     #else
     (void) id;
@@ -89,7 +89,7 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback, uint32_t id = 0) {
-    #ifndef EMC_SINGLE_CALLBACKS
+    #if EMC_MULTIPLE_CALLBACKS
     _onDisconnectCallbacks.emplace_back(callback, id);
     #else
     (void) id;
@@ -99,7 +99,7 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback, uint32_t id = 0) {
-    #ifndef EMC_SINGLE_CALLBACKS
+    #if EMC_MULTIPLE_CALLBACKS
     _onSubscribeCallbacks.emplace_back(callback, id);
     #else
     (void) id;
@@ -109,7 +109,7 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback, uint32_t id = 0) {
-    #ifndef EMC_SINGLE_CALLBACKS
+    #if EMC_MULTIPLE_CALLBACKS
     _onUnsubscribeCallbacks.emplace_back(callback, id);
     #else
     (void) id;
@@ -119,7 +119,7 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& onMessage(espMqttClientTypes::OnMessageCallback callback, uint32_t id = 0) {
-    #ifndef EMC_SINGLE_CALLBACKS
+    #if EMC_MULTIPLE_CALLBACKS
     _onMessageCallbacks.emplace_back(callback, id);
     #else
     (void) id;
@@ -129,7 +129,7 @@ class MqttClientSetup : public MqttClient {
   }
 
   T& onPublish(espMqttClientTypes::OnPublishCallback callback, uint32_t id = 0) {
-    #ifndef EMC_SINGLE_CALLBACKS
+    #if EMC_MULTIPLE_CALLBACKS
     _onPublishCallbacks.emplace_back(callback, id);
     #else
     (void) id;
@@ -138,7 +138,7 @@ class MqttClientSetup : public MqttClient {
     return static_cast<T&>(*this);
   }
 
-  #ifndef EMC_SINGLE_CALLBACKS
+  #if EMC_MULTIPLE_CALLBACKS
   T& removeOnConnect(uint32_t id) {
     for (auto it = _onConnectCallbacks.begin(); it != _onConnectCallbacks.end(); ++it) {
       if (it->second == id) {
@@ -210,7 +210,7 @@ class MqttClientSetup : public MqttClient {
  protected:
   explicit MqttClientSetup(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1)
   : MqttClient(useInternalTask, priority, core) {
-    #ifndef EMC_SINGLE_CALLBACKS
+    #if EMC_MULTIPLE_CALLBACKS
     _onConnectCallback = [this](bool sessionPresent) {
       for (auto callback : _onConnectCallbacks) if (callback.first) callback.first(sessionPresent);
     };
@@ -234,7 +234,7 @@ class MqttClientSetup : public MqttClient {
     #endif
   }
 
-  #ifndef EMC_SINGLE_CALLBACKS
+  #if EMC_MULTIPLE_CALLBACKS
   std::list<std::pair<espMqttClientTypes::OnConnectCallback, uint32_t>> _onConnectCallbacks;
   std::list<std::pair<espMqttClientTypes::OnDisconnectCallback, uint32_t>> _onDisconnectCallbacks;
   std::list<std::pair<espMqttClientTypes::OnSubscribeCallback, uint32_t>> _onSubscribeCallbacks;
