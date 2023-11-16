@@ -398,6 +398,10 @@ The (maximum) length of the client ID. (Keep in mind that this is a c-string. Yo
 
 Only used on ESP32. Sets the stack size (in words) of the MQTT client worker task.
 
+### EMC_MULTIPLE_CALLBACKS
+
+This macro is by default not enabled so you can add a single callbacks to an event. Assigning a second will overwrite the existing callback. When enabling multiple callbacks, multiple callbacks (with uint32_t id) can be assigned. Removing is done by referencing the id.
+
 ### EMC_USE_WATCHDOG 0
 
 (ESP32 only)
