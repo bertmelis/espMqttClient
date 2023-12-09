@@ -111,6 +111,7 @@ class MqttClient {
     disconnectingTcp2 =  8
   };
   std::atomic<State> _state;
+  inline void _setState(State newState);
 
  private:
   char _generatedClientId[EMC_CLIENTID_LENGTH];
