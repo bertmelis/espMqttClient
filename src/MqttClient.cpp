@@ -313,7 +313,7 @@ void MqttClient::_loop(MqttClient* c) {
 #endif
 
 inline void MqttClient::_setState(State newState) {
-  emc_log_i("state %i --> %i", _state.load(), newState);
+  emc_log_i("state %i --> %i", static_cast<std::underlying_type<State>::type>(_state.load()), static_cast<std::underlying_type<State>::type>(newState));
   _state = newState;
 }
 
