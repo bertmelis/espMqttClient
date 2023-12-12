@@ -499,7 +499,7 @@ void MqttClient::_onConnack() {
 }
 
 void MqttClient::_onPublish() {
-  espMqttClientInternals::IncomingPacket& p = _parser.getPacket();
+  const espMqttClientInternals::IncomingPacket& p = _parser.getPacket();
   uint8_t qos = p.qos();
   bool retain = p.retain();
   bool dup = p.dup();
