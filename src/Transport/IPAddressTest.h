@@ -9,7 +9,7 @@ the LICENSE file.
 #pragma once
 
 #if defined(ARDUINO)
-  #include <IPAddress.h>
+  #include <IPAddressTest.h>
 #else
 
 #include <stdint.h>
