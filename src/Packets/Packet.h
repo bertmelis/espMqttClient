@@ -17,7 +17,7 @@ the LICENSE file.
 #include "../Helpers.h"
 #include "../Logging.h"
 #include "RemainingLength.h"
-#include "String.h"
+#include "StringUtil.h"
 
 namespace espMqttClientInternals {
 

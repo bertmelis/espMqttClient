@@ -18,9 +18,10 @@ Aims to be a non-blocking, fully compliant MQTT 3.1.1 client.
 - Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported)
 - Supported platforms:
   - Espressif ESP8266 and ESP32 using the Arduino framework
+  - Espressif ESP32 using the ESP IDF
 - Basic Linux compatibility*. This includes WSL on Windows
 
-    > Linux compatibility is mainly for automatic testing. It relies on a quick and dirty Arduino-style `Client` with a POSIX TCP client underneath and Arduino-style `IPAddress` class. These are lacking many features needed for proper Linux support.
+    > Linux compatibility is mainly for automatic testing. It relies on a quick and dirty Arduino-style `Client` with a POSIX TCP client underneath and Arduino-style `ClientPosixIPAddress` class. These are lacking many features needed for proper Linux support.
 
 # Documentation
 
