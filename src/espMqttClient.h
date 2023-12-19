@@ -108,7 +108,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
 template<class MQTTVERSION>
 class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERSION> {
  public:
-  espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask)
+  explicit espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask)
   : MqttClientSetup<espMqttClient, MQTTVERSION>(useInternalTask)
   , _client() {
     _transport = &_client;
@@ -165,5 +165,6 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
 };
 #endif
 
+#define espMqttClient espMqttClient<MqttVersion::v3_1_1>
 #define espMqttClient(...) espMqttClient<MqttVersion::v3_1_1>(__VA_ARGS__)
 #define espMqttClientSecure(...) espMqttClientSecure<MqttVersion::v3_1_1>(__VA_ARGS__)
