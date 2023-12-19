@@ -44,12 +44,6 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERS
     _transport = &_client;
   }
 
-  espMqttClientSecure()
-  : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
-  , _client() {
-    _transport = &_client;
-  }
-
   espMqttClientSecure& setInsecure() {
     _client.client.setInsecure();
     return *this;

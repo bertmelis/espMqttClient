@@ -21,7 +21,7 @@ template<class MQTTVERSION>
 class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync, MQTTVERSION> {
  public:
   espMqttClientAsync()
-  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  : MqttClientSetup<espMqttClientAsync, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
   , _clientAsync() {
     _transport = &_clientAsync;
     _clientAsync.client.onConnect(onConnectCb, this);
@@ -74,4 +74,4 @@ class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync, MQTTVERSIO
 
 #endif
 
-#define espMqttClientAsync() espMqttClientAsync<MqttVersion::v3_1_1>()
+#define espMqttClientAsync espMqttClientAsync<MqttVersion::v3_1_1>
