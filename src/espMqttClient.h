@@ -38,14 +38,14 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
 template<class MQTTVERSION>
 class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERSION> {
  public:
-  espMqttClient()
-  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  espMqttClientSecure()
+  : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
   , _client() {
     _transport = &_client;
   }
 
   espMqttClientSecure()
-  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
   , _client() {
     _transport = &_client;
   }
@@ -109,13 +109,13 @@ template<class MQTTVERSION>
 class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERSION> {
  public:
   explicit espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask)
-  : MqttClientSetup<espMqttClient, MQTTVERSION>(useInternalTask)
+  : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(useInternalTask)
   , _client() {
     _transport = &_client;
   }
 
   espMqttClientSecure(uint8_t priority, uint8_t core)
-  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
+  : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
   , _client() {
     _transport = &_client;
   }
