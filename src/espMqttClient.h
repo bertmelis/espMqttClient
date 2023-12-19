@@ -166,3 +166,4 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
 #endif
 
 #define espMqttClient(...) espMqttClient<MqttVersion::v3_1_1>(__VA_ARGS__)
+#define espMqttClientSecure(...) espMqttClientSecure<MqttVersion::v3_1_1>(__VA_ARGS__)

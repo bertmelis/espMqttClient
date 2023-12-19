@@ -21,28 +21,28 @@ the LICENSE file.
 template<template <class> class T, class MQTTVERSION>
 class MqttClientSetup : public MqttClient {
  public:
-  T& setKeepAlive(uint16_t keepAlive) {
+  T<MQTTVERSION>& setKeepAlive(uint16_t keepAlive) {
     _keepAlive = keepAlive * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& setClientId(const char* clientId) {
+  T<MQTTVERSION>& setClientId(const char* clientId) {
     _clientId = clientId;
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& setCleanSession(bool cleanSession) {
+  T<MQTTVERSION>& setCleanSession(bool cleanSession) {
     _cleanSession = cleanSession;
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& setCredentials(const char* username, const char* password) {
+  T<MQTTVERSION>& setCredentials(const char* username, const char* password) {
     _username = username;
     _password = password;
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& setWill(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
+  T<MQTTVERSION>& setWill(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) {
     _willTopic = topic;
     _willQos = qos;
     _willRetain = retain;
@@ -52,158 +52,158 @@ class MqttClientSetup : public MqttClient {
     } else {
       _willPayloadLength = length;
     }
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& setWill(const char* topic, uint8_t qos, bool retain, const char* payload) {
+  T<MQTTVERSION>& setWill(const char* topic, uint8_t qos, bool retain, const char* payload) {
     return setWill(topic, qos, retain, reinterpret_cast<const uint8_t*>(payload), strlen(payload));
   }
 
-  T& setServer(IPAddress ip, uint16_t port) {
+  T<MQTTVERSION>& setServer(IPAddress ip, uint16_t port) {
     _ip = ip;
     _port = port;
     _useIp = true;
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& setServer(const char* host, uint16_t port) {
+  T<MQTTVERSION>& setServer(const char* host, uint16_t port) {
     _host = host;
     _port = port;
     _useIp = false;
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& setTimeout(uint16_t timeout) {
+  T<MQTTVERSION>& setTimeout(uint16_t timeout) {
     _timeout = timeout * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& onConnect(espMqttClientTypes::OnConnectCallback callback, uint32_t id = 0) {
+  T<MQTTVERSION>& onConnect(espMqttClientTypes::OnConnectCallback callback, uint32_t id = 0) {
     #if EMC_MULTIPLE_CALLBACKS
     _onConnectCallbacks.emplace_back(callback, id);
     #else
     (void) id;
     _onConnectCallback = callback;
     #endif
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback, uint32_t id = 0) {
+  T<MQTTVERSION>& onDisconnect(espMqttClientTypes::OnDisconnectCallback callback, uint32_t id = 0) {
     #if EMC_MULTIPLE_CALLBACKS
     _onDisconnectCallbacks.emplace_back(callback, id);
     #else
     (void) id;
     _onDisconnectCallback = callback;
     #endif
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback, uint32_t id = 0) {
+  T<MQTTVERSION>& onSubscribe(espMqttClientTypes::OnSubscribeCallback callback, uint32_t id = 0) {
     #if EMC_MULTIPLE_CALLBACKS
     _onSubscribeCallbacks.emplace_back(callback, id);
     #else
     (void) id;
     _onSubscribeCallback = callback;
     #endif
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback, uint32_t id = 0) {
+  T<MQTTVERSION>& onUnsubscribe(espMqttClientTypes::OnUnsubscribeCallback callback, uint32_t id = 0) {
     #if EMC_MULTIPLE_CALLBACKS
     _onUnsubscribeCallbacks.emplace_back(callback, id);
     #else
     (void) id;
     _onUnsubscribeCallback = callback;
     #endif
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& onMessage(espMqttClientTypes::OnMessageCallback callback, uint32_t id = 0) {
+  T<MQTTVERSION>& onMessage(espMqttClientTypes::OnMessageCallback callback, uint32_t id = 0) {
     #if EMC_MULTIPLE_CALLBACKS
     _onMessageCallbacks.emplace_back(callback, id);
     #else
     (void) id;
     _onMessageCallback = callback;
     #endif
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& onPublish(espMqttClientTypes::OnPublishCallback callback, uint32_t id = 0) {
+  T<MQTTVERSION>& onPublish(espMqttClientTypes::OnPublishCallback callback, uint32_t id = 0) {
     #if EMC_MULTIPLE_CALLBACKS
     _onPublishCallbacks.emplace_back(callback, id);
     #else
     (void) id;
     _onPublishCallback = callback;
     #endif
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
   #if EMC_MULTIPLE_CALLBACKS
-  T& removeOnConnect(uint32_t id) {
+  T<MQTTVERSION>& removeOnConnect(uint32_t id) {
     for (auto it = _onConnectCallbacks.begin(); it != _onConnectCallbacks.end(); ++it) {
       if (it->second == id) {
         _onConnectCallbacks.erase(it);
         break;
       }
     }
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& removeOnDisconnect(uint32_t id) {
+  T<MQTTVERSION>& removeOnDisconnect(uint32_t id) {
     for (auto it = _onDisconnectCallbacks.begin(); it != _onDisconnectCallbacks.end(); ++it) {
       if (it->second == id) {
         _onDisconnectCallbacks.erase(it);
         break;
       }
     }
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& removeOnSubscribe(uint32_t id) {
+  T<MQTTVERSION>& removeOnSubscribe(uint32_t id) {
     for (auto it = _onSubscribeCallbacks.begin(); it != _onSubscribeCallbacks.end(); ++it) {
       if (it->second == id) {
         _onSubscribeCallbacks.erase(it);
         break;
       }
     }
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& removeOnUnsubscribe(uint32_t id) {
+  T<MQTTVERSION>& removeOnUnsubscribe(uint32_t id) {
     for (auto it = _onUnsubscribeCallbacks.begin(); it != _onUnsubscribeCallbacks.end(); ++it) {
       if (it->second == id) {
         _onUnsubscribeCallbacks.erase(it);
         break;
       }
     }
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& removeOnMessage(uint32_t id) {
+  T<MQTTVERSION>& removeOnMessage(uint32_t id) {
     for (auto it = _onMessageCallbacks.begin(); it != _onMessageCallbacks.end(); ++it) {
       if (it->second == id) {
         _onMessageCallbacks.erase(it);
         break;
       }
     }
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
 
-  T& removeOnPublish(uint32_t id) {
+  T<MQTTVERSION>& removeOnPublish(uint32_t id) {
     for (auto it = _onPublishCallbacks.begin(); it != _onPublishCallbacks.end(); ++it) {
       if (it->second == id) {
         _onPublishCallbacks.erase(it);
         break;
       }
     }
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
   #endif
 
   /*
-  T& onError(espMqttClientTypes::OnErrorCallback callback) {
+  T<MQTTVERSION>& onError(espMqttClientTypes::OnErrorCallback callback) {
     _onErrorCallback = callback;
-    return static_cast<T&>(*this);
+    return static_cast<T<MQTTVERSION>&>(*this);
   }
   */
 
