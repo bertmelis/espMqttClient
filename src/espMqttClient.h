@@ -28,7 +28,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
   espMqttClient()
   : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
   , _client() {
-    _transport = &_client;
+    Mqttclient::_transport = &_client;
   }
 
  protected:
@@ -41,7 +41,7 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERS
   espMqttClientSecure()
   : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
   , _client() {
-    _transport = &_client;
+    Mqttclient::_transport = &_client;
   }
 
   espMqttClientSecure& setInsecure() {
@@ -86,13 +86,13 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
   explicit espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask)
   : MqttClientSetup<espMqttClient, MQTTVERSION>(useInternalTask)
   , _client() {
-    _transport = &_client;
+    Mqttclient::_transport = &_client;
   }
 
   explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1)
   : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
   , _client() {
-    _transport = &_client;
+    Mqttclient::_transport = &_client;
   }
 
  protected:
@@ -105,13 +105,13 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERS
   explicit espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask)
   : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(useInternalTask)
   , _client() {
-    _transport = &_client;
+    Mqttclient::_transport = &_client;
   }
 
-  espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1)
+  explicit espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1)
   : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
   , _client() {
-    _transport = &_client;
+    Mqttclient::_transport = &_client;
   }
 
   espMqttClientSecure& setInsecure() {
@@ -151,7 +151,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
   espMqttClient()
   : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
   , _client() {
-    _transport = &_client;
+    Mqttclient::_transport = &_client;
   }
 
  protected:
