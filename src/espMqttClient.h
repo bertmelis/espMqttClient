@@ -89,7 +89,7 @@ class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
     _transport = &_client;
   }
 
-  espMqttClient(uint8_t priority, uint8_t core)
+  explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1)
   : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
   , _client() {
     _transport = &_client;
@@ -108,7 +108,7 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERS
     _transport = &_client;
   }
 
-  espMqttClientSecure(uint8_t priority, uint8_t core)
+  espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1)
   : MqttClientSetup<espMqttClientSecure, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
   , _client() {
     _transport = &_client;
