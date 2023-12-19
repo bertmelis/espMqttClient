@@ -23,7 +23,7 @@ class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync, MQTTVERSIO
   espMqttClientAsync()
   : MqttClientSetup<espMqttClientAsync, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
   , _clientAsync() {
-    Mqttclient::_transport = &_clientAsync;
+    MqttClient::_transport = &_clientAsync;
     _clientAsync.client.onConnect(onConnectCb, this);
     _clientAsync.client.onDisconnect(onDisconnectCb, this);
     _clientAsync.client.onData(onDataCb, this);
