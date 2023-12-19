@@ -21,23 +21,64 @@ the LICENSE file.
 #include "MqttClientSetup.h"
 
 #if defined(ARDUINO_ARCH_ESP8266)
-class espMqttClient : public MqttClientSetup<espMqttClient> {
+
+template<class MQTTVERSION>
+class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
  public:
-  espMqttClient();
+  espMqttClient()
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  , _client() {
+    _transport = &_client;
+  }
 
  protected:
   espMqttClientInternals::ClientSync _client;
 };
 
-class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
+template<class MQTTVERSION>
+class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERSION> {
  public:
-  espMqttClientSecure();
-  espMqttClientSecure& setInsecure();
-  espMqttClientSecure& setFingerprint(const uint8_t fingerprint[20]);
-  espMqttClientSecure& setTrustAnchors(const X509List *ta);
-  espMqttClientSecure& setClientRSACert(const X509List *cert, const PrivateKey *sk);
-  espMqttClientSecure& setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type);
-  espMqttClientSecure& setCertStore(CertStoreBase *certStore);
+  espMqttClient()
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  , _client() {
+    _transport = &_client;
+  }
+
+  espMqttClientSecure()
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  , _client() {
+    _transport = &_client;
+  }
+
+  espMqttClientSecure& setInsecure() {
+    _client.client.setInsecure();
+    return *this;
+  }
+
+  espMqttClientSecure& setFingerprint(const uint8_t fingerprint[20]) {
+    _client.client.setFingerprint(fingerprint);
+    return *this;
+  }
+
+  espMqttClientSecure& setTrustAnchors(const X509List *ta) {
+    _client.client.setTrustAnchors(ta);
+    return *this;
+  }
+
+  espMqttClientSecure& setClientRSACert(const X509List *cert, const PrivateKey *sk) {
+    _client.client.setClientRSACert(cert, sk);
+    return *this;
+  }
+
+  espMqttClientSecure& setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type) {
+    _client.client.setClientECCert(cert, sk, allowed_usages, cert_issuer_key_type);
+    return *this;
+  }
+
+  espMqttClientSecure& setCertStore(CertStoreBase *certStore) {
+    _client.client.setCertStore(certStore);
+    return *this;
+  }
 
  protected:
   espMqttClientInternals::ClientSecureSync _client;
@@ -45,24 +86,64 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
-class espMqttClient : public MqttClientSetup<espMqttClient> {
+template<class MQTTVERSION>
+class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
  public:
-  explicit espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask);
-  explicit espMqttClient(uint8_t priority = 1, uint8_t core = 1);
+  explicit espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask)
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(useInternalTask)
+  , _client() {
+    _transport = &_client;
+  }
+
+  espMqttClient(uint8_t priority, uint8_t core)
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
+  , _client() {
+    _transport = &_client;
+  }
 
  protected:
   espMqttClientInternals::ClientSync _client;
 };
 
-class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
+template<class MQTTVERSION>
+class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure, MQTTVERSION> {
  public:
-  explicit espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask);
-  explicit espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1);
-  espMqttClientSecure& setInsecure();
-  espMqttClientSecure& setCACert(const char* rootCA);
-  espMqttClientSecure& setCertificate(const char* clientCa);
-  espMqttClientSecure& setPrivateKey(const char* privateKey);
-  espMqttClientSecure& setPreSharedKey(const char* pskIdent, const char* psKey);
+  espMqttClientSecure(espMqttClientTypes::UseInternalTask useInternalTask)
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(useInternalTask)
+  , _client() {
+    _transport = &_client;
+  }
+
+  espMqttClientSecure(uint8_t priority, uint8_t core)
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::YES, priority, core)
+  , _client() {
+    _transport = &_client;
+  }
+
+  espMqttClientSecure& setInsecure() {
+    _client.client.setInsecure();
+    return *this;
+  }
+
+  espMqttClientSecure& setCACert(const char* rootCA) {
+    _client.client.setCACert(rootCA);
+    return *this;
+  }
+
+  espMqttClientSecure& setCertificate(const char* clientCa) {
+    _client.client.setCertificate(clientCa);
+    return *this;
+  }
+
+  espMqttClientSecure& setPrivateKey(const char* privateKey) {
+    _client.client.setPrivateKey(privateKey);
+    return *this;
+  }
+
+  espMqttClientSecure& esetPreSharedKey(const char* pskIdent, const char* psKey) {
+    _client.client.setPreSharedKey(pskIdent, psKey);
+    return *this;
+  }
 
  protected:
   espMqttClientInternals::ClientSecureSync _client;
@@ -70,11 +151,18 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
 #endif
 
 #if defined(__linux__)
-class espMqttClient : public MqttClientSetup<espMqttClient> {
+template<class MQTTVERSION>
+class espMqttClient : public MqttClientSetup<espMqttClient, MQTTVERSION> {
  public:
-  espMqttClient();
+  espMqttClient()
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  , _client() {
+    _transport = &_client;
+  }
 
  protected:
   espMqttClientInternals::ClientPosix _client;
 };
 #endif
+
+#define espMqttClient(...) espMqttClient<MqttVersion::v3_1_1>(__VA_ARGS__)

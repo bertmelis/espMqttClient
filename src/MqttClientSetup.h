@@ -18,7 +18,7 @@ the LICENSE file.
 
 #include "MqttClient.h"
 
-template <typename T>
+template<template <class> class T, class MQTTVERSION>
 class MqttClientSetup : public MqttClient {
  public:
   T& setKeepAlive(uint16_t keepAlive) {

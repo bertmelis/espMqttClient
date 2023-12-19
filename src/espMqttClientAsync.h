@@ -17,20 +17,61 @@ the LICENSE file.
 
 #include "MqttClientSetup.h"
 
-class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync> {
+template<class MQTTVERSION>
+class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync, MQTTVERSION> {
  public:
-  espMqttClientAsync();
-  bool connect();
+  espMqttClientAsync()
+  : MqttClientSetup<espMqttClient, MQTTVERSION>(espMqttClientTypes::UseInternalTask::NO)
+  , _clientAsync() {
+    _transport = &_clientAsync;
+    _clientAsync.client.onConnect(onConnectCb, this);
+    _clientAsync.client.onDisconnect(onDisconnectCb, this);
+    _clientAsync.client.onData(onDataCb, this);
+    _clientAsync.client.onPoll(onPollCb, this);
+  }
+
+  bool connect() {
+    bool ret = MqttClient::connect();
+    loop();
+    return ret;
+  }
 
  protected:
   espMqttClientInternals::ClientAsync _clientAsync;
-  static void _setupClient(espMqttClientAsync* c);
-  static void _disconnectClient(espMqttClientAsync* c);
 
-  static void onConnectCb(void* a, AsyncClient* c);
-  static void onDataCb(void* a, AsyncClient* c, void* data, size_t len);
-  static void onDisconnectCb(void* a, AsyncClient* c);
-  static void onPollCb(void* a, AsyncClient* c);
+  static void _setupClient(espMqttClientAsync* c) {
+    (void)c;
+  }
+
+  static void onConnectCb(void* a, AsyncClient* c) {
+    c->setNoDelay(true);
+    espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
+    client->_state = MqttClient::State::connectingTcp2;
+    client->loop();
+  }
+
+  static void onDataCb(void* a, AsyncClient* c, void* data, size_t len) {
+    (void)c;
+    espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
+    client->_clientAsync.bufData = reinterpret_cast<uint8_t*>(data);
+    client->_clientAsync.availableData = len;
+    client->loop();
+  }
+
+  static void onDisconnectCb(void* a, AsyncClient* c) {
+    (void)c;
+    espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
+    client->_state = MqttClient::State::disconnectingTcp2;
+    client->loop();
+  }
+
+  static void onPollCb(void* a, AsyncClient* c) {
+    (void)c;
+    espMqttClientAsync* client = reinterpret_cast<espMqttClientAsync*>(a);
+    client->loop();
+  }
 };
 
 #endif
+
+#define espMqttClientAsync() espMqttClientAsync<MqttVersion::v3_1_1>()
