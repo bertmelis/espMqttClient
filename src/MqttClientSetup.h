@@ -17,6 +17,7 @@ the LICENSE file.
 #endif
 
 #include "MqttClient.h"
+#include "MqttVersion.h"
 
 template<template <class> class T, class MQTTVERSION>
 class MqttClientSetup : public MqttClient {
