@@ -62,7 +62,13 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
   _xSemaphore = xSemaphoreCreateMutex();
   EMC_SEMAPHORE_GIVE();  // release before first use
   if (_useInternalTask == espMqttClientTypes::UseInternalTask::YES) {
-    xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+    if (chip_info.cores > 1) {
+      xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
+    } else {
+      xTaskCreate((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, 5, &_taskHandle);  // ESP32S2 or SOLO only has 1 core: core 0, lower priority to prevent disconnect, see discussions #138
+    }
   }
 #else
   (void) useInternalTask;
