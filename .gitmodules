@@ -4,7 +4,7 @@
 	branch = idf-release/v4.4
 [submodule "examples/simple-esp32-idf/components/AsyncTCP"]
 	path = examples/simple-esp32-idf/components/AsyncTCP
-	url = https://github.com/me-no-dev/AsyncTCP
+	url = https://github.com/esphome/AsyncTCP
 [submodule "examples/simple-esp32-idf/components/espMqttClient"]
 	path = examples/simple-esp32-idf/components/espMqttClient
 	url = https://github.com/bertmelis/espMqttClient

@@ -31,7 +31,7 @@ jobs:
             - name: espMqttClient
               source-path: ./
             - name: ESPAsyncTCP
-              source-url: https://github.com/me-no-dev/ESPAsyncTCP.git
+              source-url: https://github.com/esphome/ESPAsyncTCP.git
 
   build-for-esp32:
     runs-on: ubuntu-latest
@@ -59,4 +59,4 @@ jobs:
             - name: espMqttClient
               source-path: ./
             - name: ESPAsyncTCP
-              source-url: https://github.com/me-no-dev/AsyncTCP.git
+              source-url: https://github.com/esphome/AsyncTCP.git

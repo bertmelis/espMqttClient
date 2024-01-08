@@ -28,7 +28,7 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
       - name: Download external libraries
-        run: pio pkg install --global --library me-no-dev/EspAsyncTCP
+        run: pio pkg install --global --library esphome/EspAsyncTCP
       - name: Build PlatformIO examples
         run: pio ci --lib="." --board=d1_mini
         env:
@@ -58,7 +58,7 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
       - name: Download external libraries
-        run: pio pkg install --global --library me-no-dev/AsyncTCP
+        run: pio pkg install --global --library esphome/AsyncTCP
       - name: Build PlatformIO examples
         run: pio ci --lib="." --board=lolin32
         env:
