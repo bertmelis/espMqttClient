@@ -10,7 +10,7 @@
 - TCP and TCP/TLS using standard WiFiClient and WiFiClientSecure connections
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
-- Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported)
+- Fully async clients available via [AsyncTCP](https://github.com/esphome/AsyncTCP) or [ESPAsnycTCP](https://github.com/esphome/ESPAsyncTCP) (no TLS supported)
 - Supported platforms:
   - Espressif ESP8266 and ESP32 using the Arduino framework
 - Basic Linux compatibility*. This includes WSL on Windows

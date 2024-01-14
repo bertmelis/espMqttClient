@@ -58,5 +58,5 @@ jobs:
           libraries: |
             - name: espMqttClient
               source-path: ./
-            - name: ESPAsyncTCP
+            - name: AsyncTCP
               source-url: https://github.com/me-no-dev/AsyncTCP.git
