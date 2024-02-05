@@ -16,7 +16,7 @@ Aims to be a non-blocking, fully compliant MQTT 3.1.1 client.
 - TCP and TCP/TLS using standard WiFiClient and WiFiClientSecure connections
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
-- Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported)
+- Fully async clients available via [AsyncTCP](https://github.com/esphome/AsyncTCP) or [ESPAsnycTCP](https://github.com/esphome/ESPAsyncTCP) (no TLS supported)
 - Supported platforms:
   - Espressif ESP8266 and ESP32 using the Arduino framework
   - Espressif ESP32 using the ESP IDF, see [esp idf component](https://docs.espressif.com/projects/arduino-esp32/en/latest/esp-idf_component.html)
