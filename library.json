@@ -17,5 +17,9 @@
   "version": "1.6.0",
   "frameworks": "arduino",
   "platforms": ["espressif8266", "espressif32"],
-  "headers": ["espMqttClient.h", "espMqttClientAsync.h"]
+  "headers": ["espMqttClient.h", "espMqttClientAsync.h"],
+  "build":
+  {
+    "libLDFMode": "deep+"
+  }
 }
