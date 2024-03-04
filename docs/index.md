@@ -18,6 +18,12 @@
 
     > Linux compatibility is mainly for automatic testing. It relies on a quick and dirty Arduino-style `Client` with a POSIX TCP client underneath and Arduino-style `IPAddress` class. These are lacking many features needed for proper Linux support.
 
+## Dependencies
+
+This libraries requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) and [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP). These libraries are not actively maintained and have some bugs. There are alternatives available on Github but make sure these alternatives fit in your project.
+
+Because of this, I have removed the explicit dependency. You will have to manually add the libraries so you can choose the version which best suites your code.
+
 # Contents
 
 1. [Runtime behaviour](#runtime-behaviour)
