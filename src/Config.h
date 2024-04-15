@@ -60,3 +60,12 @@ the LICENSE file.
 #ifndef EMC_USE_WATCHDOG
 #define EMC_USE_WATCHDOG 0
 #endif
+
+#ifndef EMC_USE_MEMPOOL
+#define EMC_USE_MEMPOOL 0
+#endif
+
+#if EMC_USE_MEMPOOL
+  #define EMC_NUM_POOL_ELEMENTS 32
+  #define EMC_SIZE_POOL_ELEMENTS 128
+#endif
