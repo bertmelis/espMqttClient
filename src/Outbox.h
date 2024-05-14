@@ -11,6 +11,7 @@ the LICENSE file.
 
 #if EMC_USE_MEMPOOL
   #include "MemoryPool/src/MemoryPool.h"
+  #include "Config.h"
 #else
   #include <new>  // new (std::nothrow)
 #endif
