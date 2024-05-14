@@ -9,7 +9,11 @@ the LICENSE file.
 
 #pragma once
 
-#include <new>  // new (std::nothrow)
+#if EMC_USE_MEMPOOL
+  #include "MemoryPool/src/MemoryPool.h"
+#else
+  #include <new>  // new (std::nothrow)
+#endif
 #include <utility>  // std::forward
 
 namespace espMqttClientInternals {
@@ -32,7 +36,12 @@ class Outbox {
   ~Outbox() {
     while (_first) {
       Node* n = _first->next;
+      #if EMC_USE_MEMPOOL
+      _first->~Node();
+      _memPool.free(_first);
+      #else
       delete _first;
+      #endif
       _first = n;
     }
   }
@@ -73,13 +82,21 @@ class Outbox {
    private:
     Node* _node = nullptr;
     Node* _prev = nullptr;
+    #if EMC_USE_MEMPOOL
+    MemoryPool::Fixed<EMC_NUM_POOL_ELEMENTS, sizeof(Node)> _memPool;
+    #endif
   };
 
   // add node to back, advance current to new if applicable
   template <class... Args>
   Iterator emplace(Args&&... args) {
     Iterator it;
+    #if EMC_USE_MEMPOOL
+    void* buf = _memPool.malloc();
+    Node* node = buf ? new (buf) Node(std::forward<Args>(args) ...) : nullptr;
+    #else
     Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    #endif
     if (node != nullptr) {
       if (!_first) {
         // queue is empty
@@ -103,7 +120,12 @@ class Outbox {
   template <class... Args>
   Iterator emplaceFront(Args&&... args) {
     Iterator it;
+    #if EMC_USE_MEMPOOL
+    void* buf = _memPool.malloc();
+    Node* node = buf ? new (buf) Node(std::forward<Args>(args) ...) : nullptr;
+    #else
     Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    #endif
     if (node != nullptr) {
       if (!_first) {
         // queue is empty
@@ -210,7 +232,12 @@ class Outbox {
     }
 
     // finally, delete the node
-    delete node;
+      #if EMC_USE_MEMPOOL
+      node->~Node();
+      _memPool.free(node);
+      #else
+      delete node;
+      #endif
   }
 };
 
