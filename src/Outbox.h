@@ -95,9 +95,12 @@ class Outbox {
     Iterator it;
     #if EMC_USE_MEMPOOL
     void* buf = _memPool.malloc();
-    Node* node = buf ? new (buf) Node(std::forward<Args>(args) ...) : nullptr;
+    Node* node = nullptr;
+    if (buf) {
+      node = new(buf) Node(std::forward<Args>(args) ...);
+    }
     #else
-    Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    Node* node = new(std::nothrow) Node(std::forward<Args>(args) ...);
     #endif
     if (node != nullptr) {
       if (!_first) {
@@ -124,9 +127,12 @@ class Outbox {
     Iterator it;
     #if EMC_USE_MEMPOOL
     void* buf = _memPool.malloc();
-    Node* node = buf ? new (buf) Node(std::forward<Args>(args) ...) : nullptr;
+    Node* node = nullptr;
+    if (buf) {
+      node = new(buf) Node(std::forward<Args>(args) ...);
+    }
     #else
-    Node* node = new (std::nothrow) Node(std::forward<Args>(args) ...);
+    Node* node = new(std::nothrow) Node(std::forward<Args>(args) ...);
     #endif
     if (node != nullptr) {
       if (!_first) {
