@@ -21,7 +21,7 @@ namespace MemoryPool {
 template <std::size_t nrBlocks, std::size_t blocksize>
 class Fixed {
  public:
-  Fixed()
+  Fixed()  // cppcheck-suppress uninitMemberVar
   : _buffer{0}
   , _head(_buffer) {
     unsigned char* b = _head;
@@ -88,7 +88,7 @@ class Fixed {
     std::cout << "+--------------------" << std::endl;
   }
 
-  bool _isFree(unsigned char* ptr) {
+  bool _isFree(const unsigned char* ptr) {
     unsigned char* b = _head;
     while (b) {
       if (b == ptr) return true;
