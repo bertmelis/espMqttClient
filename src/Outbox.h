@@ -32,7 +32,11 @@ class Outbox {
   : _first(nullptr)
   , _last(nullptr)
   , _current(nullptr)
-  , _prev(nullptr) {}
+  , _prev(nullptr)
+  #if EMC_USE_MEMPOOL
+  , _memPool()
+  #endif
+  {}
   ~Outbox() {
     while (_first) {
       Node* n = _first->next;
@@ -82,9 +86,6 @@ class Outbox {
    private:
     Node* _node = nullptr;
     Node* _prev = nullptr;
-    #if EMC_USE_MEMPOOL
-    MemoryPool::Fixed<EMC_NUM_POOL_ELEMENTS, sizeof(Node)> _memPool;
-    #endif
   };
 
   // add node to back, advance current to new if applicable
@@ -200,6 +201,9 @@ class Outbox {
   Node* _last;
   Node* _current;
   Node* _prev;  // element just before _current
+  #if EMC_USE_MEMPOOL
+  MemoryPool::Fixed<EMC_NUM_POOL_ELEMENTS, sizeof(Node)> _memPool;
+  #endif
 
   void _remove(Node* prev, Node* node) {
     if (!node) return;
