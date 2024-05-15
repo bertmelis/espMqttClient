@@ -10,6 +10,10 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
+#if EMC_USE_MEMPOOL
+MemoryPool::Variable<EMC_NUM_POOL_ELEMENTS, EMC_SIZE_POOL_ELEMENTS> Packet::_memPool;
+#endif
+
 Packet::~Packet() {
   free(_data);
 }
@@ -178,7 +182,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
     _packetId = 0;
   }
 
-  if (!_allocate(remainingLength)) {
+  if (!_allocate(remainingLength, true)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
@@ -215,7 +219,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
     _packetId = 0;
   }
 
-  if (!_allocate(remainingLength - payloadLength + std::min(payloadLength, static_cast<size_t>(EMC_RX_BUFFER_SIZE)))) {
+  if (!_allocate(remainingLength - payloadLength + std::min(payloadLength, static_cast<size_t>(EMC_RX_BUFFER_SIZE)), true)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
@@ -251,7 +255,7 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t p
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
-  if (!_allocate(2)) {
+  if (!_allocate(2, true)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
@@ -290,7 +294,7 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
 , _payloadStartIndex(0)
 , _payloadEndIndex(0)
 , _getPayload(nullptr) {
-  if (!_allocate(0)) {
+  if (!_allocate(0, true)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
@@ -301,12 +305,20 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
 
 
 bool Packet::_allocate(size_t remainingLength, bool check) {
+  #if EMC_USE_MEMPOOL
+  (void) check;
+  #else
   if (check && EMC_GET_FREE_MEMORY() < EMC_MIN_FREE_MEMORY) {
     emc_log_w("Packet buffer not allocated: low memory");
     return false;
   }
+  #endif
   _size = 1 + remainingLengthLength(remainingLength) + remainingLength;
+  #if EMC_USE_MEMPOOL
+  _data = reinterpret_cast<uint8_t*>(_memPool.malloc(_size));
+  #else
   _data = reinterpret_cast<uint8_t*>(malloc(_size));
+  #endif
   if (!_data) {
     _size = 0;
     emc_log_w("Alloc failed (l:%zu)", _size);
@@ -357,7 +369,7 @@ void Packet::_createSubscribe(espMqttClientTypes::Error& error,
   size_t remainingLength = 2 + payload;  // packetId + payload
 
   // allocate memory
-  if (!_allocate(remainingLength)) {
+  if (!_allocate(remainingLength, true)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }
@@ -387,7 +399,7 @@ void Packet::_createUnsubscribe(espMqttClientTypes::Error& error,
   size_t remainingLength = 2 + payload;  // packetId + payload
 
   // allocate memory
-  if (!_allocate(remainingLength)) {
+  if (!_allocate(remainingLength, true)) {
     error = espMqttClientTypes::Error::OUT_OF_MEMORY;
     return;
   }

@@ -10,7 +10,11 @@ the LICENSE file.
 
 #include <cstddef>  // std::size_t
 #include <cassert>  // assert
+#if _GLIBCXX_HAS_GTHREADS
 #include <mutex>  // NOLINT [build/c++11] std::mutex, std::lock_guard
+#else
+#warning "The memory pool is not thread safe"
+#endif
 
 #ifdef MEMPOL_DEBUG
 #include <iostream>
@@ -45,7 +49,9 @@ class Variable {
   Variable& operator= (const Variable&) = delete;
 
   void* malloc(size_t size) {
+    #if _GLIBCXX_HAS_GTHREADS
     const std::lock_guard<std::mutex> lockGuard(_mutex);
+    #endif
     if (size == 0) return nullptr;
 
     size = (size / sizeof(BlockHeader) + (size % sizeof(BlockHeader) != 0)) + 1;  // count by BlockHeader size, add 1 for header
@@ -107,7 +113,9 @@ class Variable {
     std::cout << "free " << static_cast<void*>(reinterpret_cast<BlockHeader*>(ptr) - 1) << std::endl;
     #endif
 
+    #if _GLIBCXX_HAS_GTHREADS
     const std::lock_guard<std::mutex> lockGuard(_mutex);
+    #endif
 
     BlockHeader* toFree = reinterpret_cast<BlockHeader*>(ptr) - 1;
     BlockHeader* previous = reinterpret_cast<BlockHeader*>(_buffer);
@@ -152,7 +160,9 @@ class Variable {
   }
 
   std::size_t freeMemory() {
+    #if _GLIBCXX_HAS_GTHREADS
     const std::lock_guard<std::mutex> lockGuard(_mutex);
+    #endif
     size_t retVal = 0;
     BlockHeader* currentBlock = reinterpret_cast<BlockHeader*>(_head);
 
@@ -165,7 +175,9 @@ class Variable {
   }
 
   std::size_t maxBlockSize() {
+    #if _GLIBCXX_HAS_GTHREADS
     const std::lock_guard<std::mutex> lockGuard(_mutex);
+    #endif
     size_t retVal = 0;
     BlockHeader* currentBlock = reinterpret_cast<BlockHeader*>(_head);
 
@@ -218,7 +230,9 @@ class Variable {
   */
   unsigned char _buffer[(nrBlocks * ((blocksize / sizeof(BlockHeader) + ((blocksize % sizeof(BlockHeader)) ? 1 : 0)) + 1)) * sizeof(BlockHeader)];
   BlockHeader* _head;
+  #if _GLIBCXX_HAS_GTHREADS
   std::mutex _mutex;
+  #endif
 
   #ifdef MEMPOL_DEBUG
   std::size_t _bufferSize;

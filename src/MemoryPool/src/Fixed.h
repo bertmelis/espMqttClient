@@ -10,7 +10,11 @@ the LICENSE file.
 
 #include <cstddef>  // std::size_t
 #include <cassert>  // assert
+#if _GLIBCXX_HAS_GTHREADS
 #include <mutex>  // NOLINT [build/c++11] std::mutex, std::lock_guard
+#else
+#warning "The memory pool is not thread safe"
+#endif
 
 #ifdef MEMPOL_DEBUG
 #include <iostream>
@@ -38,7 +42,9 @@ class Fixed {
   Fixed& operator= (const Fixed&) = delete;
 
   void* malloc() {
+    #if _GLIBCXX_HAS_GTHREADS
     const std::lock_guard<std::mutex> lockGuard(_mutex);
+    #endif
     if (_head) {
       void* retVal = _head;
       _head = *reinterpret_cast<unsigned char**>(_head);
@@ -49,13 +55,17 @@ class Fixed {
 
   void free(void* ptr) {
     if (!ptr) return;
+    #if _GLIBCXX_HAS_GTHREADS
     const std::lock_guard<std::mutex> lockGuard(_mutex);
+    #endif
     *reinterpret_cast<unsigned char**>(ptr) = _head;
     _head = reinterpret_cast<unsigned char*>(ptr);
   }
 
   std::size_t freeMemory() {
+    #if _GLIBCXX_HAS_GTHREADS
     const std::lock_guard<std::mutex> lockGuard(_mutex);
+    #endif
     unsigned char* i = _head;
     std::size_t retVal = 0;
     while (i) {
@@ -101,7 +111,9 @@ class Fixed {
  private:
   unsigned char _buffer[nrBlocks * (sizeof(std::size_t) > blocksize ? sizeof(std::size_t) : blocksize)];
   unsigned char* _head;
+  #if _GLIBCXX_HAS_GTHREADS
   std::mutex _mutex;
+  #endif
 };
 
 }  // end namespace MemoryPool
