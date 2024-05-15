@@ -15,7 +15,11 @@ MemoryPool::Variable<EMC_NUM_POOL_ELEMENTS, EMC_SIZE_POOL_ELEMENTS> Packet::_mem
 #endif
 
 Packet::~Packet() {
+  #if EMC_USE_MEMPOOL
+  _memPool.free(_data);
+  #else
   free(_data);
+  #endif
 }
 
 size_t Packet::available(size_t index) {
