@@ -229,6 +229,9 @@ void MqttClient::loop() {
         _parser.reset();
         _lastClientActivity = _lastServerActivity = millis();
         _setState(State::connectingMqtt);
+      }  else if (_transport->disconnected()) {  // sync: implemented as "not connected"; async: depending on state of pcb in underlying lib
+        _setState(State::disconnectingTcp1);
+        _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
       break;
     case State::connectingMqtt:
