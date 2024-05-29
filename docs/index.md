@@ -417,6 +417,23 @@ This macro is by default not enabled so you can add a single callbacks to an eve
 
 You can enable a watchdog on the MQTT task. This is experimental and will probably result in resets because some (framework) function calls block without feeding the dog.
 
+### EMC_USE_MEMPOOL 0
+
+**Experimental**
+
+When set to `1`, (outgoing) MQTT packets and the outbox data is stored in a memory pool. The memory pool is part of the espMqttClient object and is thus allocated in the same memory type. There are two pools: one to hold the outgoing packets (dynamic size elements) and one for the outbox itself (fixed-size elements).
+
+#### EMC_NUM_POOL_ELEMENTS 32
+
+This config variable is only used when enabling the memory pool. It defines
+- the number of elements in the outbox-pool
+- the number of blocks that will be allocated in the packet-pool
+
+#### EMC_SIZE_POOL_ELEMENTS 128
+
+This defines the size of one packet-pool element. Together with `EMC_NUM_POOL_ELEMENTS`, you get the total packet-pool size.
+The packet-pool can hold any size of element. The configuration only guarantees a minimum of `EMC_NUM_POOL_ELEMENTS` of size `EMC_SIZE_POOL_ELEMENTS` can fit in the pool.
+
 ### Logging
 
 If needed, you have to enable logging at compile time. This is done differently on ESP32 and ESP8266.
