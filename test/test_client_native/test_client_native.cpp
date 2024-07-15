@@ -18,7 +18,7 @@ std::thread t;
 
 //const IPAddress broker(127,0,0,1);
 //const char* broker = "localhost";
-const char* broker = "mosquitto";
+const char* broker = "mqtt";
 const uint16_t broker_port = 1883;
 
 /*

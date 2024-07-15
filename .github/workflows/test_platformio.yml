@@ -9,12 +9,11 @@ jobs:
 
     services:
          mosquitto:
-              image: eclipse-mosquitto
-              ports:
-                  - "1883:1883"
+            mqtt:
+              image: eclipse-mosquitto:2.0
               volumes:
-                  - ${{ github.workspace }}/.github/mosquitto:/mosquitto/config
-              options: --name mosquitto
+                - ${{ github.workspace }}/.github/mosquitto:/mosquitto/config
+              options: --name mqtt
 
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +21,7 @@ jobs:
         # Restart MQTT after volumes have been checked out
         uses: docker://docker
         with:
-          args: docker restart mosquitto
+          args: docker restart mqtt
       - name: Test
         run: |
           pio test -e native -v
