@@ -6,15 +6,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: ghcr.io/bertmelis/pio-test-container
+
+    services:
+         mosquitto:
+              image: eclipse-mosquitto
+              container_name: mosquitto
+              ports:
+                  - "1883:1883"
+              volumes:
+                  - ${{ github.workspace }}/.github/etc/mosquitto.conf:/mosquitto/config/mosquitto.conf
     steps:
       - uses: actions/checkout@v4
-      - name: Start Mosquitto
-        uses: namoshek/mosquitto-github-action@v1
-        with:
-          version: '2.0'
-          ports: '1883:1883'
-          config: ${{ github.workspace }}/.github/etc/mosquitto.conf
-          container-name: 'mosquitto'
       - name: Test
         run: |
           pio test -e native -v
