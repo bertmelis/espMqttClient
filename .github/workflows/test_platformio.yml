@@ -14,6 +14,7 @@ jobs:
           version: '2.0'
           ports: '1883:1883'
           config: ${{ github.workspace }}/.github/etc/mosquitto.conf
+          container-name: 'mosquitto'
       - name: Test
         run: |
           pio test -e native -v
