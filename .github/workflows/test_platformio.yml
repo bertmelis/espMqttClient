@@ -8,8 +8,7 @@ jobs:
     container: ghcr.io/bertmelis/pio-test-container
 
     services:
-         mosquitto:
-            mqtt:
+          mqtt:
               image: eclipse-mosquitto:2.0
               volumes:
                 - ${{ github.workspace }}/.github/mosquitto:/mosquitto/config
