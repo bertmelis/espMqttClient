@@ -70,7 +70,7 @@ bool ClientPosix::connect(const char* hostname, uint16_t port) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = IPPROTO_TCP;
 
-  emc_log_i("connecting to %s:%d", host, port);
+  emc_log_i("Connecting to %s:%d", hostname, port);
 
   err = getaddrinfo(hostname, port_str, &hints, &addrs);
   if (err != 0) {
