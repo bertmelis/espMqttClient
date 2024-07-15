@@ -51,7 +51,7 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
   return true;
 }
 
-bool ClientPosix::connect(const char* host, uint16_t port) {
+bool ClientPosix::connect(const char* hostname, uint16_t port) {
   if (connected()) stop();
 
   int err;

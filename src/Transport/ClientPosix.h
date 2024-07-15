@@ -34,7 +34,7 @@ class ClientPosix : public Transport {
   ClientPosix();
   ~ClientPosix();
   bool connect(IPAddress ip, uint16_t port) override;
-  bool connect(const char* host, uint16_t port) override;
+  bool connect(const char* hostname, uint16_t port) override;
   size_t write(const uint8_t* buf, size_t size) override;
   int read(uint8_t* buf, size_t size) override;
   void stop() override;
