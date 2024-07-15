@@ -19,6 +19,7 @@ the LICENSE file.
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
 #include "Transport.h"  // includes IPAddress
 #include "../Logging.h"
@@ -44,6 +45,8 @@ class ClientPosix : public Transport {
  protected:
   int _sockfd;
   sockaddr_in _host;
+
+  IPAddress _hostToIP(const char* hostname);
 };
 
 }  // namespace espMqttClientInternals

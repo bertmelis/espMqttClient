@@ -52,65 +52,12 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
 }
 
 bool ClientPosix::connect(const char* hostname, uint16_t port) {
-  if (connected()) stop();
-
-  int err;
-  struct addrinfo hints = {}, *addrs;
-  char port_str[16] = {};
-  
-  hints.ai_family = AF_INET; // Since your original code was using sockaddr_in and
-                             // PF_INET, I'm using AF_INET here to match.  Use
-                             // AF_UNSPEC instead if you want to allow getaddrinfo()
-                             // to find both IPv4 and IPv6 addresses for the hostname.
-                             // Just make sure the rest of your code is equally family-
-                             // agnostic when dealing with the IP addresses associated
-                             // with this connection. For instance, make sure any uses
-                             // of sockaddr_in are changed to sockaddr_storage,
-                             // and pay attention to its ss_family field, etc...
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_protocol = IPPROTO_TCP;
-
-  emc_log_i("Connecting to %s:%d", hostname, port);
-
-  err = getaddrinfo(hostname, port_str, &hints, &addrs);
-  if (err != 0) {
-    emc_log_e("Error getting addr info: %s - %s\n", hostname, gai_strerror(err));
+  IPAddress ipAddress = _hostToIP(hostname);
+  if (ipAddress == IPAddress(0)) {
+    emc_log_e("No such host '%s'", hostname);
     return false;
   }
-
-  for(struct addrinfo *addr = addrs; addr != NULL; addr = addr->ai_next) {
-    _sockfd = ::socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-    if (_sockfd == -1) {
-      err = errno;
-      break; // if using AF_UNSPEC above instead of AF_INET/6 specifically,
-             // replace this 'break' with 'continue' instead, as the 'ai_family'
-             // may be different on the next iteration...
-    }
-
-    int flag = 1;
-    if (setsockopt(_sockfd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
-      emc_log_e("Error %d disabling nagle", errno);
-    }
-
-    if (::connect(_sockfd, addr->ai_addr, addr->ai_addrlen) == 0) {
-      break;
-    }
-
-    err = errno;
-
-    close(_sockfd);
-    _sockfd = -1;
-  }
-
-  freeaddrinfo(addrs);
-
-  if (_sockfd < 0) {
-    emc_log_e("%s: %s", hostname, strerror(err));
-    return false;
-  }
-
-  emc_log_i("Socket connected");
-  return true;
+  return connect(ipAddress, port);
 }
 
 size_t ClientPosix::write(const uint8_t* buf, size_t size) {
@@ -140,6 +87,42 @@ bool ClientPosix::connected() {
 
 bool ClientPosix::disconnected() {
   return _sockfd < 0;
+}
+
+IPAddress ClientPosix::_hostToIP(const char* hostname) {
+  IPAddress returnIP(0);
+  struct addrinfo hints, *servinfo, *p;
+  struct sockaddr_in *h;
+  int rv;
+
+// Set up request addrinfo struct
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  emc_log_i("Looking for '%s'", hostname);
+
+// ask for host data
+  if ((rv = getaddrinfo(hostname, NULL, &hints, &servinfo)) != 0) {
+    emc_log_e("getaddrinfo: %s", gai_strerror(rv));
+    return returnIP;
+  }
+
+  // loop through all the results and connect to the first we can
+  for (p = servinfo; p != NULL; p = p->ai_next) {
+    h = (struct sockaddr_in *)p->ai_addr;
+    returnIP = ::htonl(h->sin_addr.s_addr);
+    if (returnIP != IPAddress(0)) break;
+  }
+  // Release allocated memory
+  freeaddrinfo(servinfo);
+
+  if (returnIP != IPAddress(0)) {
+    emc_log_i("Host '%s' = %u", hostname, (uint32_t)returnIP);
+  } else {
+    emc_log_e("No IP for '%s' found", hostname);
+  }
+  return returnIP;
 }
 
 }  // namespace espMqttClientInternals
