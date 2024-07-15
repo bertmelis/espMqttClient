@@ -22,7 +22,7 @@ jobs:
         # Restart MQTT after volumes have been checked out
         uses: docker://docker
         with:
-          args: docker restart mqtt
+          args: docker restart mosquitto
       - name: Test
         run: |
           pio test -e native -v
