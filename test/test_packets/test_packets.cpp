@@ -11,7 +11,7 @@ void tearDown() {}
 void test_encodeConnect0() {
   const uint8_t check[] = {
     0b00010000,                           // header
-    0x0F,                                 // remaining length
+    0x11,                                 // remaining length
     0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
     0b00000100,                           // protocol level
     0b00000010,                           // connect flags
@@ -57,7 +57,7 @@ void test_encodeConnect0() {
 void test_encodeConnect1() {
   const uint8_t check[] = {
     0b00010000,                           // header
-    0x20,                                 // remaining length
+    0x22,                                 // remaining length
     0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
     0b00000100,                           // protocol level
     0b11101110,                           // connect flags
@@ -107,7 +107,7 @@ void test_encodeConnect1() {
 void test_encodeConnect2() {
   const uint8_t check[] = {
     0b00010000,                           // header
-    0x20,                                 // remaining length
+    0x22,                                 // remaining length
     0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
     0b00000100,                           // protocol level
     0b11110110,                           // connect flags
