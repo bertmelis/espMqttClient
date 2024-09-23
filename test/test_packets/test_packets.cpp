@@ -13,7 +13,7 @@ void test_encodeConnect0() {
     0b00010000,                           // header
     0x11,                                 // remaining length
     0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
-    0b00000100,                           // protocol level
+    0b000000011,                           // protocol level
     0b00000010,                           // connect flags
     0x00,0x10,                            // keepalive (16)
     0x00,0x03,'c','l','i'                 // client id
@@ -59,7 +59,7 @@ void test_encodeConnect1() {
     0b00010000,                           // header
     0x22,                                 // remaining length
     0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
-    0b00000100,                           // protocol level
+    0b00000011,                           // protocol level
     0b11101110,                           // connect flags
     0x00,0x10,                            // keepalive (16)
     0x00,0x03,'c','l','i',                // client id
@@ -109,7 +109,7 @@ void test_encodeConnect2() {
     0b00010000,                           // header
     0x22,                                 // remaining length
     0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
-    0b00000100,                           // protocol level
+    0b00000011,                           // protocol level
     0b11110110,                           // connect flags
     0x00,0x10,                            // keepalive (16)
     0x00,0x03,'c','l','i',                // client id
