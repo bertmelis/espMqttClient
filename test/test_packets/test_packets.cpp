@@ -10,15 +10,15 @@ void tearDown() {}
 
 void test_encodeConnect0() {
   const uint8_t check[] = {
-    0b00010000,                 // header
-    0x0F,                       // remaining length
-    0x00,0x04,'M','Q','T','T',  // protocol
-    0b00000100,                 // protocol level
-    0b00000010,                 // connect flags
-    0x00,0x10,                  // keepalive (16)
-    0x00,0x03,'c','l','i'       // client id
+    0b00010000,                           // header
+    0x11,                                 // remaining length
+    0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
+    0b000000011,                           // protocol level
+    0b00000010,                           // connect flags
+    0x00,0x10,                            // keepalive (16)
+    0x00,0x03,'c','l','i'                 // client id
   };
-  const uint32_t length = 17;
+  const uint32_t length = 19;
 
   bool cleanSession = true;
   const char* username = nullptr;
@@ -56,19 +56,19 @@ void test_encodeConnect0() {
 
 void test_encodeConnect1() {
   const uint8_t check[] = {
-    0b00010000,                 // header
-    0x20,                       // remaining length
-    0x00,0x04,'M','Q','T','T',  // protocol
-    0b00000100,                 // protocol level
-    0b11101110,                 // connect flags
-    0x00,0x10,                  // keepalive (16)
-    0x00,0x03,'c','l','i',      // client id
-    0x00,0x03,'t','o','p',      // will topic
-    0x00,0x02,'p','l',          // will payload
-    0x00,0x02,'u','n',          // username
-    0x00,0x02,'p','a'           // password
+    0b00010000,                           // header
+    0x22,                                 // remaining length
+    0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
+    0b00000011,                           // protocol level
+    0b11101110,                           // connect flags
+    0x00,0x10,                            // keepalive (16)
+    0x00,0x03,'c','l','i',                // client id
+    0x00,0x03,'t','o','p',                // will topic
+    0x00,0x02,'p','l',                    // will payload
+    0x00,0x02,'u','n',                    // username
+    0x00,0x02,'p','a'                     // password
   };
-  const uint32_t length = 34;
+  const uint32_t length = 36;
 
   bool cleanSession = true;
   const char* username = "un";
@@ -106,19 +106,19 @@ void test_encodeConnect1() {
 
 void test_encodeConnect2() {
   const uint8_t check[] = {
-    0b00010000,                 // header
-    0x20,                       // remaining length
-    0x00,0x04,'M','Q','T','T',  // protocol
-    0b00000100,                 // protocol level
-    0b11110110,                 // connect flags
-    0x00,0x10,                  // keepalive (16)
-    0x00,0x03,'c','l','i',      // client id
-    0x00,0x03,'t','o','p',      // will topic
-    0x00,0x02,'p','l',          // will payload
-    0x00,0x02,'u','n',          // username
-    0x00,0x02,'p','a'           // password
+    0b00010000,                           // header
+    0x22,                                 // remaining length
+    0x00,0x06,'M','Q','I','s', 'd', 'p',  // protocol
+    0b00000011,                           // protocol level
+    0b11110110,                           // connect flags
+    0x00,0x10,                            // keepalive (16)
+    0x00,0x03,'c','l','i',                // client id
+    0x00,0x03,'t','o','p',                // will topic
+    0x00,0x02,'p','l',                    // will payload
+    0x00,0x02,'u','n',                    // username
+    0x00,0x02,'p','a'                     // password
   };
-  const uint32_t length = 34;
+  const uint32_t length = 36;
 
   bool cleanSession = true;
   const char* username = "un";
