@@ -98,7 +98,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
 
   // Calculate size
   size_t remainingLength =
-  6 +  // protocol
+  8 +  // protocol
   1 +  // protocol level
   1 +  // connect flags
   2 +  // keepalive
@@ -119,8 +119,8 @@ Packet::Packet(espMqttClientTypes::Error& error,
   // FIXED HEADER
   _data[pos++] = PacketType.CONNECT | HeaderFlag.CONNECT_RESERVED;
   pos += encodeRemainingLength(remainingLength, &_data[pos]);
-  pos += encodeString(PROTOCOL, &_data[pos]);
-  _data[pos++] = PROTOCOL_LEVEL;
+  pos += encodeString(PROTOCOL_3_1, &_data[pos]);
+  _data[pos++] = PROTOCOL_LEVEL_3_1;
   uint8_t connectFlags = 0;
   if (cleanSession) connectFlags |= espMqttClientInternals::ConnectFlag.CLEAN_SESSION;
   if (username != nullptr) connectFlags |= espMqttClientInternals::ConnectFlag.USERNAME;

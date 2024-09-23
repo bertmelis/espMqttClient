@@ -15,8 +15,10 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
-constexpr const char PROTOCOL[] = "MQTT";
-constexpr const uint8_t PROTOCOL_LEVEL = 0b00000100;
+constexpr const char PROTOCOL_3_1[] = "MQIsdp";
+constexpr const char PROTOCOL_3_1_1[] = "MQTT";
+constexpr const uint8_t PROTOCOL_LEVEL_3_1 = 0b00000011;
+constexpr const uint8_t PROTOCOL_LEVEL_3_1_1 = 0b00000100;
 
 typedef uint8_t MQTTPacketType;
 

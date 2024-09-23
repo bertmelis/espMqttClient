@@ -94,20 +94,20 @@ ParserResult Parser::_fixedHeader(Parser* p) {
       return ParserResult::protocolError;
     }
   } else {
-    switch (p->_packet.fixedHeader.packetType) {
-      case PacketType.CONNACK | HeaderFlag.CONNACK_RESERVED:
-      case PacketType.PUBACK | HeaderFlag.PUBACK_RESERVED:
-      case PacketType.PUBREC | HeaderFlag.PUBREC_RESERVED:
-      case PacketType.PUBREL | HeaderFlag.PUBREL_RESERVED:
-      case PacketType.PUBCOMP | HeaderFlag.PUBCOMP_RESERVED:
-      case PacketType.UNSUBACK | HeaderFlag.UNSUBACK_RESERVED:
+    switch (p->_packet.fixedHeader.packetType & 0xF0) {
+      case PacketType.CONNACK:
+      case PacketType.PUBACK:
+      case PacketType.PUBREC:
+      case PacketType.PUBREL:
+      case PacketType.PUBCOMP:
+      case PacketType.UNSUBACK:
         p->_parse = _remainingLengthFixed;
         break;
-      case PacketType.SUBACK | HeaderFlag.SUBACK_RESERVED:
+      case PacketType.SUBACK:
         p->_parse = _remainingLengthVariable;
         p->_bytePos = 0;
         break;
-      case PacketType.PINGRESP | HeaderFlag.PINGRESP_RESERVED:
+      case PacketType.PINGRESP:
         p->_parse = _remainingLengthNone;
         break;
       default:
