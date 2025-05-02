@@ -24,7 +24,7 @@ jobs:
             ~/.platformio/.cache
           key: ${{ runner.os }}-pio
       - name: Download external libraries
-        run: pio pkg install --global --library me-no-dev/ESPAsyncTCP
+        run: pio pkg install --global --library ESP32Async/ESPAsyncTCP
       - name: Build PlatformIO examples
         run: pio ci --lib="." --board=d1_mini
         env:
@@ -50,7 +50,7 @@ jobs:
             ~/.platformio/.cache
           key: ${{ runner.os }}-pio
       - name: Download external libraries
-        run: pio pkg install --global --library me-no-dev/AsyncTCP
+        run: pio pkg install --global --library ESP32Async/AsyncTCP
       - name: Build PlatformIO examples
         run: pio ci --lib="." --board=lolin32
         env:
