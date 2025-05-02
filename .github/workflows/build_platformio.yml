@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build-for-esp8266:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     runs-on: ubuntu-latest
     container: ghcr.io/bertmelis/pio-test-container
     strategy:
@@ -31,6 +32,7 @@ jobs:
           PLATFORMIO_CI_SRC: ${{ matrix.example }}
 
   build-for-esp32:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     runs-on: ubuntu-latest
     container: ghcr.io/bertmelis/pio-test-container
     strategy:
@@ -57,6 +59,7 @@ jobs:
           PLATFORMIO_CI_SRC: ${{ matrix.example }}
 
   build-for-linux:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     runs-on: ubuntu-latest
     container: ghcr.io/bertmelis/pio-test-container
     strategy:
