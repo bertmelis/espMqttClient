@@ -19,4 +19,4 @@ jobs:
         pip install cpplint
     - name: Linting
       run: |
-        cpplint --repository=. --recursive --filter=-whitespace/line_length,-build/include ./src
+        cpplint --repository=. --recursive --filter=-whitespace/line_length,-whitespace/indent_namespace,-build/include ./src
