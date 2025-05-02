@@ -108,7 +108,7 @@ bool MqttClient::connect() {
                         _willQos,
                         _willPayload,
                         _willPayloadLength,
-                        (uint16_t)(_keepAlive / 1000),  // 32b to 16b doesn't overflow because it comes from 16b orignally
+                        static_cast<uint16_t>(_keepAlive / 1000),  // 32b to 16b doesn't overflow because it comes from 16b orignally
                         _clientId)) {
       result = true;
       _setState(State::connectingTcp1);
