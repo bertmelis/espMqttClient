@@ -159,6 +159,39 @@ void test_outbox_removeCurrent() {
   // Valgrind should not detect a leak here
 }
 
+
+// Regression test for Outbox::remove() dangling-prev bug.
+// root cause: ++it (inside remove()) stored it._prev = node, then _remove()
+// freed that node, leaving it._prev dangling. A second consecutive remove()
+// call then passed the freed pointer as 'prev' to _remove(), corrupting the
+// queue and any heap block recycled into that address.
+// fix: re-anchor it._prev = prev (the live predecessor) after _remove().
+void test_outbox_remove_consecutive() {
+  Outbox<uint32_t> outbox;
+  outbox.emplace(1);
+  outbox.emplace(2);
+  outbox.emplace(3);
+
+  Outbox<uint32_t>::Iterator it = outbox.front();
+  TEST_ASSERT_EQUAL_UINT32(1, *(it.get()));
+
+  // First remove: eliminates 1, it advances to 2.
+  // Without the fix, it._prev is now a dangling pointer to freed node 1.
+  outbox.remove(it);
+  TEST_ASSERT_NOT_NULL(it.get());
+  TEST_ASSERT_EQUAL_UINT32(2, *(it.get()));
+
+  // Second remove: without the fix, passes dangling it._prev to _remove()
+  // and writes through a freed pointer.  With the fix it._prev == nullptr
+  // (correct head predecessor after node 1 was removed).
+  outbox.remove(it);
+  TEST_ASSERT_NOT_NULL(it.get());
+  TEST_ASSERT_EQUAL_UINT32(3, *(it.get()));
+
+  outbox.remove(it);
+  TEST_ASSERT_NULL(it.get());
+  TEST_ASSERT_TRUE(outbox.empty());
+}
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_outbox_create);
@@ -167,5 +200,6 @@ int main() {
   RUN_TEST(test_outbox_remove1);
   RUN_TEST(test_outbox_remove2);
   RUN_TEST(test_outbox_removeCurrent);
+  RUN_TEST(test_outbox_remove_consecutive);
   return UNITY_END();
 }

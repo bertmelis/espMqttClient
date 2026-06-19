@@ -155,6 +155,7 @@ class Outbox {
     Node* prev = it._prev;
     ++it;
     _remove(prev, node);
+    it._prev = prev;  // re-anchor to live predecessor after node removal
   }
 
   // remove current node, current points to next
