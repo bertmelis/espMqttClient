@@ -25,3 +25,14 @@ jobs:
       - name: Test
         run: |
           pio test -e native -v
+
+  test-no_mempool:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    runs-on: ubuntu-latest
+    container: ghcr.io/bertmelis/pio-test-container
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: |
+          pio test -e native-no_mempool -v -f test_outbox
