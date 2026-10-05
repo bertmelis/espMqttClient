@@ -47,7 +47,20 @@ bool ClientSync::connect(const char* host, uint16_t port) {
 }
 
 size_t ClientSync::write(const uint8_t* buf, size_t size) {
+  #if defined(ARDUINO_ARCH_ESP32)
+  // Do not block the caller. NetworkClient::write() waits in select() (up to
+  // WIFI_CLIENT_MAX_WRITE_RETRY times) until the peer takes the data, which stalls
+  // the task that pumps loop() for as long as a slow broker needs. Hand the socket
+  // only what it accepts now: MqttClient::_sendPacket() adds the count to _bytesSent,
+  // and _checkOutbox() stops on 0 and continues on the next loop() call.
+  int fd = client.fd();
+  if (fd < 0) return 0;
+  ssize_t sent = ::send(fd, buf, size, MSG_DONTWAIT);
+  if (sent < 0) return 0;  // EAGAIN/EWOULDBLOCK: send buffer full; a real error surfaces as a disconnect
+  return static_cast<size_t>(sent);
+  #else
   return client.write(buf, size);
+  #endif
 }
 
 int ClientSync::read(uint8_t* buf, size_t size) {
