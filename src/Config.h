@@ -32,6 +32,13 @@ the LICENSE file.
 #define EMC_MIN_FREE_MEMORY 16384
 #endif
 
+// TCP_NODELAY on the sync (and secure sync) client's socket. 1 (default) disables Nagle, as before.
+// 0 keeps Nagle on: the stack then merges small writes into one segment instead of sending each one
+// at once, which costs at most one round trip of latency but needs far fewer TCP buffers.
+#ifndef EMC_TCP_NODELAY
+#define EMC_TCP_NODELAY 1
+#endif
+
 #ifndef EMC_ESP8266_MULTITHREADING
 #define EMC_ESP8266_MULTITHREADING 0
 #endif

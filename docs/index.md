@@ -376,6 +376,10 @@ Set the incoming payload buffer size for SUBACK messages. When subscribing to mu
 
 The client keeps all outgoing packets in a queue which stores its data in heap memory. With this option, you can set the minimum available (contiguous) heap memory that needs to be available for adding a message to the queue.
 
+### EMC_TCP_NODELAY 1
+
+Sets `TCP_NODELAY` on the socket of the sync clients (`espMqttClient`, `espMqttClientSecure`). The default `1` disables Nagle's algorithm, as before. With `0` the TCP stack merges small writes (for example a burst of short PUBLISH packets) into fewer segments. On lwIP each segment that is sent at once holds its own buffer of about one MSS until it is acknowledged, so `0` can save tens of kilobytes of heap during a burst, at the cost of up to one round trip of extra latency for small packets.
+
 ### EMC_ESP8266_MULTITHREADING 0
 
 Set this to 1 if you use the async version on ESP8266. For the regular client this setting can be kept disabled because the ESP8266 doesn't use multithreading and is only single-core.
