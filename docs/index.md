@@ -376,6 +376,10 @@ Set the incoming payload buffer size for SUBACK messages. When subscribing to mu
 
 The client keeps all outgoing packets in a queue which stores its data in heap memory. With this option, you can set the minimum available (contiguous) heap memory that needs to be available for adding a message to the queue.
 
+### EMC_CONNECT_TIMEOUT_MS 3000
+
+Timeout in milliseconds for the TCP connect of the sync client on ESP32 (`espMqttClient` with `ClientSync`). The default equals the framework's `NetworkClient` default, so behaviour is unchanged. `connect()` runs on the task that calls `loop()`, so an unreachable broker blocks that task for this long on every attempt; set a lower value if that task must stay responsive. Not used on ESP8266 or for the async and secure clients.
+
 ### EMC_ESP8266_MULTITHREADING 0
 
 Set this to 1 if you use the async version on ESP8266. For the regular client this setting can be kept disabled because the ESP8266 doesn't use multithreading and is only single-core.

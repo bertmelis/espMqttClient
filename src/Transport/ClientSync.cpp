@@ -9,6 +9,7 @@ the LICENSE file.
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 
 #include "ClientSync.h"
+#include "../Config.h"
 #include <lwip/sockets.h>  // socket options
 
 namespace espMqttClientInternals {
@@ -19,7 +20,13 @@ ClientSync::ClientSync()
 }
 
 bool ClientSync::connect(IPAddress ip, uint16_t port) {
+  #if defined(ARDUINO_ARCH_ESP32)
+  // NetworkClient::connect(ip, port) waits up to its default 3000 ms for an unreachable host, on the task that
+  // pumps this client. EMC_CONNECT_TIMEOUT_MS (Config.h) lets the application choose a shorter bound.
+  bool ret = client.connect(ip, port, EMC_CONNECT_TIMEOUT_MS);
+  #else
   bool ret = client.connect(ip, port);  // implicit conversion of return code int --> bool
+  #endif
   if (ret) {
     #if defined(ARDUINO_ARCH_ESP8266)
     client.setNoDelay(true);
@@ -33,7 +40,11 @@ bool ClientSync::connect(IPAddress ip, uint16_t port) {
 }
 
 bool ClientSync::connect(const char* host, uint16_t port) {
+  #if defined(ARDUINO_ARCH_ESP32)
+  bool ret = client.connect(host, port, EMC_CONNECT_TIMEOUT_MS);  // see connect(ip, port)
+  #else
   bool ret = client.connect(host, port);  // implicit conversion of return code int --> bool
+  #endif
   if (ret) {
     #if defined(ARDUINO_ARCH_ESP8266)
     client.setNoDelay(true);
