@@ -29,10 +29,10 @@ bool ClientSync::connect(IPAddress ip, uint16_t port) {
   #endif
   if (ret) {
     #if defined(ARDUINO_ARCH_ESP8266)
-    client.setNoDelay(true);
+    client.setNoDelay(EMC_TCP_NODELAY);
     #elif defined(ARDUINO_ARCH_ESP32)
     // Set TCP option directly to bypass lack of working setNoDelay for WiFiClientSecure (for consistency also here)
-    int val = true;
+    int val = EMC_TCP_NODELAY;
     client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
     #endif
   }
@@ -47,10 +47,10 @@ bool ClientSync::connect(const char* host, uint16_t port) {
   #endif
   if (ret) {
     #if defined(ARDUINO_ARCH_ESP8266)
-    client.setNoDelay(true);
+    client.setNoDelay(EMC_TCP_NODELAY);
     #elif defined(ARDUINO_ARCH_ESP32)
     // Set TCP option directly to bypass lack of working setNoDelay for WiFiClientSecure (for consistency also here)
-    int val = true;
+    int val = EMC_TCP_NODELAY;
     client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
     #endif
   }
