@@ -39,6 +39,13 @@ the LICENSE file.
 #define EMC_TCP_NODELAY 1
 #endif
 
+// TCP connect timeout of the sync transport (ESP32) in ms.
+// The default keeps the framework's NetworkClient default (3000 ms);
+// an application can set a shorter value with a build flag, so an unreachable broker cannot stall the loop.
+#ifndef EMC_CONNECT_TIMEOUT_MS
+#define EMC_CONNECT_TIMEOUT_MS 3000
+#endif
+
 #ifndef EMC_ESP8266_MULTITHREADING
 #define EMC_ESP8266_MULTITHREADING 0
 #endif
