@@ -54,7 +54,7 @@ jobs:
       - name: Download external libraries
         run: pio pkg install --global --library ESP32Async/AsyncTCP
       - name: Build PlatformIO examples
-        run: pio ci --lib="." --board=lolin32
+        run: pio ci --lib="." --project-option="platform=https://github.com/pioarduino/platform-espressif32/releases/download/stable/platform-espressif32.zip" --board=lolin32
         env:
           PLATFORMIO_CI_SRC: ${{ matrix.example }}
 
